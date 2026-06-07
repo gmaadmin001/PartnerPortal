@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete, Phase 3 ✅ complete (Tasks 8–9). Next up: Phase 4, Task 10.
+**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete, Phase 3 ✅ complete (Tasks 8–9), Phase 3.5 in progress (Navbar done, Footer pending). Next up: Phase 3.5 Footer polish, then Phase 4 Task 10.
 
 ---
 
@@ -99,6 +99,22 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 ### Task 7: Auth callback route ✅
 
 - [x] `src/app/auth/callback/route.ts` — exchanges Supabase code for session, redirects to `/add-service` on success, `/register?error=auth_callback_error` on failure
+
+---
+
+## PHASE 3.5 — Navbar & Footer Polish (pixel-close to WordPress)
+
+### Navbar ✅
+- [x] Logo: replaced text wordmark with `GMA-1.png` via `next/image` (remote pattern added to `next.config.ts`)
+- [x] Top accent border: 4px `gma-navy` strip at very top of header
+- [x] Nav links right-aligned; ALL CAPS; `gma-navy` default, `gma-primary` on hover
+- [x] Left-to-right underline sweep animation on hover (`.nav-link` CSS class in globals.css)
+- [x] All nav links → WordPress site URLs; Sign In → WP login page
+- [x] Sign In button: `gma-primary` blue (not navy), person icon, hover `gma-blue-mid`
+- [x] Note: Sign In will be updated to `/register` (internal) when Phase 4 is built
+
+### Footer
+- [ ] Polish footer to match WordPress version (pending review session)
 
 ---
 

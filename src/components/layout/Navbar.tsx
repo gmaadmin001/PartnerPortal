@@ -1,55 +1,78 @@
 "use client";
 
-import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Solutions", href: "/solutions" },
-  { label: "Courses", href: "/courses" },
-  { label: "About Us", href: "/about" },
-  { label: "Resources", href: "/resources" },
-  { label: "Contact Us", href: "/contact" },
+  { label: "HOME", href: "https://honeydew-capybara-608687.hostingersite.com/" },
+  { label: "SOLUTIONS", href: "https://honeydew-capybara-608687.hostingersite.com/solutions/" },
+  { label: "COURSES", href: "https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/" },
+  { label: "ABOUT US", href: "https://honeydew-capybara-608687.hostingersite.com/about-us/" },
+  { label: "RESOURCES", href: "https://honeydew-capybara-608687.hostingersite.com/resources/" },
+  { label: "CONTACT US", href: "https://honeydew-capybara-608687.hostingersite.com/contact-us/" },
 ];
+
+const SIGN_IN_HREF = "https://honeydew-capybara-608687.hostingersite.com/login/";
+const LOGO_HREF = "https://honeydew-capybara-608687.hostingersite.com/";
+
+function PersonIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+    </svg>
+  );
+}
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Wordmark */}
-          <Link
-            href="/"
-            className="font-heading font-bold text-lg text-gma-navy leading-tight shrink-0"
-          >
-            Global Mobility Adviser
-          </Link>
+    <header className="sticky top-0 z-50">
+      {/* Top accent border */}
+      <div className="h-1 bg-gma-navy" />
 
-          {/* Desktop nav links */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-gray-700 hover:text-gma-primary transition-colors"
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+
+            {/* Logo */}
+            <a href={LOGO_HREF} className="shrink-0">
+              <Image
+                src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png"
+                alt="Global Mobility Adviser"
+                width={220}
+                height={36}
+                priority
+                className="h-9 w-auto"
+              />
+            </a>
+
+            {/* Desktop — links + Sign In pushed to the right */}
+            <div className="hidden md:flex items-center gap-8">
+              <nav className="flex items-center gap-6">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="nav-link text-xs font-bold text-gma-navy tracking-widest"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+
+              <a
+                href={SIGN_IN_HREF}
+                className="flex items-center gap-2 px-5 py-2 rounded-full bg-gma-primary text-white text-xs font-bold uppercase tracking-widest transition-colors hover:bg-gma-blue-mid"
               >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+                SIGN IN
+                <PersonIcon />
+              </a>
+            </div>
 
-          {/* Sign In + mobile toggle */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/register"
-              className="hidden sm:inline-flex items-center px-5 py-2 rounded-full bg-gma-navy text-white text-sm font-medium uppercase tracking-wide hover:bg-gma-blue-mid transition-colors"
-            >
-              Sign In
-            </Link>
+            {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2 rounded text-gray-700 hover:text-gma-navy"
+              className="md:hidden p-2 rounded text-gma-navy"
               onClick={() => setMobileOpen((o) => !o)}
               aria-label="Toggle menu"
               aria-expanded={mobileOpen}
@@ -70,25 +93,26 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-2 pb-4">
+        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-2 pb-4 shadow-md">
           <nav className="flex flex-col gap-1">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
+              <a
+                key={link.label}
                 href={link.href}
-                className="py-2 text-sm font-medium text-gray-700 hover:text-gma-primary transition-colors"
+                className="py-2 text-xs font-bold text-gma-navy hover:text-gma-primary tracking-widest uppercase transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 {link.label}
-              </Link>
+              </a>
             ))}
-            <Link
-              href="/register"
-              className="mt-3 flex justify-center items-center px-5 py-2 rounded-full bg-gma-navy text-white text-sm font-medium uppercase tracking-wide hover:bg-gma-blue-mid transition-colors"
+            <a
+              href={SIGN_IN_HREF}
+              className="mt-3 flex justify-center items-center gap-2 px-5 py-2 rounded-full bg-gma-primary text-white text-xs font-bold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
               onClick={() => setMobileOpen(false)}
             >
-              Sign In
-            </Link>
+              SIGN IN
+              <PersonIcon />
+            </a>
           </nav>
         </div>
       )}
