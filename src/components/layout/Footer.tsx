@@ -35,7 +35,7 @@ function EmailIcon() {
 export default function Footer() {
   return (
     <footer className="mt-auto" style={{ backgroundColor: "#1C66AD" }}>
-      <div className="w-full px-10 lg:px-16 pt-12 pb-8">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-12 pb-8">
 
         {/* Main 4-column grid */}
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1.5fr_1fr_1fr] gap-10 mb-8">
