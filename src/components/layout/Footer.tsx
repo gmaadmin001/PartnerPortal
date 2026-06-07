@@ -18,7 +18,7 @@ const policyLinks = [
 
 function PhoneIcon() {
   return (
-    <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
     </svg>
   );
@@ -26,7 +26,7 @@ function PhoneIcon() {
 
 function EmailIcon() {
   return (
-    <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
     </svg>
   );
@@ -35,7 +35,7 @@ function EmailIcon() {
 export default function Footer() {
   return (
     <footer className="mt-auto" style={{ backgroundColor: "#1C66AD" }}>
-      <div className="w-full px-6 lg:px-10 pt-12 pb-8">
+      <div className="w-full px-10 lg:px-16 pt-12 pb-8">
 
         {/* Main 4-column grid */}
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1.5fr_1fr_1fr] gap-10 mb-8">
@@ -52,7 +52,7 @@ export default function Footer() {
                 style={{ filter: "brightness(0) invert(1)" }}
               />
             </a>
-            <p className="text-sm text-white leading-relaxed mb-6">
+            <p className="text-base text-white leading-relaxed mb-6">
               At Global Mobility Adviser, we deliver results you can trust, led
               by Michael Ray, an expert in Talent Mobility, Relocation, and
               Remote Work strategies.
@@ -76,32 +76,32 @@ export default function Footer() {
 
           {/* Col 2 — Contact */}
           <div>
-            <div className="text-sm font-bold uppercase tracking-widest text-white mb-5">
+            <div className="text-base font-bold uppercase tracking-widest text-white mb-5">
               Contact
             </div>
             <div className="space-y-4">
-              <div className="flex gap-3 items-start">
+              <a href="tel:6232901143" className="flex gap-3 items-start group hover:text-gma-blue-light transition-colors">
                 <PhoneIcon />
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-white mb-1">Phone</div>
-                  <div className="text-sm text-white">(623)-290-1143</div>
+                  <div className="text-sm font-bold uppercase tracking-wider text-white mb-1 group-hover:text-gma-blue-light transition-colors">Phone</div>
+                  <div className="text-base text-white group-hover:text-gma-blue-light transition-colors">(623)-290-1143</div>
                 </div>
-              </div>
-              <div className="flex gap-3 items-start">
+              </a>
+              <a href="mailto:contactus@honeydew-capybara-608687.hostingersite.com" className="flex gap-3 items-start group hover:text-gma-blue-light transition-colors">
                 <EmailIcon />
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-white mb-1">Send Us Email</div>
-                  <div className="text-sm text-white break-all">
+                  <div className="text-sm font-bold uppercase tracking-wider text-white mb-1 group-hover:text-gma-blue-light transition-colors">Send Us Email</div>
+                  <div className="text-base text-white break-all group-hover:text-gma-blue-light transition-colors">
                     contactus@honeydew-capybara-608687.hostingersite.com
                   </div>
                 </div>
-              </div>
+              </a>
             </div>
           </div>
 
           {/* Col 3 — Site Map */}
           <div>
-            <div className="text-sm font-bold uppercase tracking-widest text-white mb-5">
+            <div className="text-base font-bold uppercase tracking-widest text-white mb-5">
               Site Map
             </div>
             <ul className="space-y-3">
@@ -109,7 +109,7 @@ export default function Footer() {
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="text-sm text-white hover:text-gma-blue-light transition-colors"
+                    className="text-base text-white hover:text-gma-blue-light transition-colors"
                   >
                     {link.label}
                   </a>
@@ -120,7 +120,7 @@ export default function Footer() {
 
           {/* Col 4 — Policies */}
           <div>
-            <div className="text-sm font-bold uppercase tracking-widest text-white mb-5">
+            <div className="text-base font-bold uppercase tracking-widest text-white mb-5">
               Policies
             </div>
             <ul className="space-y-3">
@@ -128,7 +128,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="text-sm text-white hover:text-gma-blue-light transition-colors"
+                    className="text-base text-white hover:text-gma-blue-light transition-colors"
                   >
                     {link.label}
                   </a>

@@ -43,7 +43,7 @@ export default function Navbar() {
 
       <div className="bg-white shadow-sm">
         <div className="w-full px-6 lg:px-10">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-24">
 
             {/* Logo — slightly smaller */}
             <a href={LOGO_HREF} className="shrink-0">
@@ -64,7 +64,7 @@ export default function Navbar() {
                   <a
                     key={link.label}
                     href={link.href}
-                    className="nav-link text-sm font-bold text-black tracking-widest"
+                    className="nav-link text-base font-bold text-black tracking-widest"
                   >
                     {link.label}
                   </a>
@@ -73,7 +73,7 @@ export default function Navbar() {
 
               <a
                 href={SIGN_IN_HREF}
-                className="flex items-center gap-2 px-6 py-3 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest transition-colors hover:bg-gma-primary"
+                className="flex items-center gap-2 px-6 py-4 rounded-full bg-gma-navy text-white text-base font-bold uppercase tracking-widest transition-colors hover:bg-gma-primary"
               >
                 SIGN IN
                 <PersonIconOutline />
