@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete (pending one manual Supabase step — see Task 6), Task 8 ✅ complete. Next up: Phase 3, Task 9.
+**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete, Phase 3 ✅ complete (Tasks 8–9). Next up: Phase 4, Task 10.
 
 ---
 
@@ -87,20 +87,12 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 ---
 
-### Task 6: Supabase Auth configuration ⏳ (manual step — user action required)
+### Task 6: Supabase Auth configuration ✅
 
-**User must complete before Phase 4 (register page) will work end-to-end:**
-
-1. Go to **Supabase Dashboard → Authentication → URL Configuration**
-   - **Site URL:** `https://partnerportal.gmaadmin001.workers.dev`
-   - **Redirect URLs:** add `https://partnerportal.gmaadmin001.workers.dev/auth/callback`
-2. Go to **Authentication → Providers** → confirm **Email** provider is enabled
-3. Decide on email confirmation behaviour (require confirmation on sign-up? yes/no) — confirm with user before Task 10
-
-- [ ] Site URL set in Supabase dashboard
-- [ ] Redirect URL added
-- [ ] Email provider confirmed enabled
-- [ ] Email confirmation preference decided
+- [x] Site URL set: `https://partnerportal.gmaadmin001.workers.dev`
+- [x] Redirect URL added: `https://partnerportal.gmaadmin001.workers.dev/auth/callback`
+- [x] Email provider confirmed enabled
+- [x] Email confirmation: **ON** — users must confirm email before first sign-in; register form will show "Check your email" on sign-up
 
 ---
 
@@ -129,22 +121,12 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 ---
 
-### Task 9: Global layout — Navbar and Footer components
+### Task 9: Global layout — Navbar and Footer components ✅
 
-- [ ] Create `src/components/layout/Navbar.tsx`:
-  - GMA logo (text wordmark for now; swap for image asset when provided)
-  - Nav links: Home / Solutions / Courses / About Us / Resources / Contact Us
-  - "Sign In" link top-right
-  - Mobile responsive: hamburger menu / collapsible
-- [ ] Create `src/components/layout/Footer.tsx`:
-  - Logo + tagline: "At Global Mobility Adviser, we deliver results you can trust..."
-  - "Subscribe now" CTA
-  - Contact block: (623)-290-1143 · contactus@honeydew-capybara-608687.hostingersite.com
-  - Sitemap: Solutions / Education / About Us / Resources / Contact Us
-  - Policy links: Privacy Policy / Copyright Policy / Terms of Service
-  - © 2025 Global Mobility Adviser All Rights Reserved
-  - LinkedIn icon
-- [ ] Update `src/app/layout.tsx` to wrap all pages with `<Navbar />` and `<Footer />`
+- [x] `src/components/layout/Navbar.tsx` — sticky white navbar; wordmark left; nav links center; Sign In pill (gma-navy, rounded-full) right; hamburger + mobile drawer with useState
+- [x] `src/components/layout/Footer.tsx` — dark gma-sidebar bg; 3-column grid (brand+contact / sitemap / policies); newsletter form row; bottom bar with copyright + LinkedIn SVG
+- [x] `src/app/layout.tsx` — Navbar above `<main>`, Footer below; body bg set to gma-surface
+- [x] Build verified: `npm run build` ✅, TypeScript ✅
 
 ---
 

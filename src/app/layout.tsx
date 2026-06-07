@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Lato, Open_Sans, Space_Grotesk } from "next/font/google";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import "./globals.css";
 
 const lato = Lato({
@@ -38,7 +40,11 @@ export default function RootLayout({
       lang="en"
       className={`${lato.variable} ${openSans.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-gma-surface">
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </body>
     </html>
   );
 }
