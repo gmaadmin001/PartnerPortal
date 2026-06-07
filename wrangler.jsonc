@@ -1,0 +1,18 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "partner-portal",
+	"compatibility_date": "2026-06-06",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			// Self-reference service binding — worker name must match "name" above
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "partner-portal"
+		}
+	]
+}
