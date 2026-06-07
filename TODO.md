@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete (pending one manual Supabase step — see Task 6). Next up: Phase 3, Task 8.
+**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete (pending one manual Supabase step — see Task 6), Task 8 ✅ complete. Next up: Phase 3, Task 9.
 
 ---
 
@@ -112,16 +112,20 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 ## PHASE 3 — Shared Shell & Brand
 
-### Task 8: Tailwind brand configuration
+### Task 8: Tailwind brand configuration ✅
 
-> Tailwind v4 — configuration is done in `globals.css` via CSS custom properties and `@theme` block,
-> NOT in a `tailwind.config.ts` file (that file does not exist in v4 projects by default).
-> Colors to extract from live site: `https://honeydew-capybara-608687.hostingersite.com/`
+> Tailwind v4 — configuration is done in `globals.css` via CSS custom properties and `@theme inline` block.
+> Colors extracted from live Elementor kit CSS (`post-10758.css`). Lato weight 800 doesn't exist in
+> Google Fonts (available: 100, 300, 400, 700, 900) — using 900 as closest bold.
+> Also fixed Cloudflare CI build error in this commit: added `build.command` to `wrangler.jsonc` so
+> `wrangler deploy` runs `opennextjs-cloudflare build` first.
 
-- [ ] Extract exact GMA brand colors from live site CSS (primary blue, grays, white)
-- [ ] Extract font family from live site (appears to be a Google Font sans-serif)
-- [ ] Update `src/app/globals.css` `@theme` block with GMA color tokens and font
-- [ ] Set base font family on `body`
+- [x] Extract exact GMA brand colors from live site Elementor kit CSS
+- [x] Fonts: **Lato** (headings, weights 400/700/900), **Open Sans** (body, 400/500/600/700), **Space Grotesk** (display, 400/500/700)
+- [x] Updated `src/app/layout.tsx`: removed Geist, added Lato/Open Sans/Space Grotesk via `next/font/google`
+- [x] Updated `src/app/globals.css`: `@theme inline` with 8 GMA color tokens + 3 font tokens; body uses Open Sans 18px; headings use Lato
+- [x] Fixed `wrangler.jsonc`: added `build.command` to resolve Cloudflare CI "did you run the build command?" error
+- [x] Build verified: `npm run build` ✅, `opennextjs-cloudflare build` ✅
 
 ---
 
@@ -305,6 +309,8 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 | Supabase URL | `https://fwiudagfnntuwqhglkdi.supabase.co` |
 | Supabase key format | New format: `sb_publishable_*` (anon) and `sb_secret_*` (service role) |
 | middleware.ts vs proxy.ts | Keeping `middleware.ts` — OpenNext 1.19.11 doesn't support Next.js 16's `proxy.ts` (Node.js runtime incompatible with Cloudflare Edge). Deprecation warning is non-blocking. Revisit when OpenNext updates. |
+| Cloudflare CI build fix | Added `build.command: npx opennextjs-cloudflare build` to `wrangler.jsonc` — was failing with "did you run the build command?" because CI ran `wrangler deploy` without the build step. |
+| Lato weight 800 | Lato on Google Fonts only has 100/300/400/700/900. Using 900 instead of 800. |
 | Task 3 | Skipped — GitHub ↔ Cloudflare pipeline was pre-existing |
 | Task 19 | Completed early inside Task 5 |
 | Portal branding | "Partner Portal" name unresolved — using neutral labels in code |
