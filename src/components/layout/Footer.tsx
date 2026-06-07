@@ -38,7 +38,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-12 pb-8">
 
         {/* Main 4-column grid */}
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1.5fr_1fr_1fr] gap-10 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1.8fr_1.2fr_1.2fr] gap-14 mb-8">
 
           {/* Col 1 — Brand + subscribe */}
           <div>
@@ -59,15 +59,15 @@ export default function Footer() {
             </p>
 
             {/* Subscribe form */}
-            <form className="flex gap-0" onSubmit={(e) => e.preventDefault()}>
+            <form className="flex items-center gap-2" onSubmit={(e) => e.preventDefault()}>
               <input
                 type="email"
                 placeholder="Your Email Address"
-                className="flex-1 min-w-0 px-5 py-3 rounded-l-full bg-white text-gray-700 text-sm placeholder-gray-400 border-0 focus:outline-none"
+                className="flex-1 min-w-0 px-4 py-3 rounded-lg bg-white text-gray-700 text-sm placeholder-gray-400 border-0 focus:outline-none"
               />
               <button
                 type="submit"
-                className="px-5 py-3 rounded-r-full bg-gma-navy text-white text-sm font-bold uppercase tracking-wider whitespace-nowrap hover:bg-gma-blue-mid transition-colors"
+                className="px-5 py-3 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-wider whitespace-nowrap hover:bg-gma-blue-mid transition-colors"
               >
                 Subscribe Now
               </button>
