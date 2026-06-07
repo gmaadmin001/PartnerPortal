@@ -4,21 +4,31 @@ import Image from "next/image";
 import { useState } from "react";
 
 const navLinks = [
-  { label: "HOME", href: "https://honeydew-capybara-608687.hostingersite.com/" },
-  { label: "SOLUTIONS", href: "https://honeydew-capybara-608687.hostingersite.com/solutions/" },
-  { label: "COURSES", href: "https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/" },
-  { label: "ABOUT US", href: "https://honeydew-capybara-608687.hostingersite.com/about-us/" },
-  { label: "RESOURCES", href: "https://honeydew-capybara-608687.hostingersite.com/resources/" },
+  { label: "HOME",       href: "https://honeydew-capybara-608687.hostingersite.com/" },
+  { label: "SOLUTIONS",  href: "https://honeydew-capybara-608687.hostingersite.com/solutions/" },
+  { label: "COURSES",    href: "https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/" },
+  { label: "ABOUT US",   href: "https://honeydew-capybara-608687.hostingersite.com/about-us/" },
+  { label: "RESOURCES",  href: "https://honeydew-capybara-608687.hostingersite.com/resources/" },
   { label: "CONTACT US", href: "https://honeydew-capybara-608687.hostingersite.com/contact-us/" },
 ];
 
 const SIGN_IN_HREF = "https://honeydew-capybara-608687.hostingersite.com/login/";
-const LOGO_HREF = "https://honeydew-capybara-608687.hostingersite.com/";
+const LOGO_HREF    = "https://honeydew-capybara-608687.hostingersite.com/";
 
-function PersonIcon() {
+function PersonIconOutline() {
   return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+    <svg
+      className="w-4 h-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }
@@ -35,26 +45,26 @@ export default function Navbar() {
         <div className="w-full px-6 lg:px-10">
           <div className="flex items-center justify-between h-20">
 
-            {/* Logo */}
+            {/* Logo — slightly smaller */}
             <a href={LOGO_HREF} className="shrink-0">
               <Image
                 src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png"
                 alt="Global Mobility Adviser"
-                width={220}
-                height={36}
+                width={200}
+                height={32}
                 priority
-                className="h-9 w-auto"
+                className="h-7 w-auto"
               />
             </a>
 
-            {/* Desktop — links + Sign In pushed to the right */}
+            {/* Desktop — links + Sign In pushed right */}
             <div className="hidden md:flex items-center gap-8">
-              <nav className="flex items-center gap-6">
+              <nav className="flex items-center gap-8">
                 {navLinks.map((link) => (
                   <a
                     key={link.label}
                     href={link.href}
-                    className="nav-link text-sm font-bold text-gma-navy tracking-widest"
+                    className="nav-link text-sm font-bold text-black tracking-widest"
                   >
                     {link.label}
                   </a>
@@ -63,10 +73,10 @@ export default function Navbar() {
 
               <a
                 href={SIGN_IN_HREF}
-                className="flex items-center gap-2 px-5 py-2 rounded-full bg-gma-primary text-white text-sm font-bold uppercase tracking-widest transition-colors hover:bg-gma-blue-mid"
+                className="flex items-center gap-2 px-6 py-3 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest transition-colors hover:bg-gma-primary"
               >
                 SIGN IN
-                <PersonIcon />
+                <PersonIconOutline />
               </a>
             </div>
 
@@ -99,7 +109,7 @@ export default function Navbar() {
               <a
                 key={link.label}
                 href={link.href}
-                className="py-2 text-xs font-bold text-gma-navy hover:text-gma-primary tracking-widest uppercase transition-colors"
+                className="py-2 text-sm font-bold text-black hover:text-gma-primary tracking-widest uppercase transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 {link.label}
@@ -107,11 +117,11 @@ export default function Navbar() {
             ))}
             <a
               href={SIGN_IN_HREF}
-              className="mt-3 flex justify-center items-center gap-2 px-5 py-2 rounded-full bg-gma-primary text-white text-sm font-bold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
+              className="mt-3 flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest hover:bg-gma-primary transition-colors"
               onClick={() => setMobileOpen(false)}
             >
               SIGN IN
-              <PersonIcon />
+              <PersonIconOutline />
             </a>
           </nav>
         </div>
