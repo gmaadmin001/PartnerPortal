@@ -32,8 +32,8 @@ export default function Navbar() {
       <div className="h-1 bg-gma-navy" />
 
       <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+        <div className="w-full px-6 lg:px-10">
+          <div className="flex items-center justify-between h-20">
 
             {/* Logo */}
             <a href={LOGO_HREF} className="shrink-0">
@@ -54,7 +54,7 @@ export default function Navbar() {
                   <a
                     key={link.label}
                     href={link.href}
-                    className="nav-link text-xs font-bold text-gma-navy tracking-widest"
+                    className="nav-link text-sm font-bold text-gma-navy tracking-widest"
                   >
                     {link.label}
                   </a>
@@ -63,7 +63,7 @@ export default function Navbar() {
 
               <a
                 href={SIGN_IN_HREF}
-                className="flex items-center gap-2 px-5 py-2 rounded-full bg-gma-primary text-white text-xs font-bold uppercase tracking-widest transition-colors hover:bg-gma-blue-mid"
+                className="flex items-center gap-2 px-5 py-2 rounded-full bg-gma-primary text-white text-sm font-bold uppercase tracking-widest transition-colors hover:bg-gma-blue-mid"
               >
                 SIGN IN
                 <PersonIcon />
@@ -107,7 +107,7 @@ export default function Navbar() {
             ))}
             <a
               href={SIGN_IN_HREF}
-              className="mt-3 flex justify-center items-center gap-2 px-5 py-2 rounded-full bg-gma-primary text-white text-xs font-bold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
+              className="mt-3 flex justify-center items-center gap-2 px-5 py-2 rounded-full bg-gma-primary text-white text-sm font-bold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
               onClick={() => setMobileOpen(false)}
             >
               SIGN IN
