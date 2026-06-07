@@ -8,11 +8,5 @@
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
 	},
-	"services": [
-		{
-			// Self-reference service binding — worker name must match "name" above
-			"binding": "WORKER_SELF_REFERENCE",
-			"service": "partner-portal"
-		}
-	]
+
 }

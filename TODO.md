@@ -1,126 +1,112 @@
 # PartnerPortal — Build Plan
 
-Recreating 3 WordPress pages in React/Tailwind (Next.js 15, Cloudflare Workers, Supabase).
+Recreating 3 WordPress pages in React/Tailwind (Next.js 16, Cloudflare Workers, Supabase).
 Priority order: /register → /add-service → /services-page.
 
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
----
-
-## PHASE 1 — Project Scaffolding
-
-### Task 1: Initialize Next.js 15 project
-
-- [ ] Run `npx create-next-app@latest` with the following options:
-  - TypeScript: yes
-  - ESLint: yes
-  - Tailwind CSS: yes
-  - `src/` directory: yes
-  - App Router: yes
-  - Import alias `@/*`: yes
-- [ ] Confirm generated files: `package.json`, `tsconfig.json`, `tailwind.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`
-- [ ] Remove boilerplate content from `src/app/page.tsx` and `src/app/globals.css`
-- [ ] Verify dev server starts: `npm run dev`
+**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete (pending one manual Supabase step — see Task 6). Next up: Phase 3, Task 8.
 
 ---
 
-### Task 2: Configure Cloudflare Workers via @opennextjs/cloudflare
+## PHASE 1 — Project Scaffolding ✅
 
-- [ ] Install dependencies:
-  - `npm install -D @opennextjs/cloudflare wrangler`
-- [ ] Create `wrangler.jsonc` at project root with:
-  - `name`: `partner-portal`
-  - `compatibility_date`: current date
-  - `compatibility_flags`: `["nodejs_compat"]`
-  - `main`: `.open-next/worker.js`
-  - `assets` bucket pointing to `.open-next/assets`
-- [ ] Update `next.config.ts` to use the `@opennextjs/cloudflare` adapter
-- [ ] Add scripts to `package.json`:
-  - `"build": "next build"`
-  - `"deploy": "opennextjs-cloudflare build && wrangler deploy"`
-  - `"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview"`
-  - `"cf-typegen": "wrangler types"`
-- [ ] Run `npm run preview` locally to confirm the build compiles and serves without error
-- [ ] Add `.dev.vars` to `.gitignore` (this file holds local secrets — must never be committed)
-- [ ] Create `.dev.vars.example` with empty placeholder keys for documentation
+### Task 1: Initialize Next.js project ✅
+
+> **Actual:** Next.js 16.2.7 / React 19.2.4 installed (not 15 as originally planned — 16 was latest stable).
+> Tailwind v4 used — no `tailwind.config.ts`; CSS uses `@import "tailwindcss"` in `globals.css`.
+> `create-next-app` can't init in a directory with capital letters; was scaffolded in `partner-portal/` subdirectory then moved to root.
+
+- [x] Run `npx create-next-app@latest` with TypeScript, ESLint, Tailwind, `src/`, App Router, `@/*` alias
+- [x] Confirm generated files: `package.json`, `tsconfig.json`, `src/app/layout.tsx`, `src/app/page.tsx`
+- [x] Remove boilerplate — `src/app/page.tsx` now redirects `/` → `/register`; `globals.css` cleaned
+- [x] Update `layout.tsx` metadata to GMA branding
+- [x] AGENTS.md retained at root (Next.js 16 auto-generated — contains breaking-change notes)
 
 ---
 
-### Task 3: Connect GitHub repo to Cloudflare Workers Builds (manual step — user action)
+### Task 2: Configure Cloudflare Workers via @opennextjs/cloudflare ✅
 
-**User must complete these steps in the Cloudflare dashboard:**
+> **Actual:** `@opennextjs/cloudflare` 1.19.11, `wrangler` 4.98.0 installed.
+> `open-next.config.ts` required (separate from `next.config.ts`).
+> Deploy script uses `opennextjs-cloudflare deploy` not `wrangler deploy`.
+> **Known issue:** Next.js 16 deprecated `middleware.ts` in favour of `proxy.ts`, but OpenNext 1.19.11
+> doesn't support `proxy.ts` (proxy runs on Node.js runtime; OpenNext requires Edge). Keeping
+> `middleware.ts` until OpenNext ships compatibility. Deprecation warning in build is non-blocking.
 
-1. Go to **Cloudflare Dashboard → Workers & Pages → Create application**
-2. Select **Pages** (or Workers depending on adapter output — confirm with build output)
-3. Click **Connect to Git** → authorize GitHub → select the `PartnerPortal` repository
-4. Configure build settings:
-   - **Framework preset:** None (custom)
-   - **Build command:** `npm run build` (opennextjs-cloudflare wraps next build)
-   - **Build output directory:** `.open-next/assets`
-   - **Root directory:** `/` (repo root)
-5. Under **Environment Variables (Build)** add:
-   - `NEXT_PUBLIC_SUPABASE_URL` = *(will fill in Task 4)*
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = *(will fill in Task 4)*
-   - `NODE_VERSION` = `20`
-6. Click **Save and Deploy** — confirm the first build completes (even if pages are empty)
-7. Note the assigned `*.workers.dev` or `*.pages.dev` URL for testing
-
-> Wait for confirmation that the Cloudflare build pipeline is green before proceeding.
+- [x] Install `@opennextjs/cloudflare` and `wrangler` as dev dependencies
+- [x] Create `wrangler.jsonc` — worker name `partner-portal`, `compatibility_date: 2026-06-06`, flags `nodejs_compat` + `global_fetch_strictly_public`, assets binding
+- [x] Create `open-next.config.ts` with `defineCloudflareConfig({})`
+- [x] Add scripts to `package.json`: `preview`, `deploy`, `cf-typegen`
+- [x] Add `.dev.vars`, `.open-next/`, `.wrangler/` to `.gitignore`
+- [x] Create `.dev.vars.example` with three placeholder keys
+- [x] Build verified: `opennextjs-cloudflare build` passes, worker saved to `.open-next/worker.js`
 
 ---
 
-## PHASE 2 — Supabase Setup
+### Task 3: Connect GitHub repo to Cloudflare Workers Builds ✅ (pre-existing)
 
-### Task 4: Create and connect Supabase project
+> **Actual:** GitHub → Cloudflare connection was already set up before this project started.
+> Workers URL: `partnerportal.gmaadmin001.workers.dev`
+> Task 3 was skipped entirely.
 
-- [ ] Use Supabase MCP (`list_projects`) to check if a project already exists; create one if not:
-  - Project name: `partner-portal`
-  - Region: closest to expected user base (e.g. `us-east-1`)
-- [ ] Use MCP `get_project_url` and `get_publishable_keys` to retrieve:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] Retrieve the service role key from Supabase dashboard (Settings → API → service_role key)
-- [ ] Populate `.dev.vars` with all three keys for local development
-- [ ] Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` as **build variables** in Cloudflare dashboard (build-time, not just runtime — required for browser bundle)
-- [ ] Add `SUPABASE_SERVICE_ROLE_KEY` as a **runtime secret** in Cloudflare (wrangler secret put)
+- [x] Cloudflare Workers project exists and is connected to `gmaadmin001/PartnerPortal`
+- [x] Deploy branch: `main` — every push to main triggers a build and deploy
 
 ---
 
-### Task 5: Supabase client setup (three roles)
+## PHASE 2 — Supabase Setup ✅
 
-Following `architecture.md` — Supabase client roles section:
+### Task 4: Create and connect Supabase project ✅
 
-- [ ] Install: `npm install @supabase/supabase-js @supabase/ssr`
-- [ ] Create `src/lib/supabase/client.ts` — browser/anon client (safe in client components, RLS-bound)
-- [ ] Create `src/lib/supabase/server.ts` — SSR/server client (acts as the logged-in user, RLS applies; reads cookies)
-- [ ] Create `src/lib/supabase/service.ts` — service-role client (server-only, bypasses RLS; throws at import if accidentally bundled for client)
-- [ ] Create `src/middleware.ts` — Supabase auth session refresh middleware (required for SSR cookie-based sessions to stay alive across navigations)
-- [ ] Verify types: run `npm run cf-typegen` and confirm no TypeScript errors
+> **Actual:** Supabase project already existed (`PartnerPortal`, `fwiudagfnntuwqhglkdi`, `us-west-1`).
+> New Supabase key format introduced: `sb_publishable_*` (anon) and `sb_secret_*` (service role).
+> URL: `https://fwiudagfnntuwqhglkdi.supabase.co`
 
----
-
-### Task 6: Supabase Auth configuration (manual step — user action in Supabase dashboard)
-
-**User must complete these steps:**
-
-1. Go to **Supabase Dashboard → Authentication → Providers**
-2. Confirm **Email** provider is enabled
-3. Under **Auth → Email Templates** — leave as default for now (custom email routing comes later)
-4. Under **Auth → URL Configuration**:
-   - **Site URL:** set to the Cloudflare `*.workers.dev` URL from Task 3
-   - **Redirect URLs:** add `<cloudflare-url>/auth/callback`
-5. Under **Auth → Settings**:
-   - Confirm email confirmations behavior (enable or disable based on project preference — confirm with user)
-
-> Wait for user confirmation before proceeding.
+- [x] Supabase project confirmed via MCP (`list_projects`, `get_project_url`)
+- [x] `.dev.vars` populated with all three keys for local development
+- [ ] **MANUAL — STILL NEEDED:** Add to Cloudflare Dashboard → `partner-portal` → Settings → Variables and Secrets:
+  - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` → **plain text build variables**
+  - `SUPABASE_SERVICE_ROLE_KEY` → **encrypted secret (runtime only)**
 
 ---
 
-### Task 7: Auth callback route
+### Task 5: Supabase client setup (three roles) ✅
 
-- [ ] Create `src/app/auth/callback/route.ts` — handles the OAuth/magic-link redirect from Supabase, exchanges the code for a session, and redirects to `/add-service` (or `/` as appropriate)
-- [ ] Test the callback route URL resolves without 404
+> **Actual:** `server-only` package also installed to guard the service-role client from accidental
+> client-side imports. `@supabase/ssr` 0.10.3, `@supabase/supabase-js` 2.107.0.
+> Route protection (Task 19) was implemented here in `middleware.ts` — Task 19 can be skipped.
+
+- [x] Install `@supabase/supabase-js`, `@supabase/ssr`, `server-only`
+- [x] `src/lib/supabase/client.ts` — browser anon client (`createBrowserClient`)
+- [x] `src/lib/supabase/server.ts` — SSR cookie client (`createServerClient`, async, reads `cookies()`)
+- [x] `src/lib/supabase/service.ts` — service-role client (guarded with `import "server-only"`)
+- [x] `src/middleware.ts` — session refresh + `/add-service` route protection (redirects unauthenticated → `/register`)
+- [x] Build verified clean (TypeScript passes, no errors)
+
+---
+
+### Task 6: Supabase Auth configuration ⏳ (manual step — user action required)
+
+**User must complete before Phase 4 (register page) will work end-to-end:**
+
+1. Go to **Supabase Dashboard → Authentication → URL Configuration**
+   - **Site URL:** `https://partnerportal.gmaadmin001.workers.dev`
+   - **Redirect URLs:** add `https://partnerportal.gmaadmin001.workers.dev/auth/callback`
+2. Go to **Authentication → Providers** → confirm **Email** provider is enabled
+3. Decide on email confirmation behaviour (require confirmation on sign-up? yes/no) — confirm with user before Task 10
+
+- [ ] Site URL set in Supabase dashboard
+- [ ] Redirect URL added
+- [ ] Email provider confirmed enabled
+- [ ] Email confirmation preference decided
+
+---
+
+### Task 7: Auth callback route ✅
+
+- [x] `src/app/auth/callback/route.ts` — exchanges Supabase code for session, redirects to `/add-service` on success, `/register?error=auth_callback_error` on failure
 
 ---
 
@@ -128,15 +114,14 @@ Following `architecture.md` — Supabase client roles section:
 
 ### Task 8: Tailwind brand configuration
 
-- [ ] Update `tailwind.config.ts` with GMA brand tokens:
-  - Primary blue (extracted from live site — `#1a5f9e` approximate, confirm with live site inspection)
-  - Neutral/text grays
-  - White background
-  - Error red, success green for form states
-- [ ] Update `src/app/globals.css`:
-  - Import Google Font (confirm with live site — appears to use a sans-serif; extract exact font from live site CSS)
-  - Set base font family on `body`
-  - Remove all create-next-app boilerplate CSS
+> Tailwind v4 — configuration is done in `globals.css` via CSS custom properties and `@theme` block,
+> NOT in a `tailwind.config.ts` file (that file does not exist in v4 projects by default).
+> Colors to extract from live site: `https://honeydew-capybara-608687.hostingersite.com/`
+
+- [ ] Extract exact GMA brand colors from live site CSS (primary blue, grays, white)
+- [ ] Extract font family from live site (appears to be a Google Font sans-serif)
+- [ ] Update `src/app/globals.css` `@theme` block with GMA color tokens and font
+- [ ] Set base font family on `body`
 
 ---
 
@@ -148,15 +133,14 @@ Following `architecture.md` — Supabase client roles section:
   - "Sign In" link top-right
   - Mobile responsive: hamburger menu / collapsible
 - [ ] Create `src/components/layout/Footer.tsx`:
-  - Logo + tagline
+  - Logo + tagline: "At Global Mobility Adviser, we deliver results you can trust..."
   - "Subscribe now" CTA
-  - Contact block: phone + email
-  - Sitemap links: Solutions / Education / About Us / Resources / Contact Us
+  - Contact block: (623)-290-1143 · contactus@honeydew-capybara-608687.hostingersite.com
+  - Sitemap: Solutions / Education / About Us / Resources / Contact Us
   - Policy links: Privacy Policy / Copyright Policy / Terms of Service
   - © 2025 Global Mobility Adviser All Rights Reserved
-  - LinkedIn social icon
+  - LinkedIn icon
 - [ ] Update `src/app/layout.tsx` to wrap all pages with `<Navbar />` and `<Footer />`
-- [ ] Create `src/app/page.tsx` to redirect from `/` → `/register` (this lets the Cloudflare URL land directly on the register page during development; update later as more pages are built)
 
 ---
 
@@ -164,41 +148,27 @@ Following `architecture.md` — Supabase client roles section:
 
 ### Task 10: Register page — layout and login form
 
-Architecture note: touches the **member auth surface** from `architecture.md`.
+> Architecture: touches the **member auth surface** (`architecture.md` — Two auth surfaces section).
+> Supabase Task 6 manual step must be complete before end-to-end auth testing works.
 
-- [ ] Create `src/app/register/page.tsx` — two-panel layout:
-  - Left panel: login/auth form
-  - Right panel: GMA info (tagline, Michael Ray description, contact details)
-  - Stacks vertically on mobile
+- [ ] Create `src/app/register/page.tsx` — two-panel layout (form left, GMA info right; stacked mobile)
 - [ ] Build `src/components/auth/LoginForm.tsx`:
-  - **Username or Email Address** field (text input)
-  - **Password** field with show/hide toggle button (eye icon)
-  - **Remember Me** checkbox
-  - **Lost Password?** link (routes to Supabase password reset flow)
-  - **Log In** primary button
-  - **OR** divider
-  - **Register** link below (routes to account creation — Supabase sign-up form or separate tab)
-- [ ] Wire Log In button to `supabase.auth.signInWithPassword({ email, password })`
-  - On success: redirect to `/add-service`
-  - On error: display inline error message below the form
-- [ ] Wire Lost Password link to `supabase.auth.resetPasswordForEmail(email)`
-  - Show confirmation message: "Check your email for a reset link"
-- [ ] Add form validation:
-  - Required field indicators
-  - Email format validation on blur
-  - Disable submit button while request is in-flight
-- [ ] Build `src/components/auth/RegisterForm.tsx` (shown when user clicks "Register"):
-  - **Email** field
-  - **Password** field (with show/hide toggle)
-  - **Confirm Password** field
-  - **Create Account** button → `supabase.auth.signUp({ email, password })`
-  - On success: show "Check your email to confirm your account" message
-  - On error: inline error
-- [ ] Decide and confirm with user: is Register a separate tab/view within the same page, or a different URL (`/register/signup`)? Implement accordingly.
+  - Email/Username field
+  - Password field with show/hide toggle
+  - Remember Me checkbox
+  - Lost Password link → `supabase.auth.resetPasswordForEmail(email)`
+  - Log In button → `supabase.auth.signInWithPassword({ email, password })` → redirect `/add-service`
+  - OR divider + Register link
+  - Inline error states, loading state on button
+- [ ] Build `src/components/auth/RegisterForm.tsx`:
+  - Email, Password, Confirm Password fields
+  - Create Account → `supabase.auth.signUp({ email, password })`
+  - Success: "Check your email to confirm your account"
+- [ ] **Confirm with user:** Register as separate tab within same page, or separate URL `/register/signup`?
 - [ ] Build `src/components/auth/InfoPanel.tsx` (right panel):
-  - GMA description text
-  - Contact details (phone + email)
-- [ ] Visual QA: compare side-by-side with live `/register/` page
+  - GMA tagline + Michael Ray description
+  - Contact details
+- [ ] Visual QA: compare with live `/register/` page
 
 ---
 
@@ -206,169 +176,138 @@ Architecture note: touches the **member auth surface** from `architecture.md`.
 
 ### Task 11: Add Service page — step indicator and state management
 
-- [ ] Create `src/app/add-service/page.tsx` — top-level page component managing step state
-- [ ] Create `src/components/add-service/StepIndicator.tsx`:
-  - Four steps: **Service → Details → Membership Plans → Finish**
-  - Active step highlighted, completed steps marked, future steps muted
-  - Props: `currentStep: 1 | 2 | 3 | 4`
-- [ ] Set up form state management using React `useState` or React Hook Form:
-  - Install React Hook Form: `npm install react-hook-form`
-  - Shared form context so data persists across step transitions
-  - Define TypeScript types for VendorFormData and RealtorFormData
+- [ ] Create `src/app/add-service/page.tsx` — step state manager
+- [ ] Create `src/components/add-service/StepIndicator.tsx` (Service → Details → Membership Plans → Finish)
+- [ ] Install `react-hook-form`: `npm install react-hook-form`
+- [ ] Define TypeScript types: `VendorFormData`, `RealtorFormData`
 
 ---
 
-### Task 12: Add Service — Step 1: Vendor/Realtor toggle and Vendor form
+### Task 12: Add Service — Step 1: Vendor form
 
-- [ ] Create `src/components/add-service/VendorRealtorToggle.tsx`:
-  - Two-button toggle: **Vendor** | **Realtor**
-  - Instruction text: "Please select Vendor or Realtor"
-  - Active state styling (selected button filled/highlighted)
-- [ ] Create `src/components/add-service/VendorForm.tsx` with all fields:
-  - **Primary Category** — single-select dropdown (10 Relocentra categories)
-  - **Sub Category** — dependent dropdown, populates based on Primary Category selection (multi-select per design doc; implement as multi-select checkboxes or a multi-select dropdown)
-  - **Company Name** — text input (required)
-  - **Website URL** — text/URL input (required)
-  - **Short Description** — textarea, max 255 chars with character counter (required)
-  - **Headquarters Country** — dropdown, full ISO country list (required)
-  - **Headquarters City** — text input (required)
-  - **Countries Served** — multi-select dropdown (optional)
-  - **Delivery Model** — radio buttons: Direct / Aggregator / Mixed / Franchise / Unknown
-  - **Company Size** — radio buttons: 1–50 / 51–500 / 500+
-  - **Certifications** — text input (comma-separated)
-  - **Contact Name** — text input
-  - **Contact Email** — email input
-  - **Contact Phone** — tel input
-- [ ] Add required field validation on all required fields
-- [ ] "Next" button advances to Step 2 only if all required fields pass validation
+- [ ] Create `src/components/add-service/VendorRealtorToggle.tsx` (Vendor | Realtor toggle)
+- [ ] Create `src/components/add-service/VendorForm.tsx`:
+  - Primary Category (single dropdown — 10 Relocentra categories)
+  - Sub Category (multi-select, dependent on Primary)
+  - Company Name, Website URL, Short Description (255 chars + counter)
+  - HQ Country (ISO dropdown), HQ City
+  - Countries Served (multi-select)
+  - Delivery Model (radio: Direct / Aggregator / Mixed / Franchise / Unknown)
+  - Company Size (radio: 1–50 / 51–500 / 500+)
+  - Certifications (text)
+  - Contact Name, Email, Phone
+- [ ] Required field validation + Next button
 
 ---
 
 ### Task 13: Add Service — Step 1: Realtor form
 
-- [ ] Create `src/components/add-service/RealtorForm.tsx` with all fields:
-  - **Brokerage/Agent Name** — text input (required)
-  - **Website URL** — URL input (required)
-  - **Headquarters Country** — dropdown, ISO country list (required)
-  - **Headquarters City** — text input (required)
-  - **License Number** — text input (optional)
-  - **Service Areas** — multi-select dropdown (required) — NOTE: resolve country vs. state/region question before building; default to country-level per live site
-  - **Property Type** — single-select dropdown (optional)
-  - **Short Bio** — textarea, max 255 chars with character counter (required)
-  - **Contact Name** — text input
-  - **Contact Email** — email input
-  - **Contact Phone** — tel input
-- [ ] Required field validation + "Next" button advancement
+- [ ] Create `src/components/add-service/RealtorForm.tsx`:
+  - Brokerage/Agent Name, Website URL
+  - HQ Country (dropdown), HQ City
+  - License Number
+  - Service Areas (multi-select — country-level per live site; confirm before building)
+  - Property Type (dropdown)
+  - Short Bio (255 chars + counter)
+  - Contact Name, Email, Phone
+- [ ] Required field validation + Next button
 
 ---
 
 ### Task 14: Add Service — Step 2: Details
 
-- [ ] Confirm with user what Step 2 ("Details") contains — not fully visible on the live site
-- [ ] Placeholder: build `src/components/add-service/DetailsStep.tsx` as a holding step with a "Next" / "Back" button until content is confirmed
-- [ ] Once confirmed, populate with actual fields
+> **Blocked:** Step 2 content is not visible on the live WordPress site. Build a placeholder step
+> with Back/Next buttons. Confirm content with user before populating.
+
+- [ ] Confirm with user what Step 2 ("Details") contains
+- [ ] Build `src/components/add-service/DetailsStep.tsx` (placeholder with Back/Next)
+- [ ] Populate with real fields once confirmed
 
 ---
 
 ### Task 15: Add Service — Step 3: Membership Plans
 
 - [ ] Create `src/components/add-service/MembershipPlans.tsx`:
-  - Three plan cards side-by-side (stacked on mobile):
-    - **Free** — $0/mo — feature list
-    - **Standard** — $100/mo — feature list
-    - **Premium** — $200/mo — feature list
-  - Each card has a **"Select Plan"** button
-  - Selected plan is visually highlighted (border/bg change)
-- [ ] Wire plan selection to form state
-- [ ] "Next" button advances to Step 4 once a plan is selected
+  - Free ($0), Standard ($100/mo), Premium ($200/mo) cards
+  - Each card: price, feature list, "Select Plan" button
+  - Selected card highlighted
+- [ ] Wire selection to form state; Next button enabled once plan selected
 
 ---
 
-### Task 16: Add Service — Step 4: Finish / Confirmation
+### Task 16: Add Service — Step 4: Finish + Supabase write
 
-- [ ] Create `src/components/add-service/FinishStep.tsx`:
-  - Summary of submitted data (company name, type, selected plan)
-  - **Submit** button — fires the Supabase write (server action or API route)
-  - On success: success message / confirmation UI
-  - On error: inline error with retry option
+> **Note:** Supabase DB schema (vendor/realtor tables) needs to be created before this task.
+> Schema will be designed and applied via Supabase MCP `apply_migration` with Gate 1 plan approval.
+
+- [ ] Create `src/components/add-service/FinishStep.tsx` (summary + Submit button)
 - [ ] Create `src/app/api/add-service/route.ts` — POST handler:
-  - Validates session (user must be logged in — redirect to `/register` if not)
-  - Uses **SSR Supabase client** to insert vendor/realtor record into the appropriate table
-  - Returns 200 on success, appropriate error codes on failure
-- [ ] Apply architecture failure contract (per `architecture.md` external provider integrations section): missing config → fail soft; real error → throw
-- [ ] Visual QA: walk through all 4 steps and confirm data flows correctly end-to-end
+  - Validate session via SSR Supabase client
+  - Insert vendor/realtor record
+  - Failure contract per `architecture.md`: missing config → fail soft; real error → throw
+- [ ] Visual QA: walk all 4 steps end-to-end
 
 ---
 
-## PHASE 6 — Page 3: /services-page (build after /register and /add-service are approved)
+## PHASE 6 — Page 3: /services-page
 
 ### Task 17: Services page — filter panel
 
 - [ ] Create `src/app/services-page/page.tsx`
-- [ ] Create `src/components/services/FilterPanel.tsx` with all filter controls:
-  - Service Type (dropdown)
-  - Sub-service (dependent dropdown)
-  - Country (global dropdown)
-  - State/Region (North America / EMEA / APAC / Global)
-  - Industry (Technology / Energy / Financial Services / etc.)
-  - Integration Scope (Domestic / International / Hybrid + SAP / Workday checkboxes)
-  - Company Size (Small / Medium / Large)
-  - Company Name (text search input)
-  - Zip Code (text input)
-  - Certifications (multi-select)
-  - Diversity badges (multi-select)
-- [ ] "Search / Apply Filters" button triggers results fetch
-- [ ] "Clear All" resets all filters
+- [ ] Create `src/components/services/FilterPanel.tsx`:
+  - Service Type, Sub-service, Country, State/Region, Industry, Integration Scope
+  - Company Size, Company Name, Zip Code, Certifications, Diversity badges
+- [ ] "Search / Apply Filters" + "Clear All" buttons
 
 ---
 
 ### Task 18: Services page — results area and provider cards
 
-- [ ] Create `src/components/services/ResultsArea.tsx`:
-  - Results count label ("X providers found")
-  - Loading skeleton state while fetching
-  - Empty state ("No providers match your filters")
+- [ ] Create `src/components/services/ResultsArea.tsx` (count, loading skeleton, empty state)
 - [ ] Create `src/components/services/ProviderCard.tsx`:
-  - Company Name
-  - Category / Subcategory badges
-  - Short Description
-  - HQ location
-  - Website link / CTA button
-  - Premium badge for upgraded listings (if applicable)
-- [ ] Create `src/app/api/services/route.ts` — GET handler:
-  - Accepts filter params from query string
-  - Uses **anon Supabase client** (public directory, no auth required)
-  - Queries providers table with filters applied
-  - Returns paginated results
-- [ ] Wire filter panel → API call → results render
-- [ ] Implement basic pagination (next/previous page or load-more)
+  - Company Name, Category badges, Short Description, HQ, Website CTA, Premium badge
+- [ ] Create `src/app/api/services/route.ts` — GET, anon Supabase client, filter + paginate
+- [ ] Wire filter → API → results
+- [ ] Pagination (next/prev or load-more)
 
 ---
 
 ## PHASE 7 — Cross-cutting / Cleanup
 
-### Task 19: Auth protection middleware
+### Task 19: Auth protection middleware ✅ (completed as part of Task 5)
 
-- [ ] Update `src/middleware.ts` to:
-  - Protect `/add-service` route — redirect unauthenticated users to `/register`
-  - Allow `/register`, `/services-page`, and all public routes without a session
-  - Refresh Supabase session on every request (required for SSR cookie sessions)
+> `/add-service` protection and session refresh are already implemented in `src/middleware.ts`.
+> This task is complete — no further action needed.
+
+- [x] Protect `/add-service` — redirect unauthenticated → `/register`
+- [x] Session refresh on every request
 
 ---
 
 ### Task 20: Environment variable audit + production readiness
 
-- [ ] Confirm all `NEXT_PUBLIC_*` vars are set as Cloudflare **build variables** (not just runtime secrets)
-- [ ] Confirm `SUPABASE_SERVICE_ROLE_KEY` is set as a Cloudflare **runtime secret** only (never in build vars)
-- [ ] Run `npm run preview` locally against `.dev.vars` — verify all three pages load without errors
-- [ ] Push to GitHub deploy branch → confirm Cloudflare build completes → smoke test all three pages on the live Workers URL
+- [ ] Confirm `NEXT_PUBLIC_*` vars set as Cloudflare **build variables** (see Task 4 manual step)
+- [ ] Confirm `SUPABASE_SERVICE_ROLE_KEY` is Cloudflare **runtime secret** only
+- [ ] Run `npm run preview` locally — verify all three pages load
+- [ ] Push to main → confirm Cloudflare build green → smoke test on `partnerportal.gmaadmin001.workers.dev`
 
 ---
 
-## Notes
+## Context & Decisions Log
 
-- **Branch:** confirm deploy branch name before any `git push` (Gate 2 check)
-- **Supabase DB schema:** vendor/realtor tables and auth are not yet migrated — Task 16 will surface the exact schema needed; apply via Supabase MCP `apply_migration` with Gate 1 plan approval
-- **Portal branding name:** "Partner Portal" naming concern from design docs is unresolved — using neutral labels in code until decided
-- **Step 2 ("Details") content:** blocked on user clarification before Task 14 can be fully built
-- **Realtor Service Areas field type:** country vs. state/region — defaulting to country per live site; confirm before Task 13
+| Topic | Decision / Finding |
+|---|---|
+| Next.js version | 16.2.7 (not 15 — 16 was latest stable at build time) |
+| Tailwind version | v4 — config in `globals.css` `@theme` block, no `tailwind.config.ts` |
+| React version | 19.2.4 |
+| Cloudflare Workers URL | `partnerportal.gmaadmin001.workers.dev` |
+| Supabase project | `PartnerPortal`, ID `fwiudagfnntuwqhglkdi`, region `us-west-1` |
+| Supabase URL | `https://fwiudagfnntuwqhglkdi.supabase.co` |
+| Supabase key format | New format: `sb_publishable_*` (anon) and `sb_secret_*` (service role) |
+| middleware.ts vs proxy.ts | Keeping `middleware.ts` — OpenNext 1.19.11 doesn't support Next.js 16's `proxy.ts` (Node.js runtime incompatible with Cloudflare Edge). Deprecation warning is non-blocking. Revisit when OpenNext updates. |
+| Task 3 | Skipped — GitHub ↔ Cloudflare pipeline was pre-existing |
+| Task 19 | Completed early inside Task 5 |
+| Portal branding | "Partner Portal" name unresolved — using neutral labels in code |
+| Step 2 Details content | Blocked — content not visible on live WordPress site |
+| Realtor Service Areas | Defaulting to country-level per live site; confirm before Task 13 |
+| Email confirmation | Not yet decided — confirm before Task 10 |
