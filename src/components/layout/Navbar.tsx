@@ -12,7 +12,7 @@ const navLinks = [
   { label: "CONTACT US", href: "https://honeydew-capybara-608687.hostingersite.com/contact-us/" },
 ];
 
-const SIGN_IN_HREF = "https://honeydew-capybara-608687.hostingersite.com/login/";
+const SIGN_IN_HREF = "/register";
 const LOGO_HREF    = "https://honeydew-capybara-608687.hostingersite.com/";
 
 function PersonIconOutline() {
