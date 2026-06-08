@@ -137,7 +137,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded bg-gma-primary text-white text-base font-bold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors disabled:opacity-60"
+            className="w-full py-3 rounded bg-gma-primary text-white text-base font-normal uppercase tracking-widest hover:bg-gma-blue-mid transition-colors disabled:opacity-60"
           >
             {loading ? "Logging in…" : "Log In"}
           </button>
@@ -168,7 +168,7 @@ export default function LoginForm() {
       </div>
       <a
         href="/add-service"
-        className="mt-2 flex w-full items-center justify-center py-3 rounded bg-gma-primary text-white text-base font-bold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
+        className="mt-2 flex w-full items-center justify-center py-3 rounded bg-gma-primary text-white text-base font-normal uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
       >
         Register
       </a>
