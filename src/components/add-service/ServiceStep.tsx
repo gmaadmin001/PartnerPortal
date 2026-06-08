@@ -71,16 +71,13 @@ const CATEGORY_MAP: Record<string, string[]> = {
 
 interface ServiceStepProps {
   initial: ServiceStepData;
-  onNext: (data: ServiceStepData) => Promise<void>;
+  onNext: (data: ServiceStepData) => void;
 }
 
 export default function ServiceStep({ initial, onNext }: ServiceStepProps) {
   const [registerAs, setRegisterAs] = useState<"vendor" | "realtor" | null>(initial.registerAs);
   const [primaryCategory, setPrimaryCategory] = useState(initial.primaryCategory);
   const [subCategory, setSubCategory] = useState(initial.subCategory);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const subCategories = primaryCategory ? CATEGORY_MAP[primaryCategory] ?? [] : [];
   const canProceed = registerAs !== null && primaryCategory !== "" && subCategory !== "";
 
@@ -89,29 +86,16 @@ export default function ServiceStep({ initial, onNext }: ServiceStepProps) {
     setSubCategory("");
   }
 
-  async function handleNext() {
+  function handleNext() {
     if (!canProceed) return;
-    setError(null);
-    setLoading(true);
-    try {
-      await onNext({ registerAs, primaryCategory, subCategory });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
-      setLoading(false);
-    }
+    onNext({ registerAs, primaryCategory, subCategory });
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-3xl mx-auto">
-      {error && (
-        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
+    <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 max-w-5xl mx-auto">
       {/* Register As */}
       <div className="mb-6 text-center">
-        <h2 className="text-xl font-semibold mb-4" style={{ color: "#1C66AD" }}>
+        <h2 className="text-2xl font-semibold mb-4" style={{ color: "#1C66AD" }}>
           Register As
         </h2>
         <div className="flex justify-center gap-4">
@@ -173,10 +157,10 @@ export default function ServiceStep({ initial, onNext }: ServiceStepProps) {
         <button
           type="button"
           onClick={handleNext}
-          disabled={!canProceed || loading}
+          disabled={!canProceed}
           className="px-8 py-2 rounded bg-gma-primary text-white text-base font-semibold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Saving…" : "Next"}
+          Next
         </button>
       </div>
     </div>
