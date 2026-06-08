@@ -66,7 +66,7 @@ export default function LoginForm() {
     <div className="w-full">
       {/* Login card */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <form onSubmit={handleLogin} className="px-8 pt-6 pb-4">
+        <form onSubmit={handleLogin} className="px-8 pt-8 pb-6">
           <h1 className="font-heading text-2xl font-bold uppercase tracking-wide text-black mb-6">
             Log In
           </h1>
@@ -163,7 +163,7 @@ export default function LoginForm() {
       </div>
 
       {/* OR + Register */}
-      <div className="max-w-6xl mx-auto w-full">
+      <div className="max-w-5xl mx-auto w-full">
         <div className="mt-6 text-center text-base text-gray-500 tracking-widest uppercase">
           OR
         </div>

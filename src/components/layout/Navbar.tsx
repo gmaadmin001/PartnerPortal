@@ -64,7 +64,7 @@ export default function Navbar() {
                   <a
                     key={link.label}
                     href={link.href}
-                    className="nav-link text-base font-medium text-black tracking-widest"
+                    className="nav-link text-sm font-bold text-black tracking-widest"
                   >
                     {link.label}
                   </a>
@@ -73,7 +73,7 @@ export default function Navbar() {
 
               <a
                 href={SIGN_IN_HREF}
-                className="flex items-center gap-2 px-6 py-4 rounded-full bg-gma-navy text-white text-base font-medium uppercase tracking-widest transition-colors hover:bg-gma-primary"
+                className="flex items-center gap-2 px-6 py-4 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest transition-colors hover:bg-gma-primary"
               >
                 SIGN IN
                 <PersonIconOutline />
@@ -109,7 +109,7 @@ export default function Navbar() {
               <a
                 key={link.label}
                 href={link.href}
-                className="py-2 text-sm font-medium text-black hover:text-gma-primary tracking-widest uppercase transition-colors"
+                className="py-2 text-sm font-bold text-black hover:text-gma-primary tracking-widest uppercase transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 {link.label}
@@ -117,7 +117,7 @@ export default function Navbar() {
             ))}
             <a
               href={SIGN_IN_HREF}
-              className="mt-3 flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gma-navy text-white text-sm font-medium uppercase tracking-widest hover:bg-gma-primary transition-colors"
+              className="mt-3 flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest hover:bg-gma-primary transition-colors"
               onClick={() => setMobileOpen(false)}
             >
               SIGN IN
