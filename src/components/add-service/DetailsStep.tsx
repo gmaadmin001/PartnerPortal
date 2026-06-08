@@ -18,7 +18,7 @@ export interface DetailsStepData {
 }
 
 const COUNTRIES = [
-  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
+  "Afghanistan","Åland Islands","Albania","Algeria","American Samoa","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
   "Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
   "Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia",
   "Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo","Costa Rica",
@@ -40,8 +40,8 @@ const COUNTRIES = [
   "Yemen","Zambia","Zimbabwe",
 ];
 
-const DELIVERY_MODEL_OPTIONS = ["Direct", "Through Partners", "Both"];
-const COMPANY_SIZE_OPTIONS = ["1–50", "51–200", "201–500", "501–1000", "1000+"];
+const DELIVERY_MODEL_OPTIONS = ["Direct", "Aggregator", "Mixed", "Franchise", "Unknown"];
+const COMPANY_SIZE_OPTIONS = ["1–50", "51–500", "500+"];
 
 interface DetailsStepProps {
   initial: DetailsStepData;
@@ -72,9 +72,10 @@ export default function DetailsStep({ initial, onNext, onPrevious }: DetailsStep
     countriesServed.length > 0 &&
     deliveryModel !== "";
 
-  function handleCountriesChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const selected = Array.from(e.target.selectedOptions).map((o) => o.value);
-    setCountriesServed(selected);
+  function toggleCountry(country: string) {
+    setCountriesServed((prev) =>
+      prev.includes(country) ? prev.filter((c) => c !== country) : [...prev, country]
+    );
   }
 
   function handleNext() {
@@ -164,17 +165,50 @@ export default function DetailsStep({ initial, onNext, onPrevious }: DetailsStep
       {/* Countries Served */}
       <div className="mb-4">
         <label className={labelClass}>Countries Served <span className="text-red-500">*</span></label>
-        <select
-          multiple
-          value={countriesServed}
-          onChange={handleCountriesChange}
-          className={`${inputClass} h-36`}
-        >
-          {COUNTRIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-        <p className="text-xs text-gray-400 mt-1">Hold Ctrl / Cmd to select multiple countries.</p>
+        <div className="rounded border border-gma-border bg-white focus-within:border-gma-primary">
+          {/* Chip display area */}
+          <div className="min-h-11 px-3 py-2 flex flex-wrap gap-2">
+            {countriesServed.length === 0 && (
+              <span className="text-gray-400 text-base select-none">Select countries</span>
+            )}
+            {countriesServed.map((c) => (
+              <span
+                key={c}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-gray-300 bg-white text-sm text-gray-700"
+              >
+                {c}
+                <button
+                  type="button"
+                  onClick={() => toggleCountry(c)}
+                  className="text-gray-400 hover:text-gray-700 leading-none"
+                  aria-label={`Remove ${c}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          {/* Scrollable country list */}
+          <div className="border-t border-gma-border h-40 overflow-y-auto">
+            {COUNTRIES.map((c) => {
+              const selected = countriesServed.includes(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleCountry(c)}
+                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                    selected
+                      ? "bg-gma-primary text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Delivery Model */}
