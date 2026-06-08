@@ -44,7 +44,7 @@ export default function LoginForm() {
     if (error) {
       setError(error.message);
     } else {
-      router.push("/add-service");
+      router.push("/dashboard");
     }
   }
 
