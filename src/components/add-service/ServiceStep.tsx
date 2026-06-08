@@ -95,7 +95,7 @@ export default function ServiceStep({ initial, onNext }: ServiceStepProps) {
     <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 max-w-6xl mx-auto">
       {/* Register As */}
       <div className="mb-6 text-center">
-        <h2 className="text-2xl font-semibold mb-4" style={{ color: "#1C66AD" }}>
+        <h2 className="text-3xl font-medium mb-4" style={{ color: "#1C66AD" }}>
           Register As
         </h2>
         <div className="flex justify-center gap-4">
@@ -104,12 +104,11 @@ export default function ServiceStep({ initial, onNext }: ServiceStepProps) {
               key={type}
               type="button"
               onClick={() => setRegisterAs(type)}
-              className="px-8 py-2 rounded border-2 text-sm font-bold uppercase tracking-widest transition-colors"
-              style={{
-                borderColor: "#1C66AD",
-                backgroundColor: registerAs === type ? "#1C66AD" : "transparent",
-                color: registerAs === type ? "#ffffff" : "#1C66AD",
-              }}
+              className={`px-8 py-3 rounded border-2 text-sm font-bold uppercase tracking-widest transition-colors ${
+                registerAs === type
+                  ? "bg-gma-primary border-gma-primary text-white"
+                  : "bg-transparent border-gma-primary text-gma-primary hover:bg-gma-primary hover:text-white"
+              }`}
             >
               {type}
             </button>
