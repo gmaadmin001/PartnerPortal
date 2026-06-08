@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "infisical",
+      "args": [
+        "run",
+        "--env=dev",
+        "--silent",
+        "--",
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=fwiudagfnntuwqhglkdi"
+      ]
+    }
+  }
+}
