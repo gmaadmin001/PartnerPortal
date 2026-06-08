@@ -47,7 +47,7 @@ interface StepIndicatorProps {
 }
 
 export default function StepIndicator({ currentStep }: StepIndicatorProps) {
-  const progressPercent = ((currentStep - 1) / (STEPS.length - 1)) * 100;
+  const progressPercent = (currentStep / STEPS.length) * 100;
 
   return (
     <div className="max-w-6xl mx-auto py-8">
