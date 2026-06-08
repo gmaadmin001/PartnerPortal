@@ -19,7 +19,7 @@ export default function AddServicePage() {
 
   return (
     <div className="bg-white px-4 pb-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <StepIndicator currentStep={currentStep} />
 
         {currentStep === 1 && (

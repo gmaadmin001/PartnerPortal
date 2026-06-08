@@ -92,7 +92,7 @@ export default function ServiceStep({ initial, onNext }: ServiceStepProps) {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 max-w-5xl mx-auto">
+    <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 max-w-6xl mx-auto">
       {/* Register As */}
       <div className="mb-6 text-center">
         <h2 className="text-2xl font-semibold mb-4" style={{ color: "#1C66AD" }}>
