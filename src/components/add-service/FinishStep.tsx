@@ -21,9 +21,21 @@ export default function FinishStep({ serviceData, detailsData, membershipData, o
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const criteria = {
+    length:    password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number:    /[0-9]/.test(password),
+    special:   /[^A-Za-z0-9]/.test(password),
+  };
+  const metCount = Object.values(criteria).filter(Boolean).length;
+  const allMet = metCount === 5;
   const passwordsMatch = password === confirmPassword;
-  const passwordLongEnough = password.length >= 8;
-  const canSubmit = passwordLongEnough && passwordsMatch && !loading;
+  const canSubmit = allMet && passwordsMatch && !loading;
+
+  const strengthLabel = metCount <= 1 ? "Weak" : metCount <= 3 ? "Fair" : metCount === 4 ? "Strong" : "Very Strong";
+  const strengthColor = metCount <= 1 ? "#ef4444" : metCount <= 2 ? "#f97316" : metCount <= 3 ? "#eab308" : metCount === 4 ? "#84cc16" : "#22c55e";
+  const strengthWidth = `${(metCount / 5) * 100}%`;
 
   async function handleSubmit() {
     if (!canSubmit) return;
@@ -140,7 +152,7 @@ export default function FinishStep({ serviceData, detailsData, membershipData, o
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Minimum 8 characters"
+            placeholder="Create a strong password"
             className={inputClass}
           />
           <button
@@ -152,6 +164,45 @@ export default function FinishStep({ serviceData, detailsData, membershipData, o
             {showPassword ? "Hide" : "Show"}
           </button>
         </div>
+
+        {/* Strength bar */}
+        {password.length > 0 && (
+          <div className="mt-2">
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-gray-400">Password strength</span>
+              <span className="font-semibold" style={{ color: strengthColor }}>{strengthLabel}</span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-gray-200">
+              <div
+                className="h-1.5 rounded-full transition-all duration-300"
+                style={{ width: strengthWidth, backgroundColor: strengthColor }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Requirements checklist */}
+        {password.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {[
+              { key: "length",    label: "At least 8 characters" },
+              { key: "uppercase", label: "One uppercase letter (A–Z)" },
+              { key: "lowercase", label: "One lowercase letter (a–z)" },
+              { key: "number",    label: "One number (0–9)" },
+              { key: "special",   label: "One special character (!@#$…)" },
+            ].map(({ key, label }) => {
+              const met = criteria[key as keyof typeof criteria];
+              return (
+                <li key={key} className="flex items-center gap-2 text-xs">
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] shrink-0 ${met ? "bg-gma-primary" : "bg-gray-300"}`}>
+                    {met ? "✓" : "✕"}
+                  </span>
+                  <span className={met ? "text-gray-700" : "text-gray-400"}>{label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       {/* Confirm Password */}
