@@ -102,7 +102,7 @@ export default function LoginForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="flex items-center gap-1 text-sm text-black hover:text-gma-primary transition-colors"
+                className="flex items-center gap-1 text-sm text-gma-blue-light hover:text-gma-primary transition-colors"
               >
                 <EyeIcon open={showPassword} />
                 {showPassword ? "Hide Password" : "Show Password"}
@@ -137,9 +137,9 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded bg-gma-primary text-white text-base font-normal uppercase tracking-widest hover:bg-gma-blue-mid transition-colors disabled:opacity-60"
+            className="w-full py-3 rounded bg-gma-primary text-white text-base font-bold tracking-widest hover:bg-gma-blue-mid transition-colors disabled:opacity-60"
           >
-            {loading ? "Logging in…" : "Log In"}
+            {loading ? "Logging in…" : "Login"}
           </button>
         </form>
 
@@ -163,15 +163,17 @@ export default function LoginForm() {
       </div>
 
       {/* OR + Register */}
-      <div className="mt-6 text-center text-base text-gray-500 tracking-widest uppercase">
-        OR
+      <div className="max-w-6xl mx-auto w-full">
+        <div className="mt-6 text-center text-base text-gray-500 tracking-widest uppercase">
+          OR
+        </div>
+        <a
+          href="/add-service"
+          className="mt-2 flex w-full items-center justify-center py-3 rounded bg-gma-primary text-white text-base font-normal tracking-widest hover:bg-gma-blue-mid transition-colors"
+        >
+          Register
+        </a>
       </div>
-      <a
-        href="/add-service"
-        className="mt-2 flex w-full items-center justify-center py-3 rounded bg-gma-primary text-white text-base font-normal uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
-      >
-        Register
-      </a>
     </div>
   );
 }

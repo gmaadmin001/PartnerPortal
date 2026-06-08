@@ -10,7 +10,7 @@ export const metadata = {
 export default function RegisterPage() {
   return (
     <div className="min-h-screen pt-0 pb-12 px-4 bg-white">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <LoginForm />
       </div>
     </div>
