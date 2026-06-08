@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete, Phase 3 ✅ complete, Phase 3.5 ✅ complete, Phase 4 ✅ complete. Next up: Phase 5 — /add-service (Tasks 11–16).
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details from boss).
 
 ---
 
@@ -161,80 +161,97 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 ---
 
-## PHASE 5 — Page 2: /add-service
+## PHASE 5 — Page 2: /add-service ✅
 
-### Task 11: Add Service page — step indicator and state management
+### Task 11: Service step ✅
 
-- [ ] Create `src/app/add-service/page.tsx` — step state manager
-- [ ] Create `src/components/add-service/StepIndicator.tsx` (Service → Details → Membership Plans → Finish)
-- [ ] Install `react-hook-form`: `npm install react-hook-form`
-- [ ] Define TypeScript types: `VendorFormData`, `RealtorFormData`
+> Vendor/Realtor toggle, Primary + Sub Category dropdowns (10 categories, full subcategory map).
+> Card: `rounded-3xl shadow-xl max-w-6xl`. StepIndicator full-width with fixed line connection.
+> All data held in React state — no per-step Supabase writes.
 
----
-
-### Task 12: Add Service — Step 1: Vendor form
-
-- [ ] Create `src/components/add-service/VendorRealtorToggle.tsx` (Vendor | Realtor toggle)
-- [ ] Create `src/components/add-service/VendorForm.tsx`:
-  - Primary Category (single dropdown — 10 Relocentra categories)
-  - Sub Category (multi-select, dependent on Primary)
-  - Company Name, Website URL, Short Description (255 chars + counter)
-  - HQ Country (ISO dropdown), HQ City
-  - Countries Served (multi-select)
-  - Delivery Model (radio: Direct / Aggregator / Mixed / Franchise / Unknown)
-  - Company Size (radio: 1–50 / 51–500 / 500+)
-  - Certifications (text)
-  - Contact Name, Email, Phone
-- [ ] Required field validation + Next button
+- [x] `src/app/add-service/page.tsx` — 4-step state manager, all data accumulated, single DB write at Finish
+- [x] `src/components/add-service/StepIndicator.tsx` — w-14 circles, 4px line, full-width protrusion, blue overlay extends past active circle
+- [x] `src/components/add-service/ServiceStep.tsx` — Vendor/Realtor toggle (hover fill), Primary + Sub Category dropdowns, NEXT gated on all 3 fields
 
 ---
 
-### Task 13: Add Service — Step 1: Realtor form
+### Task 12: Details step ✅
 
-- [ ] Create `src/components/add-service/RealtorForm.tsx`:
-  - Brokerage/Agent Name, Website URL
-  - HQ Country (dropdown), HQ City
-  - License Number
-  - Service Areas (multi-select — country-level per live site; confirm before building)
-  - Property Type (dropdown)
-  - Short Bio (255 chars + counter)
-  - Contact Name, Email, Phone
-- [ ] Required field validation + Next button
+> Company info + contact fields. Countries Served uses custom tag-picker (chips + scrollable list).
+> Delivery Model: Direct/Aggregator/Mixed/Franchise/Unknown. Company Size: 1–50/51–500/500+.
+
+- [x] `src/components/add-service/DetailsStep.tsx` — all 12 fields, required validation, PREVIOUS + NEXT
 
 ---
 
-### Task 14: Add Service — Step 2: Details
+### Task 13: Membership Plans step ✅
 
-> **Blocked:** Step 2 content is not visible on the live WordPress site. Build a placeholder step
-> with Back/Next buttons. Confirm content with user before populating.
+> Three plan cards: Free ($0), Standard ($100/mo), Premium ($200/mo). Select Plan advances to Finish.
 
-- [ ] Confirm with user what Step 2 ("Details") contains
-- [ ] Build `src/components/add-service/DetailsStep.tsx` (placeholder with Back/Next)
-- [ ] Populate with real fields once confirmed
+- [x] `src/components/add-service/MembershipStep.tsx` — 3-column card grid, full feature lists, PREVIOUS button
 
 ---
 
-### Task 15: Add Service — Step 3: Membership Plans
+### Task 14–16: Finish step + Supabase write ✅
 
-- [ ] Create `src/components/add-service/MembershipPlans.tsx`:
-  - Free ($0), Standard ($100/mo), Premium ($200/mo) cards
-  - Each card: price, feature list, "Select Plan" button
-  - Selected card highlighted
-- [ ] Wire selection to form state; Next button enabled once plan selected
+> Password creation with strength bar (red→yellow→green) + 5-item requirements checklist.
+> On submit: service-role API creates Supabase Auth user (email_confirm: true, no email loop),
+> then inserts full `service_registrations` row. Auth user deleted on DB failure (rollback safety).
+> `membership_plan` column added to `service_registrations` via migration.
+
+- [x] `src/components/add-service/FinishStep.tsx` — summary card, email (read-only), password strength meter, Create Account button
+- [x] `src/app/api/finish-registration/route.ts` — service-role client, `auth.admin.createUser` + DB insert
+- [x] `src/app/dashboard/page.tsx` — post-login test page; shows full registration record from DB; Sign Out button
+- [x] Login redirects to `/dashboard` on success
 
 ---
 
-### Task 16: Add Service — Step 4: Finish + Supabase write
+## PHASE 5.5 — Stripe Payment Integration 🔜 BLOCKED
 
-> **Note:** Supabase DB schema (vendor/realtor tables) needs to be created before this task.
-> Schema will be designed and applied via Supabase MCP `apply_migration` with Gate 1 plan approval.
+> **Blocked on:** Stripe account credentials from boss + Price IDs for Standard and Premium plans.
+> The original WordPress site used Stripe via Shopify for paid plan checkout — that flow is being
+> rebuilt natively here.
 
-- [ ] Create `src/components/add-service/FinishStep.tsx` (summary + Submit button)
-- [ ] Create `src/app/api/add-service/route.ts` — POST handler:
-  - Validate session via SSR Supabase client
-  - Insert vendor/realtor record
-  - Failure contract per `architecture.md`: missing config → fail soft; real error → throw
-- [ ] Visual QA: walk all 4 steps end-to-end
+### Approach: Stripe Checkout (hosted payment page)
+
+- Free plan → skip Stripe entirely, go straight to Finish step (current behaviour)
+- Standard / Premium → server creates a Stripe Checkout Session → redirect user to Stripe's hosted page
+- After payment: Stripe fires a webhook → our API verifies signature → creates auth account + saves registration
+- Webhook verification: HMAC-SHA256 via Web Crypto (Edge-compatible, no Node SDK)
+
+### What we need from boss before starting
+
+- [ ] Stripe **Publishable Key** (`pk_live_*` or `pk_test_*`)
+- [ ] Stripe **Secret Key** (`sk_live_*` or `sk_test_*`)
+- [ ] Stripe **Price ID** for Standard plan (`price_*`) — $100/mo recurring
+- [ ] Stripe **Price ID** for Premium plan (`price_*`) — $200/mo recurring
+- [ ] Stripe **Webhook Signing Secret** (`whsec_*`) — generated when registering webhook endpoint
+
+### Tasks (Gate 1 required for each before building)
+
+- [ ] **Task S1:** Add Stripe env vars to Cloudflare (build + runtime) and `.dev.vars`
+- [ ] **Task S2:** `src/app/api/stripe-checkout/route.ts` — creates Checkout Session, returns redirect URL
+  - Free plan: returns `{ skip: true }` → client proceeds to Finish
+  - Paid plan: `fetch` to `https://api.stripe.com/v1/checkout/sessions` (plain fetch, no SDK)
+  - `success_url` → `/add-service?step=finish&session_id={CHECKOUT_SESSION_ID}`
+  - `cancel_url` → `/add-service?step=plans`
+- [ ] **Task S3:** `src/app/api/stripe-webhook/route.ts` — receives `checkout.session.completed`
+  - Verify Stripe-Signature header (HMAC-SHA256, Web Crypto)
+  - Extract metadata (all form data passed as Checkout Session metadata)
+  - Call same account-creation logic as current `/api/finish-registration`
+- [ ] **Task S4:** Update `MembershipStep` + `add-service/page.tsx` — wire paid plans through Stripe Checkout before advancing to Finish
+- [ ] **Task S5:** Update `FinishStep` — for paid plans, show "Payment confirmed via Stripe" badge; for Free, current flow unchanged
+- [ ] **Task S6:** End-to-end QA — test Free (bypass), Standard (Stripe test card), Premium (Stripe test card)
+
+### Environment variables needed
+
+| Variable | Where | Value |
+|---|---|---|
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Cloudflare **build variable** | `pk_live_*` |
+| `STRIPE_SECRET_KEY` | Cloudflare **runtime secret** | `sk_live_*` |
+| `STRIPE_WEBHOOK_SECRET` | Cloudflare **runtime secret** | `whsec_*` |
+| `STRIPE_STANDARD_PRICE_ID` | Cloudflare **runtime secret** | `price_*` |
+| `STRIPE_PREMIUM_PRICE_ID` | Cloudflare **runtime secret** | `price_*` |
 
 ---
 
@@ -301,4 +318,8 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 | Portal branding | "Partner Portal" name unresolved — using neutral labels in code |
 | Step 2 Details content | Blocked — content not visible on live WordPress site |
 | Realtor Service Areas | Defaulting to country-level per live site; confirm before Task 13 |
-| Email confirmation | Not yet decided — confirm before Task 10 |
+| Email confirmation | Disabled at account creation — `auth.admin.createUser` with `email_confirm: true` skips email loop; users can sign in immediately after registration |
+| wrangler.jsonc name | Changed `partner-portal` → `partnerportal` (no hyphen) — Cloudflare was complaining about the hyphenated name |
+| /add-service auth | Guard removed from middleware — unauthenticated users can fill the form; auth enforced at API layer (`finish-registration`) |
+| Stripe payments | Planned for Phase 5.5 — using Stripe Checkout (hosted), plain fetch (no SDK), webhook verification via Web Crypto. Blocked on Stripe account details from boss. |
+| Dashboard | `/dashboard` is a temporary test/verification page — will evolve into the full partner portal in later phases |
