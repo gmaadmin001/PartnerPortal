@@ -323,3 +323,22 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 | /add-service auth | Guard removed from middleware — unauthenticated users can fill the form; auth enforced at API layer (`finish-registration`) |
 | Stripe payments | Planned for Phase 5.5 — using Stripe Checkout (hosted), plain fetch (no SDK), webhook verification via Web Crypto. Blocked on Stripe account details from boss. |
 | Dashboard | `/dashboard` is a temporary test/verification page — will evolve into the full partner portal in later phases |
+
+---
+
+## PHASE 8 — Vendor Claim Process
+
+> Allow an existing user (or new registrant) to claim an already-listed vendor profile —
+> e.g. a company that was added to the directory by an admin but not yet owned by a portal account.
+
+### Task 21: Claim a vendor listing
+
+- [ ] **Design:** Decide claim trigger — button on a `/services-page` provider card ("Is this your company?") or a dedicated `/claim` page
+- [ ] **DB:** Add `claimed_by` (UUID FK → `auth.users`), `claimed_at` (timestamptz), and `claim_status` (`pending` | `approved` | `rejected`) columns to `service_registrations` via migration
+- [ ] **Claim request flow:**
+  - Logged-in user submits a claim on a vendor they don't own
+  - Creates a claim record (or updates `claim_status = pending` on the existing row)
+  - Notifies admin (email via EmailJS helper per `architecture.md`)
+- [ ] **Admin approval:** Admin reviews and sets `claim_status = approved` → transfers `user_id` ownership to claimant; or `rejected` → notifies claimant
+- [ ] **Unauthenticated claim:** If user is not logged in, redirect to `/register` with `?claim=<vendor_id>` param so the flow resumes after sign-in/registration
+- [ ] **RLS:** Ensure a user can only see/edit a vendor row once `user_id` matches their own account (already enforced by existing policy — verify claim approval path uses service-role)
