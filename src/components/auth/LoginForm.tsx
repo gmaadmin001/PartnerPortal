@@ -66,8 +66,8 @@ export default function LoginForm() {
     <div className="w-full">
       {/* Login card */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <form onSubmit={handleLogin} className="px-8 pt-8 pb-6">
-          <h1 className="font-heading text-2xl font-black uppercase tracking-wide text-black mb-6">
+        <form onSubmit={handleLogin} className="px-8 pt-6 pb-4">
+          <h1 className="font-heading text-2xl font-bold uppercase tracking-wide text-black mb-6">
             Log In
           </h1>
 
@@ -168,7 +168,7 @@ export default function LoginForm() {
       </div>
       <a
         href="/add-service"
-        className="mt-4 flex w-full items-center justify-center py-3 rounded bg-gma-primary text-white text-base font-bold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
+        className="mt-2 flex w-full items-center justify-center py-3 rounded bg-gma-primary text-white text-base font-bold uppercase tracking-widest hover:bg-gma-blue-mid transition-colors"
       >
         Register
       </a>
