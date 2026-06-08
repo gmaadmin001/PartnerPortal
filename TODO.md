@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete, Phase 3 ✅ complete (Tasks 8–9), Phase 3.5 in progress (Navbar done, Footer pending). Next up: Phase 3.5 Footer polish, then Phase 4 Task 10.
+**Current status:** Phase 1 ✅ complete, Phase 2 ✅ complete, Phase 3 ✅ complete, Phase 3.5 ✅ complete, Phase 4 ✅ complete. Next up: Phase 5 — /add-service (Tasks 11–16).
 
 ---
 
@@ -113,8 +113,8 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 - [x] Sign In button: `gma-primary` blue (not navy), person icon, hover `gma-blue-mid`
 - [x] Note: Sign In will be updated to `/register` (internal) when Phase 4 is built
 
-### Footer
-- [ ] Polish footer to match WordPress version (pending review session)
+### Footer ✅
+- [x] Polish footer to match WordPress version
 
 ---
 
@@ -146,31 +146,18 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 ---
 
-## PHASE 4 — Page 1: /register
+## PHASE 4 — Page 1: /register ✅
 
-### Task 10: Register page — layout and login form
+### Task 10: Register page — layout and login form ✅
 
-> Architecture: touches the **member auth surface** (`architecture.md` — Two auth surfaces section).
-> Supabase Task 6 manual step must be complete before end-to-end auth testing works.
+> Architecture: member auth surface (`architecture.md` — Two auth surfaces section).
+> Register button → `/add-service` (no separate RegisterForm needed).
+> Navbar Sign In now routes to `/register` internally.
 
-- [ ] Create `src/app/register/page.tsx` — two-panel layout (form left, GMA info right; stacked mobile)
-- [ ] Build `src/components/auth/LoginForm.tsx`:
-  - Email/Username field
-  - Password field with show/hide toggle
-  - Remember Me checkbox
-  - Lost Password link → `supabase.auth.resetPasswordForEmail(email)`
-  - Log In button → `supabase.auth.signInWithPassword({ email, password })` → redirect `/add-service`
-  - OR divider + Register link
-  - Inline error states, loading state on button
-- [ ] Build `src/components/auth/RegisterForm.tsx`:
-  - Email, Password, Confirm Password fields
-  - Create Account → `supabase.auth.signUp({ email, password })`
-  - Success: "Check your email to confirm your account"
-- [ ] **Confirm with user:** Register as separate tab within same page, or separate URL `/register/signup`?
-- [ ] Build `src/components/auth/InfoPanel.tsx` (right panel):
-  - GMA tagline + Michael Ray description
-  - Contact details
-- [ ] Visual QA: compare with live `/register/` page
+- [x] `src/app/register/page.tsx` — centered single-column card, white bg, `force-dynamic`
+- [x] `src/components/auth/LoginForm.tsx` — email + password + show/hide toggle, Remember Me, Login button (`gma-primary`), Lost Password? (gray section, `resetPasswordForEmail`), OR divider, Register link → `/add-service`
+- [x] Navbar Sign In updated to `/register`
+- [x] Visual QA: pixel-matched to WordPress `/login/` page
 
 ---
 
