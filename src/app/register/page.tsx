@@ -3,7 +3,7 @@ import LoginForm from "@/components/auth/LoginForm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Sign In | Global Mobility Adviser",
+  title: "Register - Global Mobility Adviser",
   description: "Sign in or register for the GMA Partner Portal.",
 };
 
