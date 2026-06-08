@@ -5,6 +5,7 @@ import StepIndicator from "@/components/add-service/StepIndicator";
 import ServiceStep, { ServiceStepData } from "@/components/add-service/ServiceStep";
 import DetailsStep, { DetailsStepData } from "@/components/add-service/DetailsStep";
 import MembershipStep, { MembershipStepData } from "@/components/add-service/MembershipStep";
+import FinishStep from "@/components/add-service/FinishStep";
 
 export default function AddServicePage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -68,9 +69,12 @@ export default function AddServicePage() {
         )}
 
         {currentStep === 4 && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-6xl mx-auto text-center text-gray-500">
-            Finish step coming soon.
-          </div>
+          <FinishStep
+            serviceData={serviceData}
+            detailsData={detailsData}
+            membershipData={membershipData}
+            onPrevious={() => setCurrentStep(3)}
+          />
         )}
       </div>
     </div>
