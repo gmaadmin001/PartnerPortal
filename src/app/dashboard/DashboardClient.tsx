@@ -492,6 +492,72 @@ function ListingPanel({ reg, setActive }: { reg: ServiceReg | null; setActive: (
   );
 }
 
+// ── Edit panel shared data (mirrors registration form options exactly) ────────
+
+const CATEGORY_MAP: Record<string, string[]> = {
+  "Getting Established at the Destination": [
+    "Destination Services Providers (DSPs)",
+    "School Search & Education Consultants",
+  ],
+  "Health, Safety & Security": [
+    "International Health Insurance",
+    "Travel Health & Medical Services",
+    "Travel Risk & Security Services",
+  ],
+  "Housing & Accommodation": [
+    "Corporate Housing / Temporary Accommodations",
+    "Furniture & Appliance Rental",
+    "Home Sale Program Administrators",
+    "Property Management Services",
+    "Real Estate Brokers & Agents",
+    "Title, Appraisal & Closing Services",
+  ],
+  "Immigration & Work Authorization": [
+    "Corporate Immigration Service Providers",
+    "Document & Credential Services",
+    "Immigration Law Firms",
+  ],
+  "Moving Belongings": [
+    "Freight Forwarders",
+    "Household Goods Movers",
+    "Pet Relocation Specialists",
+    "Vehicle Transport Specialists",
+  ],
+  "Program Management & Outsourcing": [
+    "Lump Sum / Flex Program Administrators",
+    "Move Coordination Specialists",
+    "Relocation Management Companies (RMCs)",
+  ],
+  "Strategy, Policy & Advisory": [
+    "Benchmarking & Data Service",
+    "Mobility Consulting Firms",
+  ],
+  "Supporting Employees & Families": [
+    "Executive Coaching",
+    "Intercultural & Cross-Cultural Training",
+    "Language Training Providers",
+    "Mental Health & Wellbeing Services",
+    "Spouse & Partner Career Services",
+  ],
+  "Tax, Payroll & Compensation": [
+    "Compensation & Benefits Consulting",
+    "Employer of Record / PEO Services",
+    "Expatriate Tax Services",
+    "Global Payroll Providers",
+  ],
+  "Technology & Data": [
+    "Compliance & Tracking Tools",
+    "Cost of Living & Hardship Data",
+    "Expense Management Software",
+    "Immigration Technology",
+    "Mobility Management Platforms",
+    "Tax Technology Platforms",
+  ],
+};
+
+const DELIVERY_MODEL_OPTIONS = ["Direct", "Aggregator", "Mixed", "Franchise", "Unknown"];
+const COMPANY_SIZE_OPTIONS   = ["1–50", "51–500", "500+"];
+
 // ── Panel: Edit Profile ───────────────────────────────────────────────────────
 // These constants and EditField are defined at module level so React gets a
 // stable function reference across re-renders — prevents focus loss on every keystroke.
@@ -531,6 +597,28 @@ function EditField({ label, value, onChange, placeholder, textarea }: {
   );
 }
 
+function EditSelect({ label, value, onChange, options, placeholder }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className={EDIT_LABEL_CLS}>{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={EDIT_INPUT_CLS}
+      >
+        <option value="">{placeholder ?? `Select ${label}`}</option>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+}
+
 function EditProfilePanel({ reg, userId, setActive, onSaved }: {
   reg: ServiceReg;
   userId: string;
@@ -557,6 +645,8 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
     headquarters_country:  reg.headquarters_country  ?? "",
     countries_served:      (reg.countries_served     ?? []).join(", "),
     states_served:         (reg.states_served        ?? []).join(", "),
+    primary_category:      reg.primary_category      ?? "",
+    sub_category:          reg.sub_category          ?? "",
     industry_focus:        reg.industry_focus        ?? "",
     service_scope:         reg.service_scope         ?? "",
     delivery_model:        reg.delivery_model        ?? "",
@@ -568,8 +658,14 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
     social_discord:        reg.social_profiles?.discord  ?? "",
   });
 
+  const subCategoryOptions = form.primary_category ? (CATEGORY_MAP[form.primary_category] ?? []) : [];
+
   function set(key: keyof typeof form, value: string) {
-    setForm((f) => ({ ...f, [key]: value }));
+    if (key === "primary_category") {
+      setForm((f) => ({ ...f, primary_category: value, sub_category: "" }));
+    } else {
+      setForm((f) => ({ ...f, [key]: value }));
+    }
   }
 
   function splitTrim(s: string): string[] {
@@ -607,6 +703,8 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
         headquarters_country:  form.headquarters_country  || null,
         countries_served:      splitTrim(form.countries_served),
         states_served:         splitTrim(form.states_served),
+        primary_category:      form.primary_category      || null,
+        sub_category:          form.sub_category          || null,
         industry_focus:        form.industry_focus        || null,
         service_scope:         form.service_scope         || null,
         delivery_model:        form.delivery_model        || null,
@@ -691,10 +789,24 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
       {/* Service Classification */}
       <Section title="Service Classification">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <EditField label="Industry Focus"  value={form.industry_focus}  onChange={(v) => set("industry_focus", v)}  placeholder="Technology, Finance..." />
-          <EditField label="Service Scope"   value={form.service_scope}   onChange={(v) => set("service_scope", v)}   placeholder="Global, Regional, National..." />
-          <EditField label="Delivery Model"  value={form.delivery_model}  onChange={(v) => set("delivery_model", v)}  placeholder="Remote, On-site, Hybrid" />
-          <EditField label="Company Size"    value={form.company_size}    onChange={(v) => set("company_size", v)}    placeholder="1–10, 11–50, 51–200..." />
+          <EditSelect
+            label="Primary Category"
+            value={form.primary_category}
+            onChange={(v) => set("primary_category", v)}
+            options={Object.keys(CATEGORY_MAP)}
+            placeholder="Select Primary Category"
+          />
+          <EditSelect
+            label="Sub Category"
+            value={form.sub_category}
+            onChange={(v) => set("sub_category", v)}
+            options={subCategoryOptions}
+            placeholder={form.primary_category ? "Select Sub Category" : "Select primary first"}
+          />
+          <EditSelect label="Delivery Model" value={form.delivery_model} onChange={(v) => set("delivery_model", v)} options={DELIVERY_MODEL_OPTIONS} />
+          <EditSelect label="Company Size"   value={form.company_size}   onChange={(v) => set("company_size", v)}   options={COMPANY_SIZE_OPTIONS} />
+          <EditField  label="Industry Focus" value={form.industry_focus}  onChange={(v) => set("industry_focus", v)}  placeholder="Technology, Finance..." />
+          <EditField  label="Service Scope"  value={form.service_scope}   onChange={(v) => set("service_scope", v)}   placeholder="Global, Regional, National..." />
         </div>
         <div className="mt-4">
           <EditField label="Core Services (comma-separated)" value={form.core_services} onChange={(v) => set("core_services", v)} placeholder="Immigration, Tax Advisory, Destination Services" />

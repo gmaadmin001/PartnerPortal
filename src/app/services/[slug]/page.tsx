@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import PhotoCarousel from "@/components/services/PhotoCarousel";
+import ReviewForm from "@/components/services/ReviewForm";
 
 interface Review {
   id: string;
@@ -382,6 +383,30 @@ export default async function ProviderProfilePage({
                 ))}
               </div>
             </SectionCard>
+          )}
+
+          {/* Review form — signed-in non-owners only */}
+          {user && !isOwner && (
+            <ReviewForm
+              providerId={provider.id}
+              reviewerName={user.email?.split("@")[0] ?? ""}
+            />
+          )}
+
+          {/* Sign-in prompt for guests */}
+          {!user && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center justify-between gap-4">
+              <div>
+                <p className="font-bold text-gma-navy text-sm">Have experience with this company?</p>
+                <p className="text-xs text-gray-500 mt-0.5">Sign in to leave a review.</p>
+              </div>
+              <Link
+                href="/register"
+                className="shrink-0 bg-gma-navy text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gma-primary transition-colors"
+              >
+                Sign In
+              </Link>
+            </div>
           )}
 
         </div>

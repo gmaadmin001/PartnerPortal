@@ -32,6 +32,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen]     = useState(false);
   const [session, setSession]           = useState<Session | null | undefined>(undefined);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [listingSlug, setListingSlug]   = useState<string | null>(null);
   const dropdownRef                     = useRef<HTMLDivElement>(null);
   const router                          = useRouter();
 
@@ -41,6 +42,17 @@ export default function Navbar() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session) { setListingSlug(null); return; }
+    const supabase = createClient();
+    supabase
+      .from("service_registrations")
+      .select("slug")
+      .eq("user_id", session.user.id)
+      .maybeSingle()
+      .then(({ data }) => setListingSlug(data?.slug ?? null));
+  }, [session]);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -116,7 +128,9 @@ export default function Navbar() {
                         Dashboard
                       </Link>
                       <Link
-                        href="/dashboard?panel=listing"
+                        href={listingSlug ? `/services/${listingSlug}` : "/dashboard?panel=listing"}
+                        target={listingSlug ? "_blank" : undefined}
+                        rel={listingSlug ? "noopener noreferrer" : undefined}
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gma-surface hover:text-gma-primary transition-colors"
                       >
