@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — Relocentra</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1C66AD',
+            navy: '#1E2E61',
+            'blue-mid': '#157ABE',
+            'blue-light': '#43B4E3',
+            surface: '#F4F5F7',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    .brand { font-family: 'Space Grotesk', sans-serif; }
+
+    /* Step indicator */
+    .step-dot {
+      width: 38px; height: 38px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+      transition: all 0.3s; position: relative; z-index: 1;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .step-dot.done { background: #1C66AD; color: #fff; }
+    .step-dot.active { background: #1C66AD; color: #fff; box-shadow: 0 0 0 5px rgba(28,102,173,0.18); }
+    .step-dot.upcoming { background: #fff; color: #9ca3af; border: 2px solid #e5e7eb; }
+
+    /* Input */
+    .inp {
+      width: 100%; border: 1.5px solid #e5e7eb; border-radius: 10px;
+      padding: 10px 14px; font-size: 13.5px; color: #111;
+      background: #f9fafb; outline: none; transition: all 0.2s;
+    }
+    .inp:focus { border-color: #1C66AD; background: #fff; box-shadow: 0 0 0 3px rgba(28,102,173,0.1); }
+    .inp::placeholder { color: #9ca3af; }
+
+    label { display: block; font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1E2E61 0%, #1C66AD 100%);
+      color: #fff; border: none; border-radius: 10px;
+      padding: 11px 28px; font-size: 13.5px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 3px 12px rgba(28,102,173,0.3);
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(28,102,173,0.38); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: #fff; color: #374151; border: 1.5px solid #e5e7eb;
+      border-radius: 10px; padding: 11px 28px; font-size: 13.5px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+
+    /* Type cards (Vendor/Realtor) */
+    .type-card {
+      border: 2px solid #e5e7eb; border-radius: 14px; padding: 22px;
+      cursor: pointer; transition: all 0.2s; background: #fff;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .type-card:hover { border-color: #1C66AD; background: #f0f7ff; }
+    .type-card.selected { border-color: #1C66AD; background: #eff6ff; box-shadow: 0 0 0 3px rgba(28,102,173,0.12); }
+    .type-card .icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+
+    /* Plan cards */
+    .plan-card {
+      border: 2px solid #e5e7eb; border-radius: 16px;
+      cursor: pointer; transition: all 0.22s; background: #fff; overflow: hidden;
+    }
+    .plan-card:hover { border-color: #1C66AD; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(28,102,173,0.12); }
+    .plan-card.selected { border-color: #1C66AD; box-shadow: 0 0 0 4px rgba(28,102,173,0.14); }
+    .plan-card.premier { border-color: #7c3aed; }
+    .plan-card.premier:hover { border-color: #7c3aed; box-shadow: 0 8px 24px rgba(124,58,237,0.15); }
+    .plan-card.premier.selected { border-color: #7c3aed; box-shadow: 0 0 0 4px rgba(124,58,237,0.14); }
+    .plan-card.premier .plan-header { background: linear-gradient(135deg, #4c1d95, #7c3aed); }
+    .plan-card .plan-header { background: linear-gradient(135deg, #1E2E61, #1C66AD); }
+    .plan-card.basic .plan-header { background: #f8fafc; border-bottom: 1px solid #e5e7eb; }
+
+    /* Chip / country tag */
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
+      border-radius: 20px; padding: 3px 10px 3px 12px;
+      font-size: 12px; font-weight: 500;
+    }
+    .chip button { color: #93c5fd; cursor: pointer; font-size: 14px; line-height: 1; background: none; border: none; padding: 0; }
+    .chip button:hover { color: #1d4ed8; }
+
+    /* Password strength */
+    .crit { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+    .crit-dot { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; font-weight: 700; flex-shrink: 0; }
+
+    /* Section transition */
+    .step-section { display: none; }
+    .step-section.active { display: block; }
+
+    /* Toggle */
+    .toggle-track {
+      width: 44px; height: 24px; border-radius: 12px; background: #d1d5db;
+      position: relative; cursor: pointer; transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle-track.on { background: #1C66AD; }
+    .toggle-knob {
+      position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px; border-radius: 50%; background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+      transition: transform 0.2s;
+    }
+    .toggle-track.on .toggle-knob { transform: translateX(20px); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .fade { animation: fadeUp 0.35s ease both; }
+  </style>
+</head>
+<body class="bg-surface min-h-screen">
+
+  <!-- Top bar -->
+  <div class="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: #1E2E61">
+        <span class="brand font-bold text-white text-sm">R</span>
+      </div>
+      <span class="brand font-semibold text-gray-900 text-sm">Relocentra</span>
+    </div>
+    <a href="login.html" class="text-xs text-gray-400 hover:text-primary transition-colors font-medium">
+      Already have an account? <span class="text-primary">Sign in</span>
+    </a>
+  </div>
+
+  <div class="max-w-3xl mx-auto px-4 py-10">
+
+    <!-- Step indicator -->
+    <div class="fade mb-10">
+      <div class="flex items-center justify-between relative">
+        <div class="absolute top-[19px] left-[19px] right-[19px] h-0.5 bg-gray-200 z-0">
+          <div id="progress-bar" class="h-full bg-primary transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between w-full relative z-10">
+          <div class="flex flex-col items-center gap-2">
+            <div class="step-dot active" id="dot-1">1</div>
+            <span class="text-xs font-medium text-gray-500" id="lbl-1">Service</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="step-dot upcoming" id="dot-2">2</div>
+            <span class="text-xs font-medium text-gray-400" id="lbl-2">Details</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="step-dot upcoming" id="dot-3">3</div>
+            <span class="text-xs font-medium text-gray-400" id="lbl-3">Membership</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="step-dot upcoming" id="dot-4">4</div>
+            <span class="text-xs font-medium text-gray-400" id="lbl-4">Finish</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: Service ── -->
+    <div class="step-section active fade" id="step-1">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+        <div class="mb-7">
+          <p class="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">Step 1 of 4</p>
+          <h2 class="brand text-2xl font-bold text-gray-900">Register As</h2>
+          <p class="text-gray-400 text-sm mt-1">How would you like to list your business?</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="type-card" id="card-vendor" onclick="selectType('Vendor')">
+            <div class="icon bg-blue-50">
+              <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <div class="text-center">
+              <p class="brand font-bold text-gray-800">Vendor</p>
+              <p class="text-xs text-gray-400 mt-0.5">Relocation service provider</p>
+            </div>
+          </div>
+          <div class="type-card" id="card-realtor" onclick="selectType('Realtor')">
+            <div class="icon bg-purple-50">
+              <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            </div>
+            <div class="text-center">
+              <p class="brand font-bold text-gray-800">Realtor</p>
+              <p class="text-xs text-gray-400 mt-0.5">Real estate professional</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div>
+            <label>Primary Category</label>
+            <select id="primaryCategory" class="inp">
+              <option value="">Select a category…</option>
+              <option>Moving & Relocation</option>
+              <option>Real Estate</option>
+              <option>Immigration & Visa</option>
+              <option>Language & Cultural Training</option>
+              <option>Destination Services</option>
+              <option>Corporate Housing</option>
+              <option>Financial & Tax Services</option>
+              <option>School Search</option>
+              <option>Pet Relocation</option>
+              <option>Technology & Software</option>
+            </select>
+          </div>
+          <div>
+            <label>Sub Category</label>
+            <input type="text" id="subCategory" class="inp" placeholder="e.g. International Moving" />
+          </div>
+        </div>
+
+        <p id="step1-err" class="hidden text-red-500 text-xs mb-4">Please select a type and primary category.</p>
+
+        <div class="flex justify-end">
+          <button class="btn-primary" onclick="nextStep(1)">Continue <span class="ml-1">→</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Details ── -->
+    <div class="step-section" id="step-2">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+        <div class="mb-7">
+          <p class="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">Step 2 of 4</p>
+          <h2 class="brand text-2xl font-bold text-gray-900">Company Details</h2>
+          <p class="text-gray-400 text-sm mt-1">Tell us about your business</p>
+        </div>
+
+        <div class="space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label>Company Name <span class="text-red-400">*</span></label>
+              <input type="text" id="companyName" class="inp" placeholder="Acme Relocation Co." />
+            </div>
+            <div>
+              <label>Website URL</label>
+              <input type="url" id="websiteUrl" class="inp" placeholder="https://yourcompany.com" />
+            </div>
+          </div>
+          <div>
+            <label>Short Description</label>
+            <textarea id="shortDescription" class="inp" rows="3" placeholder="Brief description of your services…" style="resize:vertical"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label>Headquarters Country <span class="text-red-400">*</span></label>
+              <input type="text" id="hqCountry" class="inp" placeholder="United States" />
+            </div>
+            <div>
+              <label>Headquarters City</label>
+              <input type="text" id="hqCity" class="inp" placeholder="New York" />
+            </div>
+          </div>
+          <div>
+            <label>Countries Served</label>
+            <div class="border-2 border-gray-200 rounded-xl p-3" style="border-color: #e5e7eb; border-radius: 10px; background: #f9fafb;">
+              <div id="country-chips" class="flex flex-wrap gap-2 min-h-[28px] mb-2"></div>
+              <div class="relative">
+                <input type="text" id="country-input" class="inp" placeholder="Type to add a country…"
+                  style="background: #fff; border-color: #d1d5db;" />
+                <div id="country-dropdown" class="hidden absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto z-50"></div>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label>Delivery Model</label>
+              <select id="deliveryModel" class="inp">
+                <option value="">Select…</option>
+                <option>Direct</option><option>Aggregator</option>
+                <option>Mixed</option><option>Franchise</option><option>Unknown</option>
+              </select>
+            </div>
+            <div>
+              <label>Company Size</label>
+              <select id="companySize" class="inp">
+                <option value="">Select…</option>
+                <option>1–50</option><option>51–500</option><option>500+</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label>Certifications</label>
+            <input type="text" id="certifications" class="inp" placeholder="e.g. ISO 9001, FIDI, EuRA" />
+          </div>
+          <hr class="border-gray-100" />
+          <p class="brand text-sm font-semibold text-gray-700">Primary Contact</p>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label>Full Name <span class="text-red-400">*</span></label>
+              <input type="text" id="contactName" class="inp" placeholder="Jane Smith" />
+            </div>
+            <div>
+              <label>Email <span class="text-red-400">*</span></label>
+              <input type="email" id="contactEmail" class="inp" placeholder="jane@company.com" />
+            </div>
+            <div>
+              <label>Phone</label>
+              <input type="tel" id="contactPhone" class="inp" placeholder="+1 555 000 0000" />
+            </div>
+          </div>
+        </div>
+
+        <p id="step2-err" class="hidden text-red-500 text-xs mt-4">Please fill in all required fields.</p>
+
+        <div class="flex justify-between mt-8">
+          <button class="btn-secondary" onclick="prevStep(2)">← Back</button>
+          <button class="btn-primary" onclick="nextStep(2)">Continue →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Membership ── -->
+    <div class="step-section" id="step-3">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+        <div class="mb-7">
+          <p class="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">Step 3 of 4</p>
+          <h2 class="brand text-2xl font-bold text-gray-900">Choose a Plan</h2>
+          <p class="text-gray-400 text-sm mt-1">Select the listing tier that works for your business</p>
+        </div>
+
+        <!-- Billing toggle -->
+        <div class="flex items-center justify-center gap-4 mb-8">
+          <span id="lbl-monthly" class="text-sm font-semibold text-gray-900">Monthly</span>
+          <div class="toggle-track" id="billing-toggle" onclick="toggleBilling()">
+            <div class="toggle-knob"></div>
+          </div>
+          <span id="lbl-annual" class="text-sm font-semibold text-gray-400">Annual</span>
+          <div id="savings-pill" class="hidden inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-full px-3 py-1">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            2 months free
+          </div>
+        </div>
+
+        <!-- Plan cards -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <!-- Basic -->
+          <div class="plan-card basic" id="plan-basic" onclick="selectPlan('Basic')">
+            <div class="plan-header px-5 pt-5 pb-4">
+              <p class="brand font-bold text-gray-800 text-base">Basic</p>
+              <p class="text-3xl font-light text-gray-900 mt-1">Free</p>
+              <p class="text-xs text-gray-400 mt-0.5">Always free</p>
+            </div>
+            <div class="px-5 py-4">
+              <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Includes</p>
+              <ul class="space-y-2">
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>Company Name & Website</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>1 Service Category</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>HQ City & State listing</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>Standard search placement</li>
+              </ul>
+            </div>
+            <div class="px-5 pb-5">
+              <button class="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors">Get Started Free</button>
+            </div>
+          </div>
+
+          <!-- Professional -->
+          <div class="plan-card" id="plan-professional" onclick="selectPlan('Professional')">
+            <div class="plan-header px-5 pt-5 pb-4 text-white">
+              <div class="flex items-center justify-between">
+                <p class="brand font-bold text-base">Professional</p>
+                <span class="text-[10px] font-bold bg-white/20 rounded-full px-2 py-0.5">Popular</span>
+              </div>
+              <p class="text-3xl font-light mt-1" id="pro-price">$25<span class="text-base text-white/70">/mo</span></p>
+              <p class="text-xs text-white/60 mt-0.5" id="pro-savings">&nbsp;</p>
+            </div>
+            <div class="px-5 py-4">
+              <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Everything in Basic, plus</p>
+              <ul class="space-y-2">
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>Company Logo & Description</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>Contact Details</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>Up to 3 Service Categories</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>3 cities, states, or countries</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>Self-service profile editing</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-primary font-bold mt-0.5">✓</span>Auto-renewal subscription</li>
+              </ul>
+              <div class="mt-3 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-gray-600">
+                <span class="font-semibold text-gray-800">Verified Badge</span> — <span class="text-primary font-semibold">$100 one-time</span>
+              </div>
+            </div>
+            <div class="px-5 pb-5">
+              <button class="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-colors" style="background: linear-gradient(135deg,#1E2E61,#1C66AD)">Select Professional</button>
+            </div>
+          </div>
+
+          <!-- Premier -->
+          <div class="plan-card premier" id="plan-premier" onclick="selectPlan('Premier')">
+            <div class="plan-header px-5 pt-5 pb-4 text-white">
+              <div class="flex items-center justify-between">
+                <p class="brand font-bold text-base">Premier</p>
+                <span class="text-[10px] font-bold bg-white/20 rounded-full px-2 py-0.5">Best Value</span>
+              </div>
+              <p class="text-3xl font-light mt-1" id="pre-price">$50<span class="text-base text-white/70">/mo</span></p>
+              <p class="text-xs text-white/60 mt-0.5" id="pre-savings">&nbsp;</p>
+            </div>
+            <div class="px-5 py-4">
+              <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Everything in Professional, plus</p>
+              <ul class="space-y-2">
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-purple-500 font-bold mt-0.5">✓</span>Unlimited Service Categories</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-purple-500 font-bold mt-0.5">✓</span>Unlimited service areas + ZIP codes</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-purple-500 font-bold mt-0.5">✓</span>Verified Badge — Included</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-purple-500 font-bold mt-0.5">✓</span>Star Ratings & Reviews</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-purple-500 font-bold mt-0.5">✓</span>Preferred Search Placement*</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-purple-500 font-bold mt-0.5">✓</span>Thought Leadership Posting</li>
+                <li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-purple-500 font-bold mt-0.5">✓</span>Media Gallery</li>
+              </ul>
+            </div>
+            <div class="px-5 pb-5">
+              <button class="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-colors" style="background: linear-gradient(135deg,#4c1d95,#7c3aed)">Select Premier</button>
+            </div>
+          </div>
+        </div>
+        <p class="text-center text-[11px] text-gray-400 mb-6">* Preferred placement is a tiebreaker only — relevance always takes precedence over tier.</p>
+        <p id="step3-err" class="hidden text-red-500 text-xs mb-4 text-center">Please select a plan.</p>
+        <div class="flex justify-between">
+          <button class="btn-secondary" onclick="prevStep(3)">← Back</button>
+          <button class="btn-primary" onclick="nextStep(3)">Continue →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: Finish ── -->
+    <div class="step-section" id="step-4">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8" id="finish-form-wrap">
+        <div class="mb-7">
+          <p class="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">Step 4 of 4</p>
+          <h2 class="brand text-2xl font-bold text-gray-900">Create Your Account</h2>
+          <p class="text-gray-400 text-sm mt-1">Almost there — set a password to complete registration</p>
+        </div>
+
+        <!-- Summary -->
+        <div class="grid grid-cols-3 gap-3 mb-7 p-4 rounded-xl bg-surface border border-gray-100">
+          <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Registering as</p>
+            <p class="text-sm font-semibold text-gray-800" id="sum-type">—</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Company</p>
+            <p class="text-sm font-semibold text-gray-800 truncate" id="sum-company">—</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Plan</p>
+            <p class="text-sm font-semibold text-gray-800" id="sum-plan">—</p>
+          </div>
+        </div>
+
+        <!-- Email (readonly) -->
+        <div class="mb-4">
+          <label>Email Address</label>
+          <input type="email" id="reg-email-display" class="inp" readonly
+            style="background:#f3f4f6; color:#6b7280; cursor:not-allowed;" />
+          <p class="text-xs text-gray-400 mt-1">Using your contact email from Step 2</p>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1.5">
+            <label style="margin:0">Create Password <span class="text-red-400">*</span></label>
+            <button type="button" id="toggle-reg-pw"
+              class="text-xs text-blue-light hover:text-primary transition-colors font-medium">Show</button>
+          </div>
+          <input type="password" id="reg-password" class="inp" placeholder="Create a strong password"
+            oninput="updateStrength()" />
+
+          <!-- Strength bar -->
+          <div id="strength-section" class="mt-2 hidden">
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400">Password strength</span>
+              <span id="strength-label" class="font-semibold"></span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-gray-200">
+              <div id="strength-bar" class="h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+            </div>
+            <ul class="mt-3 grid grid-cols-2 gap-1.5">
+              <li class="crit" id="c-len"><div class="crit-dot bg-gray-300">✕</div><span class="text-gray-400">At least 8 characters</span></li>
+              <li class="crit" id="c-upper"><div class="crit-dot bg-gray-300">✕</div><span class="text-gray-400">One uppercase (A–Z)</span></li>
+              <li class="crit" id="c-lower"><div class="crit-dot bg-gray-300">✕</div><span class="text-gray-400">One lowercase (a–z)</span></li>
+              <li class="crit" id="c-num"><div class="crit-dot bg-gray-300">✕</div><span class="text-gray-400">One number (0–9)</span></li>
+              <li class="crit" id="c-spec"><div class="crit-dot bg-gray-300">✕</div><span class="text-gray-400">One special character</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Confirm -->
+        <div class="mb-6">
+          <label>Confirm Password <span class="text-red-400">*</span></label>
+          <input type="password" id="reg-confirm" class="inp" placeholder="Re-enter your password" />
+          <p id="pw-mismatch" class="hidden text-red-500 text-xs mt-1">Passwords do not match.</p>
+        </div>
+
+        <div id="finish-err" class="hidden mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700"></div>
+
+        <div class="flex justify-between">
+          <button class="btn-secondary" onclick="prevStep(4)">← Back</button>
+          <button class="btn-primary" id="create-btn" onclick="createAccount()" disabled>Create Account</button>
+        </div>
+      </div>
+
+      <!-- Success state -->
+      <div id="success-state" class="hidden bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+          style="background: linear-gradient(135deg,#1E2E61,#1C66AD)">
+          <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+        </div>
+        <h2 class="brand text-3xl font-bold text-gray-900 mb-2">Account Created!</h2>
+        <p class="text-gray-400 text-sm mb-1">Welcome to Relocentra, <strong id="suc-company" class="text-gray-700"></strong>.</p>
+        <p class="text-gray-400 text-sm mb-8">You're registered as a <strong id="suc-type" class="text-gray-700"></strong> on the <strong id="suc-plan" class="text-gray-700"></strong> plan.</p>
+        <a href="login.html"
+          class="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+          style="background: linear-gradient(135deg,#1E2E61,#1C66AD)">
+          Sign In to Your Account
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <script>
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ── State ──
+    const state = {
+      registerAs: null, primaryCategory: '', subCategory: '',
+      companyName: '', websiteUrl: '', shortDescription: '',
+      hqCountry: '', hqCity: '', countriesServed: [],
+      deliveryModel: '', companySize: '', certifications: '',
+      contactName: '', contactEmail: '', contactPhone: '',
+      plan: '', billing: 'monthly',
+    };
+
+    let currentStep = 1;
+
+    // ── Step navigation ──
+    function showStep(n) {
+      document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('step-' + n).classList.add('active');
+      document.getElementById('step-' + n).classList.add('fade');
+      currentStep = n;
+      updateIndicator();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateIndicator() {
+      const pct = ((currentStep - 1) / 3) * 100;
+      document.getElementById('progress-bar').style.width = pct + '%';
+      for (let i = 1; i <= 4; i++) {
+        const dot = document.getElementById('dot-' + i);
+        const lbl = document.getElementById('lbl-' + i);
+        dot.className = 'step-dot ' + (i < currentStep ? 'done' : i === currentStep ? 'active' : 'upcoming');
+        lbl.className = 'text-xs font-medium ' + (i <= currentStep ? 'text-gray-700' : 'text-gray-400');
+      }
+    }
+
+    function nextStep(from) {
+      if (from === 1) {
+        if (!state.registerAs || !document.getElementById('primaryCategory').value) {
+          document.getElementById('step1-err').classList.remove('hidden'); return;
+        }
+        document.getElementById('step1-err').classList.add('hidden');
+        state.primaryCategory = document.getElementById('primaryCategory').value;
+        state.subCategory = document.getElementById('subCategory').value;
+      }
+      if (from === 2) {
+        const cn = document.getElementById('companyName').value;
+        const ce = document.getElementById('contactEmail').value;
+        const contact = document.getElementById('contactName').value;
+        if (!cn || !ce || !contact) { document.getElementById('step2-err').classList.remove('hidden'); return; }
+        document.getElementById('step2-err').classList.add('hidden');
+        state.companyName = cn;
+        state.websiteUrl = document.getElementById('websiteUrl').value;
+        state.shortDescription = document.getElementById('shortDescription').value;
+        state.hqCountry = document.getElementById('hqCountry').value;
+        state.hqCity = document.getElementById('hqCity').value;
+        state.deliveryModel = document.getElementById('deliveryModel').value;
+        state.companySize = document.getElementById('companySize').value;
+        state.certifications = document.getElementById('certifications').value;
+        state.contactName = contact;
+        state.contactEmail = ce;
+        state.contactPhone = document.getElementById('contactPhone').value;
+      }
+      if (from === 3) {
+        if (!state.plan) { document.getElementById('step3-err').classList.remove('hidden'); return; }
+        document.getElementById('step3-err').classList.add('hidden');
+        // Pre-fill step 4 summary
+        document.getElementById('sum-type').textContent = state.registerAs;
+        document.getElementById('sum-company').textContent = state.companyName;
+        const planLabel = state.plan === 'Basic'
+          ? 'Basic'
+          : state.plan + ' – ' + (state.billing === 'annual' ? 'Annual' : 'Monthly');
+        document.getElementById('sum-plan').textContent = planLabel;
+        document.getElementById('reg-email-display').value = state.contactEmail;
+      }
+      showStep(from + 1);
+    }
+
+    function prevStep(from) { showStep(from - 1); }
+
+    // ── Step 1: type selection ──
+    function selectType(type) {
+      state.registerAs = type;
+      document.getElementById('card-vendor').classList.toggle('selected', type === 'Vendor');
+      document.getElementById('card-realtor').classList.toggle('selected', type === 'Realtor');
+    }
+
+    // ── Step 2: countries ──
+    const ALL_COUNTRIES = [
+      'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia','Australia','Austria',
+      'Azerbaijan','Bahrain','Bangladesh','Belarus','Belgium','Bolivia','Bosnia and Herzegovina',
+      'Botswana','Brazil','Bulgaria','Cambodia','Cameroon','Canada','Chile','China','Colombia',
+      'Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Denmark','Ecuador','Egypt',
+      'El Salvador','Estonia','Ethiopia','Finland','France','Georgia','Germany','Ghana','Greece',
+      'Guatemala','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland',
+      'Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kuwait','Latvia',
+      'Lebanon','Lithuania','Luxembourg','Malaysia','Malta','Mexico','Moldova','Morocco',
+      'Mozambique','Netherlands','New Zealand','Nicaragua','Nigeria','Norway','Oman','Pakistan',
+      'Panama','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia',
+      'Rwanda','Saudi Arabia','Senegal','Serbia','Singapore','Slovakia','Slovenia','South Africa',
+      'South Korea','Spain','Sri Lanka','Sweden','Switzerland','Taiwan','Tanzania','Thailand',
+      'Tunisia','Turkey','Uganda','Ukraine','United Arab Emirates','United Kingdom',
+      'United States','Uruguay','Uzbekistan','Venezuela','Vietnam','Zambia','Zimbabwe'
+    ];
+
+    const countryInput = document.getElementById('country-input');
+    const countryDropdown = document.getElementById('country-dropdown');
+
+    countryInput.addEventListener('input', () => {
+      const q = countryInput.value.trim().toLowerCase();
+      if (!q) { countryDropdown.classList.add('hidden'); return; }
+      const matches = ALL_COUNTRIES.filter(c =>
+        c.toLowerCase().includes(q) && !state.countriesServed.includes(c)
+      ).slice(0, 8);
+      if (!matches.length) { countryDropdown.classList.add('hidden'); return; }
+      countryDropdown.innerHTML = matches.map(c =>
+        `<div class="px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer transition-colors"
+          onclick="addCountry('${c}')">${c}</div>`
+      ).join('');
+      countryDropdown.classList.remove('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!countryInput.contains(e.target) && !countryDropdown.contains(e.target)) {
+        countryDropdown.classList.add('hidden');
+      }
+    });
+
+    function addCountry(c) {
+      if (state.countriesServed.includes(c)) return;
+      state.countriesServed.push(c);
+      renderChips();
+      countryInput.value = '';
+      countryDropdown.classList.add('hidden');
+    }
+
+    function removeCountry(c) {
+      state.countriesServed = state.countriesServed.filter(x => x !== c);
+      renderChips();
+    }
+
+    function renderChips() {
+      document.getElementById('country-chips').innerHTML = state.countriesServed
+        .map(c => `<div class="chip">${c}<button onclick="removeCountry('${c}')">×</button></div>`)
+        .join('');
+    }
+
+    // ── Step 3: plan selection ──
+    let billingMode = 'monthly';
+
+    function toggleBilling() {
+      billingMode = billingMode === 'monthly' ? 'annual' : 'monthly';
+      state.billing = billingMode;
+      const t = document.getElementById('billing-toggle');
+      t.classList.toggle('on', billingMode === 'annual');
+      document.getElementById('lbl-monthly').className = 'text-sm font-semibold ' + (billingMode === 'monthly' ? 'text-gray-900' : 'text-gray-400');
+      document.getElementById('lbl-annual').className = 'text-sm font-semibold ' + (billingMode === 'annual' ? 'text-gray-900' : 'text-gray-400');
+      document.getElementById('savings-pill').classList.toggle('hidden', billingMode === 'monthly');
+      document.getElementById('pro-price').innerHTML = billingMode === 'annual'
+        ? '$250<span class="text-base text-white/70">/yr</span>'
+        : '$25<span class="text-base text-white/70">/mo</span>';
+      document.getElementById('pro-savings').textContent = billingMode === 'annual' ? 'Save $50 · 2 months free' : ' ';
+      document.getElementById('pre-price').innerHTML = billingMode === 'annual'
+        ? '$500<span class="text-base text-white/70">/yr</span>'
+        : '$50<span class="text-base text-white/70">/mo</span>';
+      document.getElementById('pre-savings').textContent = billingMode === 'annual' ? 'Save $100 · 2 months free' : ' ';
+    }
+
+    function selectPlan(name) {
+      state.plan = name;
+      ['Basic','Professional','Premier'].forEach(p => {
+        document.getElementById('plan-' + p.toLowerCase()).classList.toggle('selected', p === name);
+      });
+    }
+
+    // ── Step 4: password ──
+    document.getElementById('toggle-reg-pw').addEventListener('click', () => {
+      const inp = document.getElementById('reg-password');
+      const isText = inp.type === 'text';
+      inp.type = isText ? 'password' : 'text';
+      document.getElementById('toggle-reg-pw').textContent = isText ? 'Show' : 'Hide';
+    });
+
+    document.getElementById('reg-confirm').addEventListener('input', () => {
+      const pw = document.getElementById('reg-password').value;
+      const conf = document.getElementById('reg-confirm').value;
+      document.getElementById('pw-mismatch').classList.toggle('hidden', !conf || pw === conf);
+      checkCanSubmit();
+    });
+
+    function updateStrength() {
+      const pw = document.getElementById('reg-password').value;
+      const sec = document.getElementById('strength-section');
+      if (!pw.length) { sec.classList.add('hidden'); checkCanSubmit(); return; }
+      sec.classList.remove('hidden');
+      const crit = {
+        len: pw.length >= 8,
+        upper: /[A-Z]/.test(pw),
+        lower: /[a-z]/.test(pw),
+        num: /[0-9]/.test(pw),
+        spec: /[^A-Za-z0-9]/.test(pw),
+      };
+      const met = Object.values(crit).filter(Boolean).length;
+      const colors = ['', '#ef4444','#f97316','#eab308','#84cc16','#22c55e'];
+      const labels = ['','Weak','Fair','Good','Strong','Very Strong'];
+      document.getElementById('strength-bar').style.width = (met / 5 * 100) + '%';
+      document.getElementById('strength-bar').style.background = colors[met];
+      document.getElementById('strength-label').textContent = labels[met];
+      document.getElementById('strength-label').style.color = colors[met];
+      ['len','upper','lower','num','spec'].forEach(k => {
+        const li = document.getElementById('c-' + k);
+        const dot = li.querySelector('.crit-dot');
+        const span = li.querySelector('span');
+        dot.style.background = crit[k] ? '#1C66AD' : '#d1d5db';
+        dot.textContent = crit[k] ? '✓' : '✕';
+        span.style.color = crit[k] ? '#374151' : '#9ca3af';
+      });
+      checkCanSubmit();
+    }
+
+    function checkCanSubmit() {
+      const pw = document.getElementById('reg-password').value;
+      const conf = document.getElementById('reg-confirm').value;
+      const allMet = pw.length >= 8 && /[A-Z]/.test(pw) && /[a-z]/.test(pw) && /[0-9]/.test(pw) && /[^A-Za-z0-9]/.test(pw);
+      const match = pw === conf && conf.length > 0;
+      document.getElementById('create-btn').disabled = !(allMet && match);
+    }
+
+    async function createAccount() {
+      const btn = document.getElementById('create-btn');
+      btn.disabled = true;
+      btn.textContent = 'Creating account…';
+      document.getElementById('finish-err').classList.add('hidden');
+
+      const pw = document.getElementById('reg-password').value;
+      const planLabel = state.plan === 'Basic'
+        ? 'Basic'
+        : state.plan + ' – ' + (state.billing === 'annual' ? 'Annual' : 'Monthly');
+
+      try {
+        const res = await fetch(DEPLOYED_API + '/api/finish-registration', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: state.contactEmail, password: pw,
+            registerAs: state.registerAs,
+            primaryCategory: state.primaryCategory, subCategory: state.subCategory,
+            companyName: state.companyName, websiteUrl: state.websiteUrl,
+            shortDescription: state.shortDescription,
+            headquartersCountry: state.hqCountry, headquartersCity: state.hqCity,
+            countriesServed: state.countriesServed,
+            deliveryModel: state.deliveryModel, companySize: state.companySize,
+            certifications: state.certifications,
+            primaryContactName: state.contactName, primaryContactEmail: state.contactEmail,
+            primaryContactPhone: state.contactPhone,
+            membershipPlan: planLabel,
+            membershipBilling: state.plan === 'Basic' ? null : state.billing,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          const errEl = document.getElementById('finish-err');
+          errEl.textContent = json.error || 'Something went wrong. Please try again.';
+          errEl.classList.remove('hidden');
+          btn.disabled = false;
+          btn.textContent = 'Create Account';
+          return;
+        }
+        // Success
+        document.getElementById('suc-company').textContent = state.companyName;
+        document.getElementById('suc-type').textContent = state.registerAs;
+        document.getElementById('suc-plan').textContent = planLabel;
+        document.getElementById('finish-form-wrap').style.display = 'none';
+        document.getElementById('success-state').classList.remove('hidden');
+        document.getElementById('progress-bar').style.width = '100%';
+        for (let i = 1; i <= 4; i++) {
+          document.getElementById('dot-' + i).className = 'step-dot done';
+        }
+      } catch {
+        const errEl = document.getElementById('finish-err');
+        errEl.textContent = 'Network error. Please check your connection and try again.';
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      }
+    }
+  </script>
+</body>
+</html>

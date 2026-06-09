@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Relocentra</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1C66AD',
+            navy: '#1E2E61',
+            'blue-mid': '#157ABE',
+            'blue-light': '#43B4E3',
+            surface: '#F4F5F7',
+            sidebar: '#181f3a',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    .brand { font-family: 'Space Grotesk', sans-serif; }
+
+    .sidebar { background: #181f3a; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 10px;
+      color: rgba(255,255,255,0.5);
+      font-size: 13.5px; font-weight: 500;
+      transition: all 0.18s; cursor: pointer;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+    .nav-item.active { background: rgba(28,102,173,0.3); color: #fff; }
+    .nav-item.active svg { color: #43B4E3; }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #f0f0f0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 14px rgba(0,0,0,0.04);
+    }
+
+    .badge-free { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-basic { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-professional { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-premier { background: #faf5ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+    .badge-pending { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
+    .badge-active { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+    .field-row {
+      display: flex; align-items: baseline;
+      padding: 11px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .field-row:last-child { border-bottom: none; }
+
+    .avatar {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #1C66AD, #43B4E3);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 14px;
+      font-family: 'Space Grotesk', sans-serif;
+      flex-shrink: 0;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade { animation: fadeUp 0.4s ease both; }
+    .fade-d1 { animation: fadeUp 0.4s ease 0.08s both; }
+    .fade-d2 { animation: fadeUp 0.4s ease 0.16s both; }
+    .fade-d3 { animation: fadeUp 0.4s ease 0.24s both; }
+
+    #content { display: none; }
+
+    .metric-card {
+      background: #fff;
+      border: 1px solid #f0f0f0;
+      border-radius: 16px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    }
+  </style>
+</head>
+<body class="bg-surface flex h-screen overflow-hidden">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar w-[240px] flex flex-col shrink-0 h-full">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-5 py-5 border-b border-white/5">
+      <div class="w-8 h-8 rounded-lg bg-primary/80 flex items-center justify-center">
+        <span class="brand font-bold text-white text-sm">R</span>
+      </div>
+      <div>
+        <p class="brand font-semibold text-white text-sm leading-tight">Relocentra</p>
+        <p class="text-[10px] text-white/30 leading-tight">Partner Portal</p>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="text-[10px] font-semibold text-white/25 tracking-[0.12em] uppercase px-3 mb-2">Main</p>
+      <a href="#" class="nav-item active">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Overview
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        My Listing
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Analytics
+      </a>
+      <div class="pt-4">
+        <p class="text-[10px] font-semibold text-white/25 tracking-[0.12em] uppercase px-3 mb-2">Account</p>
+        <a href="#" class="nav-item">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          Profile
+        </a>
+        <a href="#" class="nav-item">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          Billing
+        </a>
+        <a href="#" class="nav-item">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+          Settings
+        </a>
+      </div>
+    </nav>
+
+    <!-- User footer -->
+    <div class="px-3 pb-4 border-t border-white/5 pt-4">
+      <div class="flex items-center gap-3 px-2 mb-3">
+        <div class="avatar" id="user-avatar">?</div>
+        <div class="min-w-0 flex-1">
+          <p class="text-white text-xs font-medium truncate" id="user-email-sidebar">Loading…</p>
+          <p class="text-white/35 text-[10px]">Vendor Account</p>
+        </div>
+      </div>
+      <button id="signout-btn" class="nav-item w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-900/20">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <!-- Top bar -->
+    <header class="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between shrink-0">
+      <div>
+        <h1 class="brand font-bold text-gray-900 text-lg">Overview</h1>
+        <p class="text-gray-400 text-xs mt-0.5">Your partner listing at a glance</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="w-9 h-9 rounded-xl bg-surface flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        </button>
+        <div class="avatar" id="user-avatar-top">?</div>
+      </div>
+    </header>
+
+    <!-- Scrollable content -->
+    <div class="flex-1 overflow-y-auto px-8 py-7">
+      <!-- Loading -->
+      <div id="loading" class="flex items-center justify-center h-64 text-gray-400 text-sm">
+        <div class="flex items-center gap-3">
+          <svg class="animate-spin w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          Loading your dashboard…
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div id="content" class="space-y-6">
+
+        <!-- Welcome banner -->
+        <div class="fade rounded-2xl overflow-hidden relative"
+          style="background: linear-gradient(135deg, #1E2E61 0%, #1C66AD 60%, #43B4E3 100%);">
+          <div class="absolute inset-0 opacity-10"
+            style="background-image: radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 20px 20px;"></div>
+          <div class="relative z-10 px-7 py-6 flex items-center justify-between">
+            <div>
+              <p class="text-blue-light text-xs font-semibold tracking-widest uppercase mb-1">Partner Portal</p>
+              <h2 class="brand text-white text-2xl font-bold" id="welcome-text">Welcome back!</h2>
+              <p class="text-white/60 text-sm mt-1" id="welcome-sub">Your listing is live</p>
+            </div>
+            <div class="hidden sm:flex items-center gap-3">
+              <div class="text-right">
+                <p class="text-white/50 text-xs">Signed in as</p>
+                <p class="text-white text-sm font-medium" id="welcome-email">—</p>
+              </div>
+              <div class="avatar w-12 h-12 rounded-xl text-lg" id="welcome-avatar">?</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric cards -->
+        <div class="grid grid-cols-3 gap-4 fade-d1">
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Membership</p>
+              <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+              </div>
+            </div>
+            <p class="brand text-2xl font-bold text-gray-900" id="metric-plan">—</p>
+            <p class="text-gray-400 text-xs mt-1" id="metric-billing">—</p>
+          </div>
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</p>
+              <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <span id="metric-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold">—</span>
+            <p class="text-gray-400 text-xs mt-1">Account standing</p>
+          </div>
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Member Since</p>
+              <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+            </div>
+            <p class="brand text-2xl font-bold text-gray-900" id="metric-date">—</p>
+            <p class="text-gray-400 text-xs mt-1" id="metric-year">—</p>
+          </div>
+        </div>
+
+        <!-- Registration details -->
+        <div class="grid grid-cols-2 gap-5 fade-d2">
+
+          <!-- Company info -->
+          <div class="card p-6">
+            <div class="flex items-center gap-2 mb-5">
+              <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+              </div>
+              <h3 class="font-semibold text-gray-800 text-sm">Company Details</h3>
+            </div>
+            <div id="company-fields"></div>
+          </div>
+
+          <!-- Contact info -->
+          <div class="card p-6">
+            <div class="flex items-center gap-2 mb-5">
+              <div class="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              </div>
+              <h3 class="font-semibold text-gray-800 text-sm">Primary Contact</h3>
+            </div>
+            <div id="contact-fields"></div>
+          </div>
+
+          <!-- Service info -->
+          <div class="card p-6">
+            <div class="flex items-center gap-2 mb-5">
+              <div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+              </div>
+              <h3 class="font-semibold text-gray-800 text-sm">Service Coverage</h3>
+            </div>
+            <div id="service-fields"></div>
+          </div>
+
+          <!-- Membership info -->
+          <div class="card p-6">
+            <div class="flex items-center gap-2 mb-5">
+              <div class="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+              </div>
+              <h3 class="font-semibold text-gray-800 text-sm">Membership & Listing</h3>
+            </div>
+            <div id="membership-fields"></div>
+          </div>
+        </div>
+
+        <!-- No registration notice -->
+        <div id="no-reg" class="hidden fade-d2 card p-8 text-center">
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <h3 class="brand font-bold text-gray-800 text-lg mb-1">No listing found</h3>
+          <p class="text-gray-400 text-sm mb-5">You haven't completed the registration form yet.</p>
+          <a href="register.html" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-blue-mid transition-colors">
+            Register your listing
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </a>
+        </div>
+
+      </div><!-- /content -->
+    </div>
+  </main>
+
+  <script>
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function field(label, value) {
+      if (!value) return '';
+      return `<div class="field-row">
+        <span class="text-xs text-gray-400 font-medium w-36 shrink-0">${label}</span>
+        <span class="text-sm text-gray-800 font-medium">${value}</span>
+      </div>`;
+    }
+
+    function planBadgeClass(plan) {
+      if (!plan) return 'badge-basic';
+      const p = plan.toLowerCase();
+      if (p.includes('premier')) return 'badge-premier';
+      if (p.includes('professional')) return 'badge-professional';
+      return 'badge-basic';
+    }
+
+    async function load() {
+      const { data: { user } } = await sb.auth.getUser();
+      if (!user) { window.location.href = 'login.html'; return; }
+
+      const initials = user.email.slice(0, 2).toUpperCase();
+      ['user-avatar', 'user-avatar-top', 'welcome-avatar'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = initials;
+      });
+      document.getElementById('user-email-sidebar').textContent = user.email;
+      document.getElementById('welcome-email').textContent = user.email;
+      document.getElementById('welcome-text').textContent = 'Welcome back!';
+
+      const { data: reg } = await sb
+        .from('service_registrations')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+
+      if (!reg) {
+        document.getElementById('no-reg').classList.remove('hidden');
+        document.querySelectorAll('.grid.grid-cols-2').forEach(el => el.style.display = 'none');
+        document.getElementById('metric-plan').textContent = '—';
+        document.getElementById('metric-billing').textContent = 'No listing';
+        const ms = document.getElementById('metric-status');
+        ms.textContent = 'Incomplete';
+        ms.className += ' badge-pending';
+        document.getElementById('metric-date').textContent = '—';
+        document.getElementById('welcome-sub').textContent = 'Complete your listing to get started';
+        return;
+      }
+
+      // Metrics
+      document.getElementById('metric-plan').textContent = reg.membership_plan || '—';
+      document.getElementById('metric-billing').textContent =
+        reg.membership_billing ? reg.membership_billing.charAt(0).toUpperCase() + reg.membership_billing.slice(1) + ' billing' : 'Free';
+      const ms = document.getElementById('metric-status');
+      ms.textContent = reg.status ? reg.status.charAt(0).toUpperCase() + reg.status.slice(1) : '—';
+      ms.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ' +
+        (reg.status === 'active' ? 'badge-active' : 'badge-pending');
+      const d = new Date(reg.created_at);
+      document.getElementById('metric-date').textContent =
+        d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      document.getElementById('metric-year').textContent = d.getFullYear().toString();
+      document.getElementById('welcome-sub').textContent =
+        `${reg.company_name || 'Your listing'} · ${reg.register_as || 'Vendor'}`;
+
+      // Company fields
+      document.getElementById('company-fields').innerHTML =
+        field('Company', reg.company_name) +
+        field('Website', reg.website_url) +
+        field('Description', reg.short_description ? reg.short_description.slice(0, 60) + (reg.short_description.length > 60 ? '…' : '') : null) +
+        field('HQ Country', reg.headquarters_country) +
+        field('HQ City', reg.headquarters_city) +
+        field('Delivery Model', reg.delivery_model) +
+        field('Company Size', reg.company_size) +
+        field('Certifications', reg.certifications);
+
+      // Contact fields
+      document.getElementById('contact-fields').innerHTML =
+        field('Name', reg.primary_contact_name) +
+        field('Email', reg.primary_contact_email) +
+        field('Phone', reg.primary_contact_phone);
+
+      // Service fields
+      const countries = Array.isArray(reg.countries_served)
+        ? reg.countries_served.join(', ')
+        : reg.countries_served;
+      document.getElementById('service-fields').innerHTML =
+        field('Registered As', reg.register_as) +
+        field('Primary Category', reg.primary_category) +
+        field('Sub Category', reg.sub_category) +
+        field('Countries Served', countries ? countries.slice(0, 60) + (countries && countries.length > 60 ? '…' : '') : null);
+
+      // Membership fields
+      document.getElementById('membership-fields').innerHTML =
+        field('Plan', reg.membership_plan) +
+        field('Billing Cycle', reg.membership_billing) +
+        field('Status', reg.status) +
+        field('Listing ID', reg.id ? reg.id.slice(0, 8) + '…' : null) +
+        field('Created', new Date(reg.created_at).toLocaleString());
+    }
+
+    load();
+
+    document.getElementById('signout-btn').addEventListener('click', async () => {
+      await sb.auth.signOut();
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
