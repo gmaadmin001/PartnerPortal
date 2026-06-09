@@ -949,8 +949,9 @@ const PLANS = [
 
 function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-  const PLAN_NAMES = ["Premier", "Professional", "Basic"];
-  const active = PLAN_NAMES.find(n => (currentPlan ?? "").startsWith(n)) ?? "Basic";
+  const PLAN_ORDER = ["Basic", "Professional", "Premier"];
+  const active = PLAN_ORDER.find(n => (currentPlan ?? "").startsWith(n)) ?? "Basic";
+  const activeIdx = PLAN_ORDER.indexOf(active);
 
   return (
     <div className="space-y-6">
@@ -975,6 +976,8 @@ function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
           const isCurrent = plan.name === active;
           const isPremier = plan.name === "Premier";
           const price = billing === "annual" ? plan.annualPrice : plan.monthlyPrice;
+          const planIdx = PLAN_ORDER.indexOf(plan.name);
+          const ctaVerb = planIdx < activeIdx ? "Downgrade to" : "Upgrade to";
 
           return (
             <div
@@ -1033,7 +1036,7 @@ function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
                     href="mailto:info@globalmobilityadviser.com?subject=Plan Change Request"
                     className="block w-full py-2.5 rounded-xl bg-gma-primary text-white text-sm font-bold text-center uppercase tracking-widest hover:bg-gma-navy transition-colors"
                   >
-                    {plan.name === "Basic" ? "Downgrade" : "Upgrade"} to {plan.name}
+                    {ctaVerb} {plan.name}
                   </a>
                 )}
               </div>

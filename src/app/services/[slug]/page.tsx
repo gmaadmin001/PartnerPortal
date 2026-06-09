@@ -9,6 +9,7 @@ interface Review {
   rating: number;
   body: string | null;
   reviewer_name: string | null;
+  reviewer_user_id: string | null;
   created_at: string;
 }
 
@@ -88,11 +89,14 @@ export default async function ProviderProfilePage({
 
   const { data: reviewRows } = await supabase
     .from("provider_reviews")
-    .select("id, rating, body, reviewer_name, created_at")
+    .select("id, rating, body, reviewer_name, reviewer_user_id, created_at")
     .eq("provider_id", provider.id)
     .order("created_at", { ascending: false });
 
   const reviews = (reviewRows ?? []) as Review[];
+  const existingReview = user
+    ? reviews.find((r) => r.reviewer_user_id === user.id)
+    : undefined;
   const avgRating = reviews.length
     ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)
     : 0;
@@ -389,7 +393,9 @@ export default async function ProviderProfilePage({
           {user && !isOwner && (
             <ReviewForm
               providerId={provider.id}
+              userId={user.id}
               reviewerName={user.email?.split("@")[0] ?? ""}
+              existingReview={existingReview}
             />
           )}
 

@@ -2,19 +2,67 @@
 
 import { useState, useRef, useEffect } from "react";
 
-// ── Static data ───────────────────────────────────────────────────────────────
+// ── Static data — mirrors registration form exactly ───────────────────────────
 
 const SUBCATS: Record<string, string[]> = {
-  "Moving & Relocation": ["Freight Forwarders", "Household Goods Movers", "Pet Relocation Specialists", "Vehicle Transport Specialists", "Fine Art & Valuables", "Moving Consultants"],
-  "Real Estate": ["Home Finding", "Rental Assistance", "Residential Sales", "Property Management", "Short-Term Rentals", "Commercial Real Estate"],
-  "Immigration & Visa": ["Work Permits", "Residence Visas", "Citizenship Applications", "Immigration Advisory", "Document Services", "Compliance"],
-  "Language & Cultural Training": ["Language Courses", "Cultural Orientation", "Business Communication", "Cross-Cultural Coaching", "Translation Services"],
-  "Destination Services": ["Area Orientation", "School Search", "Settling-In Services", "Departure Support", "Spousal Assistance"],
-  "Corporate Housing": ["Short-Term Furnished", "Extended Stay", "Serviced Apartments", "Temporary Accommodation"],
-  "Financial & Tax Services": ["Expat Taxation", "Tax Equalization", "Financial Planning", "Banking Setup", "Currency Services"],
-  "School Search": ["International Schools", "Local Enrollment", "University Admissions", "Private Tutoring", "Childcare"],
-  "Pet Relocation": ["International Shipping", "Quarantine Services", "Veterinary Referrals", "Documentation"],
-  "Technology & Software": ["Mobility Platforms", "HRIS Integration", "Expense Management", "Assignment Tracking"],
+  "Getting Established at the Destination": [
+    "Destination Services Providers (DSPs)",
+    "School Search & Education Consultants",
+  ],
+  "Health, Safety & Security": [
+    "International Health Insurance",
+    "Travel Health & Medical Services",
+    "Travel Risk & Security Services",
+  ],
+  "Housing & Accommodation": [
+    "Corporate Housing / Temporary Accommodations",
+    "Furniture & Appliance Rental",
+    "Home Sale Program Administrators",
+    "Property Management Services",
+    "Real Estate Brokers & Agents",
+    "Title, Appraisal & Closing Services",
+  ],
+  "Immigration & Work Authorization": [
+    "Corporate Immigration Service Providers",
+    "Document & Credential Services",
+    "Immigration Law Firms",
+  ],
+  "Moving Belongings": [
+    "Freight Forwarders",
+    "Household Goods Movers",
+    "Pet Relocation Specialists",
+    "Vehicle Transport Specialists",
+  ],
+  "Program Management & Outsourcing": [
+    "Lump Sum / Flex Program Administrators",
+    "Move Coordination Specialists",
+    "Relocation Management Companies (RMCs)",
+  ],
+  "Strategy, Policy & Advisory": [
+    "Benchmarking & Data Service",
+    "Mobility Consulting Firms",
+  ],
+  "Supporting Employees & Families": [
+    "Executive Coaching",
+    "Intercultural & Cross-Cultural Training",
+    "Language Training Providers",
+    "Mental Health & Wellbeing Services",
+    "Spouse & Partner Career Services",
+  ],
+  "Tax, Payroll & Compensation": [
+    "Compensation & Benefits Consulting",
+    "Employer of Record / PEO Services",
+    "Expatriate Tax Services",
+    "Global Payroll Providers",
+  ],
+  "Technology & Data": [
+    "Compliance & Tracking Tools",
+    "Cost of Living & Hardship Data",
+    "Expense Management Software",
+    "Immigration Technology",
+    "Mobility Management Platforms",
+    "Tax Technology Platforms",
+  ],
 };
 
 const CATEGORIES = Object.keys(SUBCATS);
@@ -44,7 +92,7 @@ const US_STATES = [
 ];
 
 const SERVICE_SCOPES = ["International", "National", "Local", "Hybrid"];
-const COMPANY_SIZES  = ["1-50", "51-200", "201-500", "500+"];
+const COMPANY_SIZES  = ["1–50", "51–500", "500+"];
 const DIVERSITY_OPTIONS = [
   "CRP Certified", "GMS Certified", "ERC® Appraisal Trained",
   "Woman Owned", "Veteran Owned", "Minority Owned", "LGBTQ+ Owned",
