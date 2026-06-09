@@ -1,299 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign In — Relocentra</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#1C66AD',
-            navy: '#1E2E61',
-            'blue-mid': '#157ABE',
-            'blue-light': '#43B4E3',
-            surface: '#F4F5F7',
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            display: ['Space Grotesk', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In — Global Mobility Adviser Partner Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
   <style>
-    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-    .brand { font-family: 'Space Grotesk', sans-serif; }
+    *{font-family:'Inter',sans-serif;box-sizing:border-box;margin:0;padding:0}
+    .dsp{font-family:'Space Grotesk',sans-serif}
 
-    .hero {
-      background: linear-gradient(145deg, #1E2E61 0%, #1a3a7a 40%, #1C66AD 100%);
-      position: relative;
-      overflow: hidden;
-    }
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -30%;
-      right: -15%;
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(67,180,227,0.18) 0%, transparent 65%);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-    .hero::after {
-      content: '';
-      position: absolute;
-      bottom: -20%;
-      left: -5%;
-      width: 350px; height: 350px;
-      background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 65%);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-    .dots {
-      background-image: radial-gradient(rgba(255,255,255,0.08) 1.5px, transparent 1.5px);
-      background-size: 28px 28px;
-    }
+    body{min-height:100vh;background:#0c1428;display:flex;flex-direction:column}
 
-    .input-wrap input {
-      border: 1.5px solid #e5e7eb;
-      outline: none;
-      background: #f9fafb;
-      transition: all 0.2s;
-    }
-    .input-wrap input:focus {
-      border-color: #1C66AD;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(28,102,173,0.1);
-    }
+    /* ── Navbar ── */
+    .site-nav{position:sticky;top:0;z-index:200;flex-shrink:0}
+    .nav-accent{height:4px;background:#1E2E61}
+    .nav-bar{background:#fff;border-bottom:1px solid #e9edf4;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+    .nav-inner{max-width:1440px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:80px}
+    .nav-links{display:flex;align-items:center;gap:26px}
+    .nav-link{font-size:11.5px;font-weight:700;color:#0a1628;letter-spacing:0.1em;text-decoration:none;text-transform:uppercase;transition:color 0.15s}
+    .nav-link:hover{color:#1C66AD}
+    .nav-signin{display:flex;align-items:center;gap:8px;padding:10px 22px;border-radius:9999px;background:#1E2E61;color:#fff;font-size:11.5px;font-weight:700;letter-spacing:0.08em;text-decoration:none;text-transform:uppercase;transition:background 0.2s;white-space:nowrap}
+    .nav-signin:hover{background:#1C66AD}
 
-    .btn-signin {
-      background: linear-gradient(135deg, #1E2E61 0%, #1C66AD 100%);
-      transition: all 0.25s;
-      box-shadow: 0 4px 14px rgba(28,102,173,0.3);
-    }
-    .btn-signin:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 22px rgba(28,102,173,0.4);
-    }
-    .btn-signin:active { transform: translateY(0); }
-    .btn-signin:disabled { opacity: 0.6; cursor: not-allowed; }
+    /* ── Login area ── */
+    .login-area{flex:1;display:flex;align-items:center;justify-content:center;padding:60px 20px;position:relative;overflow:hidden}
+    .blob1{position:absolute;top:-20%;left:-10%;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(28,102,173,0.35) 0%,transparent 65%);pointer-events:none;animation:drift1 12s ease-in-out infinite alternate}
+    .blob2{position:absolute;bottom:-25%;right:-10%;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(30,46,97,0.5) 0%,transparent 65%);pointer-events:none;animation:drift2 15s ease-in-out infinite alternate}
+    .blob3{position:absolute;top:30%;right:15%;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(67,180,227,0.12) 0%,transparent 65%);pointer-events:none}
+    @keyframes drift1{from{transform:translate(0,0) scale(1)}to{transform:translate(40px,-30px) scale(1.05)}}
+    @keyframes drift2{from{transform:translate(0,0) scale(1)}to{transform:translate(-30px,20px) scale(1.08)}}
 
-    .btn-register {
-      border: 2px solid #1C66AD;
-      color: #1C66AD;
-      transition: all 0.2s;
-    }
-    .btn-register:hover { background: #1C66AD; color: #fff; }
+    /* ── Login card ── */
+    .card{background:rgba(255,255,255,0.97);backdrop-filter:blur(24px);border-radius:24px;padding:44px;width:420px;box-shadow:0 32px 80px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.08);position:relative;z-index:10;animation:fadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both}
+    @keyframes fadeSlide{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .inp{width:100%;padding:11px 14px 11px 42px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#111;background:#f9fafb;outline:none;transition:all 0.2s}
+    .inp:focus{border-color:#1C66AD;background:#fff;box-shadow:0 0 0 3.5px rgba(28,102,173,0.1)}
+    .inp-wrap{position:relative}
+    .inp-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#9ca3af;pointer-events:none}
+    .inp-icon svg{width:16px;height:16px}
+    lbl{display:block;font-size:12.5px;font-weight:600;color:#4b5563;margin-bottom:6px}
+    .btn{width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all 0.22s;letter-spacing:0.01em}
+    .btn-main{background:linear-gradient(135deg,#1E2E61 0%,#1C66AD 100%);color:#fff;box-shadow:0 4px 14px rgba(28,102,173,0.35)}
+    .btn-main:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(28,102,173,0.45)}
+    .btn-main:disabled{opacity:0.55;cursor:not-allowed;transform:none}
+    .btn-outline{background:#fff;color:#1C66AD;border:1.5px solid #1C66AD}
+    .btn-outline:hover{background:#eff6ff}
+    .divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:#f0f0f0}
+    .divider span{font-size:11px;font-weight:600;color:#c0c0c0;letter-spacing:0.1em}
+    .alert{padding:11px 14px;border-radius:10px;font-size:13px;display:none;align-items:flex-start;gap:10px;margin-bottom:16px}
+    .alert.err{background:#fef2f2;border:1px solid #fecaca;color:#dc2626}
+    .alert.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+    .alert svg{width:15px;height:15px;flex-shrink:0;margin-top:1px}
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .f1 { animation: fadeUp 0.45s ease 0.05s both; }
-    .f2 { animation: fadeUp 0.45s ease 0.15s both; }
-    .f3 { animation: fadeUp 0.45s ease 0.25s both; }
-    .f4 { animation: fadeUp 0.45s ease 0.35s both; }
+    /* ── Footer ── */
+    .site-footer{background:#0d1b36;flex-shrink:0}
+    .footer-accent{height:3px;background:linear-gradient(90deg,#1C66AD 0%,#43B4E3 50%,#1C66AD 100%)}
+    .footer-inner{max-width:1280px;margin:0 auto;padding:56px 48px 0}
+    .footer-grid{display:grid;grid-template-columns:1.9fr 1.7fr 1fr 1fr;gap:52px;padding-bottom:48px}
+    .footer-col-head{font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:20px}
+    .footer-link{display:block;font-size:13.5px;color:rgba(255,255,255,0.55);text-decoration:none;margin-bottom:12px;transition:color 0.15s;line-height:1.4}
+    .footer-link:hover{color:#43B4E3}
+    .footer-contact-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px;text-decoration:none;color:inherit;transition:opacity 0.15s}
+    .footer-contact-item:hover{opacity:0.8}
+    .footer-contact-icon{width:36px;height:36px;border-radius:9px;background:rgba(28,102,173,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .footer-contact-icon svg{width:16px;height:16px;color:#43B4E3}
+    .footer-bottom{border-top:1px solid rgba(255,255,255,0.07);padding:22px 0 30px;display:flex;align-items:center;justify-content:space-between}
+    .footer-sub-inp{flex:1;min-width:0;padding:10px 14px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:13px;outline:none}
+    .footer-sub-inp::placeholder{color:rgba(255,255,255,0.3)}
+    .footer-sub-btn{padding:10px 16px;border-radius:8px;background:#1C66AD;color:#fff;font-size:11.5px;font-weight:700;border:none;cursor:pointer;letter-spacing:0.04em;white-space:nowrap;transition:background 0.2s}
+    .footer-sub-btn:hover{background:#157ABE}
+    .linkedin-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);transition:all 0.2s;text-decoration:none}
+    .linkedin-btn:hover{border-color:#43B4E3;color:#43B4E3;background:rgba(67,180,227,0.1)}
   </style>
 </head>
-<body class="h-screen flex overflow-hidden">
+<body>
 
-  <!-- ── Left panel ── -->
-  <div class="hero dots hidden lg:flex lg:w-[44%] flex-col justify-between p-12 text-white relative z-10">
-    <!-- Logo -->
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center">
-        <span class="brand font-bold text-base">R</span>
-      </div>
-      <span class="brand font-semibold text-base tracking-tight">Relocentra</span>
-    </div>
-
-    <!-- Hero copy -->
-    <div class="space-y-5 relative z-10">
-      <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs text-blue-light font-medium tracking-wider">
-        <span class="w-1.5 h-1.5 rounded-full bg-blue-light animate-pulse"></span>
-        GLOBAL MOBILITY ADVISER
-      </div>
-      <h1 class="brand text-[3.25rem] font-extrabold leading-[1.1] tracking-tight">
-        Your<br/>
-        Vendor<br/>
-        <span class="text-blue-light">Portal.</span>
-      </h1>
-      <p class="text-white/55 text-base leading-relaxed max-w-[280px]">
-        Manage your listing, connect with relocation professionals worldwide, and grow your presence.
-      </p>
-    </div>
-
-    <!-- Bottom stats -->
-    <div class="grid grid-cols-3 gap-3 relative z-10">
-      <div class="bg-white/6 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
-        <p class="brand text-2xl font-bold text-white">3</p>
-        <p class="text-white/45 text-xs mt-0.5 leading-tight">Listing<br/>Tiers</p>
-      </div>
-      <div class="bg-white/6 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
-        <p class="brand text-2xl font-bold text-white">190+</p>
-        <p class="text-white/45 text-xs mt-0.5 leading-tight">Countries<br/>Covered</p>
-      </div>
-      <div class="bg-white/6 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
-        <p class="brand text-2xl font-bold text-white">24/7</p>
-        <p class="text-white/45 text-xs mt-0.5 leading-tight">Portal<br/>Access</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Right panel ── -->
-  <div class="flex-1 flex items-center justify-center bg-white overflow-y-auto p-8">
-    <div class="w-full max-w-[380px]">
-
-      <!-- Header -->
-      <div class="mb-8 f1">
-        <p class="text-[11px] font-semibold text-gray-400 tracking-[0.15em] uppercase mb-2">Partner Portal</p>
-        <h2 class="brand text-3xl font-bold text-gray-900">Welcome back</h2>
-        <p class="text-gray-400 text-sm mt-1.5">Sign in to manage your listing</p>
-      </div>
-
-      <!-- Error -->
-      <div id="err" class="hidden mb-5 flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 f2">
-        <svg class="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-        <span id="err-text"></span>
-      </div>
-
-      <!-- Reset sent -->
-      <div id="reset-ok" class="hidden mb-5 flex items-start gap-2.5 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-700 f2">
-        <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-        <span>Reset email sent — check your inbox.</span>
-      </div>
-
-      <!-- Form -->
-      <form id="form" class="space-y-4 f2">
-        <div class="input-wrap">
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
-          <div class="relative">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-            <input id="email" type="email" required placeholder="you@company.com"
-              class="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-gray-900 placeholder-gray-400" />
-          </div>
-        </div>
-
-        <div class="input-wrap">
-          <div class="flex justify-between items-center mb-1.5">
-            <label class="block text-sm font-medium text-gray-700">Password</label>
-            <button type="button" id="forgot"
-              class="text-xs font-medium text-primary hover:text-blue-mid transition-colors">Forgot password?</button>
-          </div>
-          <div class="relative">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            <input id="password" type="password" required placeholder="••••••••"
-              class="w-full pl-10 pr-11 py-2.5 rounded-xl text-sm text-gray-900 placeholder-gray-400" />
-            <button type="button" id="toggle-pw"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-              <svg id="eye-off" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-              <svg id="eye-on" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <button type="submit" id="submit-btn"
-          class="btn-signin w-full py-3 rounded-xl text-white text-sm font-semibold tracking-wide mt-1">
-          Sign In
-        </button>
-      </form>
-
-      <!-- Divider -->
-      <div class="flex items-center gap-3 my-6 f3">
-        <div class="flex-1 h-px bg-gray-100"></div>
-        <span class="text-[11px] font-semibold text-gray-400 tracking-widest">OR</span>
-        <div class="flex-1 h-px bg-gray-100"></div>
-      </div>
-
-      <a href="register.html"
-        class="btn-register f4 block w-full py-3 rounded-xl text-sm font-semibold text-center transition-all duration-200">
-        Create an Account
+<!-- ── NAVBAR ── -->
+<header class="site-nav">
+  <div class="nav-accent"></div>
+  <div class="nav-bar">
+    <div class="nav-inner">
+      <a href="https://honeydew-capybara-608687.hostingersite.com/" style="display:flex;align-items:center;flex-shrink:0">
+        <img src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png" alt="Global Mobility Adviser" style="height:28px;width:auto"/>
       </a>
-
-      <p class="text-center text-[11px] text-gray-300 mt-8 f4">
-        Relocentra · Global Mobility Adviser
-      </p>
+      <div style="display:flex;align-items:center;gap:32px">
+        <nav class="nav-links">
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/">HOME</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/solutions/">SOLUTIONS</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/">COURSES</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/about-us/">ABOUT US</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/resources/">RESOURCES</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/contact-us/">CONTACT US</a>
+        </nav>
+        <a class="nav-signin" href="login.html">
+          SIGN IN
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>
+        </a>
+      </div>
     </div>
   </div>
+</header>
 
-  <script>
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<!-- ── LOGIN AREA ── -->
+<main class="login-area">
+  <div class="blob1"></div><div class="blob2"></div><div class="blob3"></div>
 
-    // Check if already logged in
-    sb.auth.getUser().then(({ data: { user } }) => {
-      if (user) window.location.href = 'dashboard.html';
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1E2E61,#1C66AD);display:flex;align-items:center;justify-content:center">
+        <span class="dsp" style="color:#fff;font-weight:800;font-size:16px">G</span>
+      </div>
+      <div>
+        <p class="dsp" style="font-weight:700;font-size:13.5px;color:#111;line-height:1.15">Global Mobility Adviser</p>
+        <p style="font-size:10.5px;color:#9ca3af;line-height:1.2">Partner Portal</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:28px">
+      <h1 class="dsp" style="font-size:26px;font-weight:800;color:#0f172a;line-height:1.2">Welcome back</h1>
+      <p style="font-size:13.5px;color:#6b7280;margin-top:5px">Sign in to your partner account</p>
+    </div>
+
+    <div class="alert err" id="err-box" style="display:none">
+      <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+      <span id="err-text"></span>
+    </div>
+    <div class="alert info" id="info-box" style="display:none">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      <span id="info-text"></span>
+    </div>
+
+    <form id="form" style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <lbl>Email address</lbl>
+        <div class="inp-wrap">
+          <span class="inp-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
+          <input class="inp" id="email" type="email" required placeholder="you@company.com" autocomplete="email"/>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <lbl style="margin:0">Password</lbl>
+          <button type="button" id="forgot" style="font-size:12px;font-weight:600;color:#1C66AD;background:none;border:none;cursor:pointer;padding:0">Forgot password?</button>
+        </div>
+        <div class="inp-wrap">
+          <span class="inp-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
+          <input class="inp" id="pw" type="password" required placeholder="••••••••" autocomplete="current-password" style="padding-right:44px"/>
+          <button type="button" id="toggle-pw" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;display:flex">
+            <svg id="eye-off" width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+            <svg id="eye-on" width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-main" type="submit" id="submit-btn" style="margin-top:4px">Sign In</button>
+    </form>
+
+    <div class="divider"><span>OR</span></div>
+    <a href="register.html" style="display:block;text-decoration:none">
+      <button class="btn btn-outline">Create a Partner Account</button>
+    </a>
+    <p style="text-align:center;font-size:11.5px;color:rgba(255,255,255,0.2);margin-top:24px">Global Mobility Adviser · Partner Portal</p>
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="footer-accent"></div>
+  <div class="footer-inner">
+    <div class="footer-grid">
+
+      <!-- Brand + subscribe -->
+      <div>
+        <a href="https://honeydew-capybara-608687.hostingersite.com/" style="display:inline-block;margin-bottom:18px">
+          <img src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png" alt="Global Mobility Adviser" style="height:26px;width:auto;filter:brightness(0) invert(1)"/>
+        </a>
+        <p style="font-size:13.5px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:24px">At Global Mobility Adviser, we deliver results you can trust, led by Michael Ray — an expert in Talent Mobility, Relocation, and Remote Work strategies.</p>
+        <p class="footer-col-head" style="margin-bottom:10px">Stay updated</p>
+        <form onsubmit="return false" style="display:flex;gap:8px">
+          <input type="email" placeholder="Your email address" class="footer-sub-inp"/>
+          <button type="submit" class="footer-sub-btn">Subscribe</button>
+        </form>
+      </div>
+
+      <!-- Contact -->
+      <div>
+        <p class="footer-col-head">Contact</p>
+        <a href="tel:6232901143" class="footer-contact-item">
+          <div class="footer-contact-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          </div>
+          <div>
+            <p style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Phone</p>
+            <p style="font-size:14px;color:#fff;font-weight:500">(623)-290-1143</p>
+          </div>
+        </a>
+        <a href="mailto:contactus@honeydew-capybara-608687.hostingersite.com" class="footer-contact-item">
+          <div class="footer-contact-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <div>
+            <p style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Email</p>
+            <p style="font-size:13px;color:#fff;font-weight:500;word-break:break-all">contactus@honeydew-capybara&#8209;608687.hostingersite.com</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Site Map -->
+      <div>
+        <p class="footer-col-head">Site Map</p>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/solutions/">Solutions</a>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/">Education</a>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/about-us/">About Us</a>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/resources/">Resources</a>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/contact-us/">Contact Us</a>
+      </div>
+
+      <!-- Policies -->
+      <div>
+        <p class="footer-col-head">Policies</p>
+        <a class="footer-link" href="#">Privacy Policy</a>
+        <a class="footer-link" href="#">Copyright Policy</a>
+        <a class="footer-link" href="#">Terms of Service</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p style="font-size:12px;color:rgba(255,255,255,0.3)">© 2025 Global Mobility Adviser. All rights reserved.</p>
+      <a href="https://www.linkedin.com/company/global-mobility-adviser" target="_blank" rel="noopener" class="linkedin-btn" aria-label="LinkedIn">
+        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sb.auth.getUser().then(({data:{user}})=>{ if(user) location.href='dashboard.html'; });
+
+  const sp = new URLSearchParams(location.search);
+  const hp = new URLSearchParams(location.hash.replace(/^#/,''));
+  if(sp.get('error')==='auth_callback_error'){
+    const msg = hp.get('error_code')==='otp_expired'
+      ? 'Your reset link has expired. Enter your email and click Forgot password.'
+      : 'Authentication error. Please try again.';
+    showErr(msg);
+  }
+
+  document.getElementById('toggle-pw').onclick = () => {
+    const i = document.getElementById('pw');
+    const isText = i.type==='text';
+    i.type = isText ? 'password' : 'text';
+    document.getElementById('eye-on').style.display = isText ? 'none' : 'block';
+    document.getElementById('eye-off').style.display = isText ? 'block' : 'none';
+  };
+
+  document.getElementById('form').onsubmit = async e => {
+    e.preventDefault(); hideAll();
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    const {error} = await sb.auth.signInWithPassword({
+      email: document.getElementById('email').value,
+      password: document.getElementById('pw').value,
     });
+    if(error){ showErr(error.message); btn.disabled=false; btn.textContent='Sign In'; }
+    else location.href='dashboard.html';
+  };
 
-    // Check for expired link error
-    const params = new URLSearchParams(location.search);
-    const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
-    if (params.get('error') === 'auth_callback_error') {
-      const msg = hash.get('error_code') === 'otp_expired'
-        ? 'Your password reset link has expired. Enter your email and click Forgot password to try again.'
-        : 'Authentication error. Please try again.';
-      showErr(msg);
-    }
+  document.getElementById('forgot').onclick = async () => {
+    const email = document.getElementById('email').value;
+    if(!email){ showErr('Enter your email address first.'); return; }
+    hideAll();
+    await fetch(DEPLOYED_API+'/api/request-reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})}).catch(()=>{});
+    await sb.auth.resetPasswordForEmail(email,{redirectTo:DEPLOYED_API+'/auth/callback?type=recovery'});
+    showInfo('Reset email sent — check your inbox.');
+  };
 
-    // Show/hide password
-    document.getElementById('toggle-pw').addEventListener('click', () => {
-      const inp = document.getElementById('password');
-      const isText = inp.type === 'text';
-      inp.type = isText ? 'password' : 'text';
-      document.getElementById('eye-on').classList.toggle('hidden', isText);
-      document.getElementById('eye-off').classList.toggle('hidden', !isText);
-    });
-
-    // Login
-    document.getElementById('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      hideErr();
-      const btn = document.getElementById('submit-btn');
-      btn.disabled = true;
-      btn.textContent = 'Signing in…';
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) {
-        showErr(error.message);
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
-      } else {
-        window.location.href = 'dashboard.html';
-      }
-    });
-
-    // Forgot password
-    document.getElementById('forgot').addEventListener('click', async () => {
-      const email = document.getElementById('email').value;
-      if (!email) { showErr('Enter your email above, then click Forgot password.'); return; }
-      hideErr();
-      // Clear old token first
-      await fetch(DEPLOYED_API + '/api/request-reset', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      }).catch(() => {});
-      await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: DEPLOYED_API + '/auth/callback?type=recovery'
-      });
-      document.getElementById('reset-ok').classList.remove('hidden');
-    });
-
-    function showErr(msg) {
-      const el = document.getElementById('err');
-      document.getElementById('err-text').textContent = msg;
-      el.classList.remove('hidden');
-    }
-    function hideErr() {
-      document.getElementById('err').classList.add('hidden');
-      document.getElementById('reset-ok').classList.add('hidden');
-    }
-  </script>
+  function showErr(m){ const b=document.getElementById('err-box'); document.getElementById('err-text').textContent=m; b.style.display='flex'; }
+  function showInfo(m){ const b=document.getElementById('info-box'); document.getElementById('info-text').textContent=m; b.style.display='flex'; }
+  function hideAll(){ document.getElementById('err-box').style.display='none'; document.getElementById('info-box').style.display='none'; }
+</script>
 </body>
 </html>
