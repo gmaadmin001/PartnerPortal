@@ -67,10 +67,15 @@ export default function LoginForm() {
     }
     setError(null);
     setResetLoading(true);
+    // Clear any existing recovery token server-side first
     await fetch("/api/request-reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
+    });
+    // Send the reset email from the browser so PKCE flow is used
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
     });
     setResetLoading(false);
     setResetSent(true);
