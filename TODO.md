@@ -381,3 +381,53 @@ STRIPE_PREMIUM_PRICE_ID=price_...
 - [ ] **Admin approval:** Admin reviews and sets `claim_status = approved` → transfers `user_id` ownership to claimant; or `rejected` → notifies claimant
 - [ ] **Unauthenticated claim:** If user is not logged in, redirect to `/register` with `?claim=<vendor_id>` param so the flow resumes after sign-in/registration
 - [ ] **RLS:** Ensure a user can only see/edit a vendor row once `user_id` matches their own account (already enforced by existing policy — verify claim approval path uses service-role)
+
+---
+
+## PHASE 9 — Production Email (Resend + Custom Domain)
+
+> Currently the portal uses Resend's SMTP with `onboarding@resend.dev` as the sender address.
+> This is Resend's sandbox address and can **only** send to the Resend account owner's email
+> (`gmaadmin001@gmail.com`). All other recipients are blocked with a `550` error.
+> This must be resolved before the portal goes live with real users.
+
+### Task 22: Verify a custom domain in Resend and update Supabase sender address
+
+**Why it's needed:**
+Supabase's built-in email service is hard-capped at 2 emails/hour and cannot be raised.
+Resend is configured as the custom SMTP provider, but until a real domain is verified,
+password reset and any future auth emails can only reach `gmaadmin001@gmail.com`.
+
+**Prerequisites:**
+- A custom domain you own (e.g. `globalmobilityadviser.com`) with DNS managed in Cloudflare or similar
+- Access to the Resend dashboard ([resend.com](https://resend.com))
+- Access to Supabase → Authentication → SMTP Settings
+
+**Steps:**
+
+1. **Resend — Add and verify the domain**
+   - Go to Resend Dashboard → **Domains** → **Add Domain**
+   - Enter your domain (e.g. `globalmobilityadviser.com`)
+   - Resend will give you DNS records to add (typically 1× TXT for SPF, 1× CNAME for DKIM, optionally 1× MX)
+   - In **Cloudflare DNS** (or wherever the domain's DNS is managed), add each record exactly as shown
+   - Back in Resend, click **Verify** — green checkmarks confirm SPF and DKIM are live
+   - DNS propagation usually takes a few minutes to 1 hour
+
+2. **Supabase — Update the sender email**
+   - Supabase Dashboard → **PartnerPortal** → **Authentication** → **SMTP Settings**
+   - Change **Sender email address** from `onboarding@resend.dev` to `noreply@yourdomain.com`
+     (or `portal@yourdomain.com`, `auth@yourdomain.com` — any address on the verified domain)
+   - Leave all other SMTP fields (host, port, username, password/API key) unchanged
+   - Click **Save**
+
+3. **Test**
+   - Go to `/register` → enter any email → click **Lost Password?**
+   - Confirm the reset email arrives in the target inbox (check Spam too)
+   - A `200 OK` in Supabase Auth logs with no error = fully working
+
+**Code changes required:** None — the SMTP credentials and `request-reset` API route are already
+in place. This is a dashboard-only configuration step.
+
+**Future consideration:** Per `architecture.md`, auth emails should eventually be routed through
+a custom Send Email hook (Supabase Auth → Edge Function → EmailJS/Resend) so branding and copy
+live in the app. That is a more involved change and can be done in a later phase.
