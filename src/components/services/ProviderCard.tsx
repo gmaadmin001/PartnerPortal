@@ -4,6 +4,7 @@ import Link from "next/link";
 
 export interface Provider {
   id: string;
+  slug: string;
   company_name: string;
   website_url: string | null;
   short_description: string | null;
@@ -97,7 +98,7 @@ export default function ProviderCard({ provider: p }: ProviderCardProps) {
           </div>
         </div>
         <Link
-          href={`/services/${p.id}`}
+          href={`/services/${p.slug}`}
           className="flex-shrink-0 bg-gma-navy text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gma-primary transition-colors whitespace-nowrap"
         >
           View Profile

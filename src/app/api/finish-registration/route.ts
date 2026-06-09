@@ -1,6 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+const PREMIUM_PLANS = ["Professional", "Premier"];
+
+function toNameSlug(name: string): string {
+  return (name ?? "provider")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .substring(0, 60) || "provider";
+}
+
+function randomHex(bytes = 6): string {
+  const arr = new Uint8Array(bytes);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function buildSlug(supabase: ReturnType<typeof createServiceClient>, companyName: string, plan: string): Promise<string> {
+  if (!PREMIUM_PLANS.includes(plan)) return randomHex(6);
+
+  const base = toNameSlug(companyName);
+  const { data: existing } = await supabase
+    .from("service_registrations")
+    .select("slug")
+    .like("slug", `${base}%`);
+
+  const taken = new Set((existing ?? []).map((r: { slug: string }) => r.slug));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -48,8 +83,11 @@ export async function POST(req: NextRequest) {
 
     const userId = userData.user.id;
 
+    const slug = await buildSlug(supabase, companyName ?? "", membershipPlan ?? "");
+
     // Save all registration data
     const { error: insertError } = await supabase.from("service_registrations").insert({
+      slug,
       user_id: userId,
       register_as: registerAs,
       primary_category: primaryCategory,

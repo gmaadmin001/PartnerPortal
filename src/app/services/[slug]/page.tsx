@@ -30,7 +30,7 @@ function SideCard({ icon, label, children }: { icon: React.ReactNode; label: str
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
       <div className="flex items-center gap-2 px-4 py-2.5 bg-gma-surface border-b border-gray-100">
-        <span className="text-gma-primary w-4 h-4 flex-shrink-0">{icon}</span>
+        <span className="text-gma-primary w-4 h-4 shrink-0">{icon}</span>
         <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">{label}</span>
       </div>
       <div className="p-4">{children}</div>
@@ -42,7 +42,7 @@ function SectionCard({ icon, label, children }: { icon: React.ReactNode; label: 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
       <div className="flex items-center gap-2 px-5 py-3 bg-gma-surface border-b border-gray-100">
-        <span className="text-gma-primary w-4 h-4 flex-shrink-0">{icon}</span>
+        <span className="text-gma-primary w-4 h-4 shrink-0">{icon}</span>
         <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">{label}</span>
       </div>
       <div className="p-5">{children}</div>
@@ -67,15 +67,15 @@ const StarIcon = () => <svg fill="none" stroke="currentColor" viewBox="0 0 24 24
 export default async function ProviderProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
+  const { slug } = await params;
   const supabase = await createClient();
 
   const { data: provider, error } = await supabase
     .from("service_registrations")
     .select("*")
-    .eq("id", id)
+    .eq("slug", slug)
     .eq("status", "active")
     .single();
 
@@ -84,7 +84,7 @@ export default async function ProviderProfilePage({
   const { data: reviewRows } = await supabase
     .from("provider_reviews")
     .select("id, rating, body, reviewer_name, created_at")
-    .eq("provider_id", id)
+    .eq("provider_id", provider.id)
     .order("created_at", { ascending: false });
 
   const reviews = (reviewRows ?? []) as Review[];
@@ -117,10 +117,10 @@ export default async function ProviderProfilePage({
               <img
                 src={provider.logo_url}
                 alt={provider.company_name}
-                className="w-20 h-20 rounded-2xl object-cover flex-shrink-0 border border-gray-200 shadow-sm"
+                className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-gray-200 shadow-sm"
               />
             ) : (
-              <div className="w-20 h-20 rounded-2xl bg-gma-navy flex items-center justify-center flex-shrink-0 shadow-sm">
+              <div className="w-20 h-20 rounded-2xl bg-gma-navy flex items-center justify-center shrink-0 shadow-sm">
                 <span className="text-white font-bold text-2xl font-display">
                   {provider.company_name.charAt(0)}
                 </span>
@@ -173,7 +173,7 @@ export default async function ProviderProfilePage({
             {/* Back link */}
             <Link
               href="/services"
-              className="flex-shrink-0 text-sm text-gma-primary hover:underline flex items-center gap-1"
+              className="shrink-0 text-sm text-gma-primary hover:underline flex items-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -188,32 +188,32 @@ export default async function ProviderProfilePage({
       <div className="max-w-screen-xl mx-auto px-6 py-8 flex gap-8 items-start">
 
         {/* ── Left sidebar ─────────────────────────────────────────────────── */}
-        <aside className="w-72 flex-shrink-0 space-y-4 sticky top-6">
+        <aside className="w-72 shrink-0 space-y-4 sticky top-6">
 
           {/* Contact Details */}
           <SideCard label="Contact Details" icon={<PhoneIcon />}>
             <div className="space-y-3">
               {provider.primary_contact_phone && (
                 <a href={`tel:${provider.primary_contact_phone}`} className="flex items-center gap-3 text-sm text-gray-700 hover:text-gma-primary transition-colors">
-                  <span className="w-4 h-4 text-gma-primary flex-shrink-0"><PhoneIcon /></span>
+                  <span className="w-4 h-4 text-gma-primary shrink-0"><PhoneIcon /></span>
                   {provider.primary_contact_phone}
                 </a>
               )}
               {provider.primary_contact_email && (
                 <a href={`mailto:${provider.primary_contact_email}`} className="flex items-center gap-3 text-sm text-gray-700 hover:text-gma-primary transition-colors break-all">
-                  <span className="w-4 h-4 text-gma-primary flex-shrink-0"><MailIcon /></span>
+                  <span className="w-4 h-4 text-gma-primary shrink-0"><MailIcon /></span>
                   {provider.primary_contact_email}
                 </a>
               )}
               {provider.company_address && (
                 <div className="flex items-start gap-3 text-sm text-gray-700">
-                  <span className="w-4 h-4 text-gma-primary flex-shrink-0 mt-0.5"><PinIcon /></span>
+                  <span className="w-4 h-4 text-gma-primary shrink-0 mt-0.5"><PinIcon /></span>
                   {provider.company_address}
                 </div>
               )}
               {provider.website_url && (
                 <a href={provider.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-gma-primary hover:underline">
-                  <span className="w-4 h-4 flex-shrink-0"><GlobeIcon /></span>
+                  <span className="w-4 h-4 shrink-0"><GlobeIcon /></span>
                   {websiteDisplay}
                 </a>
               )}
@@ -226,7 +226,7 @@ export default async function ProviderProfilePage({
               <div className="flex flex-col gap-1.5">
                 {serviceAreas.map((area) => (
                   <div key={area} className="flex items-center gap-2 text-sm text-gray-700">
-                    <svg className="w-3 h-3 text-gma-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 text-gma-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                     {area}
@@ -242,19 +242,19 @@ export default async function ProviderProfilePage({
               <div className="space-y-2">
                 {provider.service_scope && (
                   <div className="flex items-baseline gap-2 text-sm">
-                    <span className="font-semibold text-gray-700 flex-shrink-0">Service scope:</span>
+                    <span className="font-semibold text-gray-700 shrink-0">Service scope:</span>
                     <span className="text-gray-600">{provider.service_scope}</span>
                   </div>
                 )}
                 {provider.industry_focus && (
                   <div className="flex items-baseline gap-2 text-sm">
-                    <span className="font-semibold text-gray-700 flex-shrink-0">Industry focus:</span>
+                    <span className="font-semibold text-gray-700 shrink-0">Industry focus:</span>
                     <span className="text-gray-600">{provider.industry_focus}</span>
                   </div>
                 )}
                 {provider.company_size && (
                   <div className="flex items-baseline gap-2 text-sm">
-                    <span className="font-semibold text-gray-700 flex-shrink-0">Company size:</span>
+                    <span className="font-semibold text-gray-700 shrink-0">Company size:</span>
                     <span className="text-gray-600">{provider.company_size}</span>
                   </div>
                 )}
@@ -324,7 +324,7 @@ export default async function ProviderProfilePage({
                     <span className="font-semibold text-gray-800 text-sm">{svc}</span>
                     <Link
                       href={`/services?subService=${encodeURIComponent(svc)}`}
-                      className="flex-shrink-0 bg-gma-navy text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gma-primary transition-colors flex items-center gap-1.5 uppercase tracking-wide"
+                      className="shrink-0 bg-gma-navy text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gma-primary transition-colors flex items-center gap-1.5 uppercase tracking-wide"
                     >
                       Learn More
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -4,7 +4,7 @@ import { FilterValues, EMPTY_FILTERS } from "@/components/services/FilterPanel";
 import type { Provider } from "@/components/services/ProviderCard";
 
 const SELECTED_COLUMNS = [
-  "id", "company_name", "website_url", "short_description", "logo_url",
+  "id", "slug", "company_name", "website_url", "short_description", "logo_url",
   "primary_category", "sub_category", "headquarters_country", "headquarters_city",
   "countries_served", "states_served", "industry_focus", "service_scope",
   "company_size", "certifications", "diversity_flags", "core_services",

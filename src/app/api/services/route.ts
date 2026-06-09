@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const SELECTED_COLUMNS = [
   "id",
+  "slug",
   "company_name",
   "website_url",
   "short_description",

@@ -19,6 +19,7 @@ interface CompletionField { label: string; done: boolean; }
 
 export interface ServiceReg {
   id: string;
+  slug: string;
   company_name: string | null;
   website_url: string | null;
   company_bio: string | null;
@@ -140,7 +141,7 @@ function OverviewPanel({ reg, reviews, avgRating, completionFields, completionPc
 
   const quickActions = [
     { icon: "✏️", label: "Edit Company Profile",  desc: "Update your business info",      action: () => setActive("profile"),  href: null },
-    { icon: "👁️", label: "View Public Listing",    desc: "See how partners find you",      action: null, href: reg ? `/services/${reg.id}` : null },
+    { icon: "👁️", label: "View Public Listing",    desc: "See how partners find you",      action: null, href: reg ? `/services/${reg.slug}` : null },
     { icon: "👑", label: "Upgrade Plan",           desc: "Unlock more features",           action: () => setActive("plans"),    href: null },
     { icon: "⭐", label: "Manage Reviews",         desc: "See client feedback",            action: () => setActive("reviews"),  href: null },
     { icon: "📋", label: "Update Listing",         desc: "Edit service categories",        action: () => setActive("listing"),  href: null },
@@ -390,7 +391,7 @@ function ListingPanel({ reg }: { reg: ServiceReg | null }) {
         </div>
         <div className="flex gap-2 shrink-0">
           <Link
-            href={`/services/${reg.id}`}
+            href={`/services/${reg.slug}`}
             target="_blank"
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gma-primary text-gma-primary text-sm font-semibold hover:bg-gma-blue-pale transition-colors"
           >
@@ -652,7 +653,7 @@ function ReviewsPanel({ reviews, avgRating, reg }: { reviews: Review[]; avgRatin
 
   function copyLink() {
     if (!reg) return;
-    navigator.clipboard.writeText(`${window.location.origin}/services/${reg.id}`);
+    navigator.clipboard.writeText(`${window.location.origin}/services/${reg.slug}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -880,7 +881,7 @@ export default function DashboardClient({
           </div>
           {reg && (
             <Link
-              href={`/services/${reg.id}`}
+              href={`/services/${reg.slug}`}
               target="_blank"
               className="text-xs text-gma-blue-light hover:text-white transition-colors flex items-center gap-1 mt-1"
             >
