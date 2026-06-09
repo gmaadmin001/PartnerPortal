@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -29,6 +29,18 @@ export default function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (params.get("error") === "auth_callback_error") {
+      if (hash.get("error_code") === "otp_expired") {
+        setError("Your password reset link has expired. Enter your email above and click Lost Password to request a new one.");
+      } else {
+        setError("Authentication error. Please try again.");
+      }
+    }
+  }, []);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
