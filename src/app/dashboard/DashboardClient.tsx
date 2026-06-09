@@ -52,7 +52,7 @@ export interface ServiceReg {
   created_at: string;
 }
 
-export type Panel = "overview" | "profile" | "listing" | "plans" | "reviews" | "settings";
+export type Panel = "overview" | "profile" | "listing" | "plans" | "reviews" | "settings" | "edit";
 
 interface Props {
   user: { id: string; email: string };
@@ -281,7 +281,7 @@ function OverviewPanel({ reg, reviews, avgRating, completionFields, completionPc
 
 // ── Panel: Company Profile ────────────────────────────────────────────────────
 
-function ProfilePanel({ reg }: { reg: ServiceReg | null }) {
+function ProfilePanel({ reg, setActive }: { reg: ServiceReg | null; setActive: (p: Panel) => void }) {
   if (!reg) return (
     <div className="text-center py-20">
       <p className="text-gray-400 mb-4">No profile data found. Create your listing first.</p>
@@ -295,12 +295,12 @@ function ProfilePanel({ reg }: { reg: ServiceReg | null }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">Your public-facing company information shown in the services directory.</p>
-        <Link href="/add-service" className="flex items-center gap-2 bg-gma-navy text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gma-primary transition-colors shrink-0">
+        <button onClick={() => setActive("edit")} className="flex items-center gap-2 bg-gma-navy text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gma-primary transition-colors shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
           Edit Profile
-        </Link>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -353,7 +353,7 @@ function ProfilePanel({ reg }: { reg: ServiceReg | null }) {
 
 // ── Panel: My Listing ─────────────────────────────────────────────────────────
 
-function ListingPanel({ reg }: { reg: ServiceReg | null }) {
+function ListingPanel({ reg, setActive }: { reg: ServiceReg | null; setActive: (p: Panel) => void }) {
   if (!reg) return (
     <div className="text-center py-20">
       <p className="text-gray-400 mb-4">No listing found.</p>
@@ -400,15 +400,15 @@ function ListingPanel({ reg }: { reg: ServiceReg | null }) {
             </svg>
             Preview
           </Link>
-          <Link
-            href="/add-service"
+          <button
+            onClick={() => setActive("edit")}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gma-navy text-white text-sm font-semibold hover:bg-gma-primary transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
             Edit Listing
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -492,6 +492,238 @@ function ListingPanel({ reg }: { reg: ServiceReg | null }) {
   );
 }
 
+// ── Panel: Edit Profile ───────────────────────────────────────────────────────
+
+function EditProfilePanel({ reg, userId, setActive, onSaved }: {
+  reg: ServiceReg;
+  userId: string;
+  setActive: (p: Panel) => void;
+  onSaved: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const [form, setForm] = useState({
+    company_name:          reg.company_name          ?? "",
+    website_url:           reg.website_url           ?? "",
+    short_description:     reg.short_description     ?? "",
+    company_bio:           reg.company_bio           ?? "",
+    logo_url:              reg.logo_url              ?? "",
+    primary_contact_name:  reg.primary_contact_name  ?? "",
+    primary_contact_email: reg.primary_contact_email ?? "",
+    primary_contact_phone: reg.primary_contact_phone ?? "",
+    company_address:       reg.company_address       ?? "",
+    headquarters_city:     reg.headquarters_city     ?? "",
+    headquarters_country:  reg.headquarters_country  ?? "",
+    countries_served:      (reg.countries_served     ?? []).join(", "),
+    states_served:         (reg.states_served        ?? []).join(", "),
+    industry_focus:        reg.industry_focus        ?? "",
+    service_scope:         reg.service_scope         ?? "",
+    delivery_model:        reg.delivery_model        ?? "",
+    company_size:          reg.company_size          ?? "",
+    certifications:        reg.certifications        ?? "",
+    diversity_flags:       (reg.diversity_flags      ?? []).join(", "),
+    core_services:         (reg.core_services        ?? []).join(", "),
+    social_linkedin:       reg.social_profiles?.linkedin ?? "",
+    social_discord:        reg.social_profiles?.discord  ?? "",
+  });
+
+  function set(key: keyof typeof form, value: string) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function splitTrim(s: string): string[] {
+    return s.split(",").map((v) => v.trim()).filter(Boolean);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setSaveError(null);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("service_registrations")
+      .update({
+        company_name:          form.company_name          || null,
+        website_url:           form.website_url           || null,
+        short_description:     form.short_description     || null,
+        company_bio:           form.company_bio           || null,
+        logo_url:              form.logo_url              || null,
+        primary_contact_name:  form.primary_contact_name  || null,
+        primary_contact_email: form.primary_contact_email || null,
+        primary_contact_phone: form.primary_contact_phone || null,
+        company_address:       form.company_address       || null,
+        headquarters_city:     form.headquarters_city     || null,
+        headquarters_country:  form.headquarters_country  || null,
+        countries_served:      splitTrim(form.countries_served),
+        states_served:         splitTrim(form.states_served),
+        industry_focus:        form.industry_focus        || null,
+        service_scope:         form.service_scope         || null,
+        delivery_model:        form.delivery_model        || null,
+        company_size:          form.company_size          || null,
+        certifications:        form.certifications        || null,
+        diversity_flags:       splitTrim(form.diversity_flags),
+        core_services:         splitTrim(form.core_services),
+        social_profiles: {
+          ...(form.social_linkedin ? { linkedin: form.social_linkedin } : {}),
+          ...(form.social_discord  ? { discord:  form.social_discord  } : {}),
+        },
+      })
+      .eq("user_id", userId);
+
+    setSaving(false);
+    if (error) {
+      setSaveError(error.message);
+    } else {
+      setSaved(true);
+      onSaved();
+      setTimeout(() => setActive("profile"), 800);
+    }
+  }
+
+  const inputCls = "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-gma-primary transition-colors";
+  const textareaCls = inputCls + " resize-none";
+  const labelCls = "block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5";
+
+  function Field({ label, fieldKey, placeholder, textarea }: {
+    label: string; fieldKey: keyof typeof form; placeholder?: string; textarea?: boolean;
+  }) {
+    return (
+      <div>
+        <label className={labelCls}>{label}</label>
+        {textarea ? (
+          <textarea
+            rows={3}
+            value={form[fieldKey]}
+            onChange={(e) => set(fieldKey, e.target.value)}
+            placeholder={placeholder}
+            className={textareaCls}
+          />
+        ) : (
+          <input
+            type="text"
+            value={form[fieldKey]}
+            onChange={(e) => set(fieldKey, e.target.value)}
+            placeholder={placeholder}
+            className={inputCls}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => setActive("profile")}
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gma-navy transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Profile
+        </button>
+        <p className="text-sm text-gray-400">·</p>
+        <p className="text-sm text-gray-500">Changes are saved directly to your public listing.</p>
+      </div>
+
+      {saveError && (
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{saveError}</div>
+      )}
+
+      {/* Business Identity */}
+      <Section title="Business Identity">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Company Name"       fieldKey="company_name"      placeholder="Acme Relocation Co." />
+          <Field label="Website URL"        fieldKey="website_url"       placeholder="https://yoursite.com" />
+          <Field label="Logo URL"           fieldKey="logo_url"          placeholder="https://yoursite.com/logo.png" />
+        </div>
+        <div className="mt-4">
+          <Field label="Short Statement (1–2 sentences shown on listing card)" fieldKey="short_description" placeholder="We help companies move employees globally..." textarea />
+        </div>
+        <div className="mt-4">
+          <Field label="Company Bio (full description shown on profile page)" fieldKey="company_bio" placeholder="Founded in..." textarea />
+        </div>
+      </Section>
+
+      {/* Contact Details */}
+      <Section title="Contact Details">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Contact Name"  fieldKey="primary_contact_name"  placeholder="Jane Smith" />
+          <Field label="Contact Email" fieldKey="primary_contact_email" placeholder="jane@yourco.com" />
+          <Field label="Contact Phone" fieldKey="primary_contact_phone" placeholder="+1 555-000-0000" />
+          <Field label="Company Address" fieldKey="company_address"     placeholder="123 Main St, City, State" />
+        </div>
+      </Section>
+
+      {/* Geographic Coverage */}
+      <Section title="Geographic Coverage">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="HQ City"    fieldKey="headquarters_city"    placeholder="New York" />
+          <Field label="HQ Country" fieldKey="headquarters_country" placeholder="United States" />
+          <Field label="Countries Served (comma-separated)" fieldKey="countries_served" placeholder="United States, Canada, UK" />
+          <Field label="US States Served (comma-separated)" fieldKey="states_served"    placeholder="New York, California, Texas" />
+        </div>
+      </Section>
+
+      {/* Service Classification */}
+      <Section title="Service Classification">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Industry Focus"  fieldKey="industry_focus"  placeholder="Technology, Finance..." />
+          <Field label="Service Scope"   fieldKey="service_scope"   placeholder="Global, Regional, National..." />
+          <Field label="Delivery Model"  fieldKey="delivery_model"  placeholder="Remote, On-site, Hybrid" />
+          <Field label="Company Size"    fieldKey="company_size"    placeholder="1–10, 11–50, 51–200..." />
+        </div>
+        <div className="mt-4">
+          <Field label="Core Services (comma-separated)" fieldKey="core_services" placeholder="Immigration, Tax Advisory, Destination Services" />
+        </div>
+      </Section>
+
+      {/* Credentials */}
+      <Section title="Credentials & Compliance">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Certifications (comma-separated)"  fieldKey="certifications"  placeholder="ISO 9001, GMS-T, SHRM" />
+          <Field label="Diversity Flags (comma-separated)" fieldKey="diversity_flags" placeholder="Minority-owned, Woman-owned" />
+        </div>
+      </Section>
+
+      {/* Social */}
+      <Section title="Social Profiles">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="LinkedIn URL"  fieldKey="social_linkedin" placeholder="https://linkedin.com/company/..." />
+          <Field label="Discord URL"   fieldKey="social_discord"  placeholder="https://discord.gg/..." />
+        </div>
+      </Section>
+
+      {/* Save */}
+      <div className="flex items-center gap-4 pt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving || saved}
+          className="bg-gma-navy text-white text-sm font-bold px-8 py-3 rounded-xl hover:bg-gma-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {saved ? (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Saved!
+            </>
+          ) : saving ? "Saving…" : "Save Changes"}
+        </button>
+        <button
+          onClick={() => setActive("profile")}
+          className="text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Panel: Membership Plans ───────────────────────────────────────────────────
 
 const PLANS = [
@@ -544,7 +776,8 @@ const PLANS = [
 
 function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-  const active = currentPlan ?? "Basic";
+  const PLAN_NAMES = ["Premier", "Professional", "Basic"];
+  const active = PLAN_NAMES.find(n => (currentPlan ?? "").startsWith(n)) ?? "Basic";
 
   return (
     <div className="space-y-6">
@@ -940,11 +1173,17 @@ export default function DashboardClient({
         {/* Panel */}
         <div className="flex-1 p-8">
           {active === "overview"  && <OverviewPanel reg={reg} reviews={reviews} avgRating={avgRating} completionFields={completionFields} completionPct={completionPct} setActive={setActive} />}
-          {active === "profile"   && <ProfilePanel reg={reg} />}
-          {active === "listing"   && <ListingPanel reg={reg} />}
+          {active === "profile"   && <ProfilePanel reg={reg} setActive={setActive} />}
+          {active === "listing"   && <ListingPanel reg={reg} setActive={setActive} />}
           {active === "plans"     && <PlansPanel currentPlan={reg?.membership_plan ?? null} />}
           {active === "reviews"   && <ReviewsPanel reviews={reviews} avgRating={avgRating} reg={reg} />}
           {active === "settings"  && <SettingsPanel email={user.email} signOut={signOut} />}
+          {active === "edit"      && reg && <EditProfilePanel reg={reg} userId={user.id} setActive={setActive} onSaved={() => router.refresh()} />}
+          {active === "edit"      && !reg && (
+            <div className="text-center py-20">
+              <p className="text-gray-400">No listing found. <button onClick={() => setActive("overview")} className="text-gma-primary underline">Go to Overview</button></p>
+            </div>
+          )}
         </div>
       </div>
     </div>

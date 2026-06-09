@@ -76,10 +76,14 @@ export default async function ProviderProfilePage({
     .from("service_registrations")
     .select("*")
     .eq("slug", slug)
-    .eq("status", "active")
     .single();
 
   if (error || !provider) notFound();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const isOwner = user?.id === provider.user_id;
+
+  if (provider.status !== "active" && !isOwner) notFound();
 
   const { data: reviewRows } = await supabase
     .from("provider_reviews")
@@ -106,6 +110,22 @@ export default async function ProviderProfilePage({
 
   return (
     <div className="min-h-screen bg-gma-surface">
+
+      {/* ── Preview banner (owner only, non-active listing) ──────────────── */}
+      {isOwner && provider.status !== "active" && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center justify-center gap-3">
+          <svg className="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          <p className="text-sm font-semibold text-amber-800">
+            Preview mode — your listing is <span className="capitalize">{provider.status}</span> and not yet visible to the public.
+          </p>
+          <Link href="/dashboard" className="text-xs font-bold text-amber-700 underline underline-offset-2 hover:text-amber-900">
+            Back to Dashboard
+          </Link>
+        </div>
+      )}
 
       {/* ── Hero header ─────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-200">
