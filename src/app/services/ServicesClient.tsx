@@ -7,17 +7,17 @@ import ProviderCard, { Provider } from "@/components/services/ProviderCard";
 
 export function filtersToParams(v: FilterValues): URLSearchParams {
   const p = new URLSearchParams();
-  if (v.primaryServices.length) p.set("primaryService", v.primaryServices.join(","));
-  if (v.subServices.length)     p.set("subService",     v.subServices.join(","));
-  if (v.countries.length)       p.set("country",        v.countries.join(","));
-  if (v.states.length)          p.set("state",          v.states.join(","));
+  if (v.primaryServices.length) p.set("primaryService", v.primaryServices.join("|"));
+  if (v.subServices.length)     p.set("subService",     v.subServices.join("|"));
+  if (v.countries.length)       p.set("country",        v.countries.join("|"));
+  if (v.states.length)          p.set("state",          v.states.join("|"));
   if (v.city)                   p.set("city",           v.city);
   if (v.zip)                    p.set("zip",            v.zip);
   if (v.industry)               p.set("industry",       v.industry);
   if (v.serviceScope)           p.set("serviceScope",   v.serviceScope);
   if (v.companySize)            p.set("companySize",    v.companySize);
   if (v.companyName)            p.set("companyName",    v.companyName);
-  if (v.diversityFlags.length)  p.set("diversityFlags", v.diversityFlags.join(","));
+  if (v.diversityFlags.length)  p.set("diversityFlags", v.diversityFlags.join("|"));
   return p;
 }
 

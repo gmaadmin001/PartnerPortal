@@ -13,17 +13,17 @@ const SELECTED_COLUMNS = [
 
 function paramsToFilters(sp: Record<string, string>): FilterValues {
   return {
-    primaryServices: (sp.primaryService ?? "").split(",").filter(Boolean),
-    subServices:     (sp.subService     ?? "").split(",").filter(Boolean),
-    countries:       (sp.country        ?? "").split(",").filter(Boolean),
-    states:          (sp.state          ?? "").split(",").filter(Boolean),
+    primaryServices: (sp.primaryService ?? "").split("|").filter(Boolean),
+    subServices:     (sp.subService     ?? "").split("|").filter(Boolean),
+    countries:       (sp.country        ?? "").split("|").filter(Boolean),
+    states:          (sp.state          ?? "").split("|").filter(Boolean),
     city:            sp.city         ?? "",
     zip:             sp.zip          ?? "",
     industry:        sp.industry     ?? "",
     serviceScope:    sp.serviceScope ?? "",
     companySize:     sp.companySize  ?? "",
     companyName:     sp.companyName  ?? "",
-    diversityFlags:  (sp.diversityFlags ?? "").split(",").filter(Boolean),
+    diversityFlags:  (sp.diversityFlags ?? "").split("|").filter(Boolean),
   };
 }
 
@@ -36,7 +36,10 @@ async function queryProviders(f: FilterValues): Promise<{ data: Provider[]; tota
     .eq("status", "active");
 
   if (f.primaryServices.length) query = query.in("primary_category", f.primaryServices);
-  if (f.subServices.length)     query = query.in("sub_category",      f.subServices);
+  if (f.subServices.length) {
+    const qv = f.subServices.map((s) => `"${s}"`).join(",");
+    query = query.or(`sub_category.in.(${qv}),core_services.ov.{${qv}}`);
+  }
   if (f.countries.length)       query = query.overlaps("countries_served", f.countries);
   if (f.states.length)          query = query.overlaps("states_served",    f.states);
   if (f.city)                   query = query.ilike("headquarters_city",   `%${f.city}%`);
