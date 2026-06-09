@@ -493,6 +493,43 @@ function ListingPanel({ reg, setActive }: { reg: ServiceReg | null; setActive: (
 }
 
 // ── Panel: Edit Profile ───────────────────────────────────────────────────────
+// These constants and EditField are defined at module level so React gets a
+// stable function reference across re-renders — prevents focus loss on every keystroke.
+
+const EDIT_INPUT_CLS    = "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-gma-primary transition-colors";
+const EDIT_TEXTAREA_CLS = EDIT_INPUT_CLS + " resize-none";
+const EDIT_LABEL_CLS    = "block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5";
+
+function EditField({ label, value, onChange, placeholder, textarea }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  textarea?: boolean;
+}) {
+  return (
+    <div>
+      <label className={EDIT_LABEL_CLS}>{label}</label>
+      {textarea ? (
+        <textarea
+          rows={3}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={EDIT_TEXTAREA_CLS}
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={EDIT_INPUT_CLS}
+        />
+      )}
+    </div>
+  );
+}
 
 function EditProfilePanel({ reg, userId, setActive, onSaved }: {
   reg: ServiceReg;
@@ -503,6 +540,8 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [photos, setPhotos] = useState<string[]>(reg.photos ?? []);
+  const [newPhotoUrl, setNewPhotoUrl] = useState("");
 
   const [form, setForm] = useState({
     company_name:          reg.company_name          ?? "",
@@ -537,6 +576,17 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
     return s.split(",").map((v) => v.trim()).filter(Boolean);
   }
 
+  function addPhoto() {
+    const url = newPhotoUrl.trim();
+    if (!url) return;
+    setPhotos((p) => [...p, url]);
+    setNewPhotoUrl("");
+  }
+
+  function removePhoto(idx: number) {
+    setPhotos((p) => p.filter((_, i) => i !== idx));
+  }
+
   async function handleSave() {
     setSaving(true);
     setSaveError(null);
@@ -564,6 +614,7 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
         certifications:        form.certifications        || null,
         diversity_flags:       splitTrim(form.diversity_flags),
         core_services:         splitTrim(form.core_services),
+        photos,
         social_profiles: {
           ...(form.social_linkedin ? { linkedin: form.social_linkedin } : {}),
           ...(form.social_discord  ? { discord:  form.social_discord  } : {}),
@@ -579,37 +630,6 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
       onSaved();
       setTimeout(() => setActive("profile"), 800);
     }
-  }
-
-  const inputCls = "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-gma-primary transition-colors";
-  const textareaCls = inputCls + " resize-none";
-  const labelCls = "block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5";
-
-  function Field({ label, fieldKey, placeholder, textarea }: {
-    label: string; fieldKey: keyof typeof form; placeholder?: string; textarea?: boolean;
-  }) {
-    return (
-      <div>
-        <label className={labelCls}>{label}</label>
-        {textarea ? (
-          <textarea
-            rows={3}
-            value={form[fieldKey]}
-            onChange={(e) => set(fieldKey, e.target.value)}
-            placeholder={placeholder}
-            className={textareaCls}
-          />
-        ) : (
-          <input
-            type="text"
-            value={form[fieldKey]}
-            onChange={(e) => set(fieldKey, e.target.value)}
-            placeholder={placeholder}
-            className={inputCls}
-          />
-        )}
-      </div>
-    );
   }
 
   return (
@@ -636,64 +656,105 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
       {/* Business Identity */}
       <Section title="Business Identity">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Company Name"       fieldKey="company_name"      placeholder="Acme Relocation Co." />
-          <Field label="Website URL"        fieldKey="website_url"       placeholder="https://yoursite.com" />
-          <Field label="Logo URL"           fieldKey="logo_url"          placeholder="https://yoursite.com/logo.png" />
+          <EditField label="Company Name" value={form.company_name} onChange={(v) => set("company_name", v)} placeholder="Acme Relocation Co." />
+          <EditField label="Website URL"  value={form.website_url}  onChange={(v) => set("website_url", v)}  placeholder="https://yoursite.com" />
+          <EditField label="Logo URL"     value={form.logo_url}     onChange={(v) => set("logo_url", v)}     placeholder="https://yoursite.com/logo.png" />
         </div>
         <div className="mt-4">
-          <Field label="Short Statement (1–2 sentences shown on listing card)" fieldKey="short_description" placeholder="We help companies move employees globally..." textarea />
+          <EditField label="Short Statement (1–2 sentences shown on listing card)" value={form.short_description} onChange={(v) => set("short_description", v)} placeholder="We help companies move employees globally..." textarea />
         </div>
         <div className="mt-4">
-          <Field label="Company Bio (full description shown on profile page)" fieldKey="company_bio" placeholder="Founded in..." textarea />
+          <EditField label="Company Bio (full description shown on profile page)" value={form.company_bio} onChange={(v) => set("company_bio", v)} placeholder="Founded in..." textarea />
         </div>
       </Section>
 
       {/* Contact Details */}
       <Section title="Contact Details">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Contact Name"  fieldKey="primary_contact_name"  placeholder="Jane Smith" />
-          <Field label="Contact Email" fieldKey="primary_contact_email" placeholder="jane@yourco.com" />
-          <Field label="Contact Phone" fieldKey="primary_contact_phone" placeholder="+1 555-000-0000" />
-          <Field label="Company Address" fieldKey="company_address"     placeholder="123 Main St, City, State" />
+          <EditField label="Contact Name"     value={form.primary_contact_name}  onChange={(v) => set("primary_contact_name", v)}  placeholder="Jane Smith" />
+          <EditField label="Contact Email"    value={form.primary_contact_email} onChange={(v) => set("primary_contact_email", v)} placeholder="jane@yourco.com" />
+          <EditField label="Contact Phone"    value={form.primary_contact_phone} onChange={(v) => set("primary_contact_phone", v)} placeholder="+1 555-000-0000" />
+          <EditField label="Company Address"  value={form.company_address}       onChange={(v) => set("company_address", v)}       placeholder="123 Main St, City, State" />
         </div>
       </Section>
 
       {/* Geographic Coverage */}
       <Section title="Geographic Coverage">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="HQ City"    fieldKey="headquarters_city"    placeholder="New York" />
-          <Field label="HQ Country" fieldKey="headquarters_country" placeholder="United States" />
-          <Field label="Countries Served (comma-separated)" fieldKey="countries_served" placeholder="United States, Canada, UK" />
-          <Field label="US States Served (comma-separated)" fieldKey="states_served"    placeholder="New York, California, Texas" />
+          <EditField label="HQ City"    value={form.headquarters_city}    onChange={(v) => set("headquarters_city", v)}    placeholder="New York" />
+          <EditField label="HQ Country" value={form.headquarters_country} onChange={(v) => set("headquarters_country", v)} placeholder="United States" />
+          <EditField label="Countries Served (comma-separated)" value={form.countries_served} onChange={(v) => set("countries_served", v)} placeholder="United States, Canada, UK" />
+          <EditField label="US States Served (comma-separated)" value={form.states_served}    onChange={(v) => set("states_served", v)}    placeholder="New York, California, Texas" />
         </div>
       </Section>
 
       {/* Service Classification */}
       <Section title="Service Classification">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Industry Focus"  fieldKey="industry_focus"  placeholder="Technology, Finance..." />
-          <Field label="Service Scope"   fieldKey="service_scope"   placeholder="Global, Regional, National..." />
-          <Field label="Delivery Model"  fieldKey="delivery_model"  placeholder="Remote, On-site, Hybrid" />
-          <Field label="Company Size"    fieldKey="company_size"    placeholder="1–10, 11–50, 51–200..." />
+          <EditField label="Industry Focus"  value={form.industry_focus}  onChange={(v) => set("industry_focus", v)}  placeholder="Technology, Finance..." />
+          <EditField label="Service Scope"   value={form.service_scope}   onChange={(v) => set("service_scope", v)}   placeholder="Global, Regional, National..." />
+          <EditField label="Delivery Model"  value={form.delivery_model}  onChange={(v) => set("delivery_model", v)}  placeholder="Remote, On-site, Hybrid" />
+          <EditField label="Company Size"    value={form.company_size}    onChange={(v) => set("company_size", v)}    placeholder="1–10, 11–50, 51–200..." />
         </div>
         <div className="mt-4">
-          <Field label="Core Services (comma-separated)" fieldKey="core_services" placeholder="Immigration, Tax Advisory, Destination Services" />
+          <EditField label="Core Services (comma-separated)" value={form.core_services} onChange={(v) => set("core_services", v)} placeholder="Immigration, Tax Advisory, Destination Services" />
         </div>
       </Section>
 
       {/* Credentials */}
       <Section title="Credentials & Compliance">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Certifications (comma-separated)"  fieldKey="certifications"  placeholder="ISO 9001, GMS-T, SHRM" />
-          <Field label="Diversity Flags (comma-separated)" fieldKey="diversity_flags" placeholder="Minority-owned, Woman-owned" />
+          <EditField label="Certifications (comma-separated)"  value={form.certifications}  onChange={(v) => set("certifications", v)}  placeholder="ISO 9001, GMS-T, SHRM" />
+          <EditField label="Diversity Flags (comma-separated)" value={form.diversity_flags} onChange={(v) => set("diversity_flags", v)} placeholder="Minority-owned, Woman-owned" />
+        </div>
+      </Section>
+
+      {/* Photo Gallery */}
+      <Section title="Photo Gallery">
+        <p className="text-xs text-gray-400 mb-4">Photos appear in the carousel on your public profile page. Paste a direct image URL and click Add.</p>
+        {photos.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            {photos.map((url, idx) => (
+              <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 aspect-video bg-gray-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                <button
+                  onClick={() => removePhoto(idx)}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Remove photo"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newPhotoUrl}
+            onChange={(e) => setNewPhotoUrl(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addPhoto())}
+            placeholder="https://example.com/photo.jpg"
+            className={EDIT_INPUT_CLS}
+          />
+          <button
+            onClick={addPhoto}
+            disabled={!newPhotoUrl.trim()}
+            className="shrink-0 bg-gma-navy text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-gma-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Add
+          </button>
         </div>
       </Section>
 
       {/* Social */}
       <Section title="Social Profiles">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="LinkedIn URL"  fieldKey="social_linkedin" placeholder="https://linkedin.com/company/..." />
-          <Field label="Discord URL"   fieldKey="social_discord"  placeholder="https://discord.gg/..." />
+          <EditField label="LinkedIn URL" value={form.social_linkedin} onChange={(v) => set("social_linkedin", v)} placeholder="https://linkedin.com/company/..." />
+          <EditField label="Discord URL"  value={form.social_discord}  onChange={(v) => set("social_discord", v)}  placeholder="https://discord.gg/..." />
         </div>
       </Section>
 

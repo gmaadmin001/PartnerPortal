@@ -21,7 +21,7 @@ function randomHex(bytes = 6): string {
 }
 
 async function buildSlug(supabase: ReturnType<typeof createServiceClient>, companyName: string, plan: string): Promise<string> {
-  if (!PREMIUM_PLANS.includes(plan)) return randomHex(6);
+  if (!PREMIUM_PLANS.some((p) => plan.startsWith(p))) return randomHex(6);
 
   const base = toNameSlug(companyName);
   const { data: existing } = await supabase
