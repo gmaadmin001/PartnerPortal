@@ -67,8 +67,10 @@ export default function LoginForm() {
     }
     setError(null);
     setResetLoading(true);
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+    await fetch("/api/request-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
     });
     setResetLoading(false);
     setResetSent(true);
