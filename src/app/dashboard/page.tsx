@@ -1,17 +1,35 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import DashboardClient, { Panel, ServiceReg } from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Dashboard - Global Mobility Adviser",
+  title: "Dashboard — Global Mobility Adviser",
 };
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
+interface Review {
+  id: string;
+  rating: number;
+  body: string | null;
+  reviewer_name: string | null;
+  created_at: string;
+}
 
+const VALID_PANELS: Panel[] = ["overview", "profile", "listing", "plans", "reviews", "settings"];
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>;
+}) {
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/register");
+
+  const sp = await searchParams;
+  const rawPanel = sp.panel as Panel | undefined;
+  const initialPanel: Panel = VALID_PANELS.includes(rawPanel as Panel) ? (rawPanel as Panel) : "overview";
 
   const { data: reg } = await supabase
     .from("service_registrations")
@@ -19,79 +37,45 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .single();
 
-  async function signOut() {
-    "use server";
-    const sb = await createClient();
-    await sb.auth.signOut();
-    redirect("/register");
+  let reviews: Review[] = [];
+  if (reg) {
+    const { data } = await supabase
+      .from("provider_reviews")
+      .select("id, rating, body, reviewer_name, created_at")
+      .eq("provider_id", reg.id)
+      .order("created_at", { ascending: false });
+    reviews = (data ?? []) as Review[];
   }
 
+  const avgRating = reviews.length
+    ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)
+    : 0;
+
+  const completionFields = [
+    { label: "Company name",     done: !!reg?.company_name },
+    { label: "Website URL",      done: !!reg?.website_url },
+    { label: "Company bio",      done: !!reg?.company_bio },
+    { label: "Logo uploaded",    done: !!reg?.logo_url },
+    { label: "Primary category", done: !!reg?.primary_category },
+    { label: "Countries served", done: !!(Array.isArray(reg?.countries_served) && reg.countries_served.length > 0) },
+    { label: "Contact phone",    done: !!reg?.primary_contact_phone },
+    { label: "Contact email",    done: !!reg?.primary_contact_email },
+    { label: "Photos added",     done: !!(Array.isArray(reg?.photos) && reg.photos.length > 0) },
+    { label: "Membership plan",  done: !!reg?.membership_plan },
+  ];
+  const completionPct = Math.round(
+    (completionFields.filter((f) => f.done).length / completionFields.length) * 100
+  );
+
   return (
-    <div className="bg-white min-h-screen px-4 py-10">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gma-navy">Portal Dashboard</h1>
-            <p className="text-gray-400 text-sm mt-1">{user.email}</p>
-          </div>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="px-6 py-2 rounded border-2 border-gma-primary text-gma-primary text-sm font-semibold uppercase tracking-widest hover:bg-gma-primary hover:text-white transition-colors"
-            >
-              Sign Out
-            </button>
-          </form>
-        </div>
-
-        {/* Auth check */}
-        <div className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 mb-6 text-sm text-green-700 font-medium">
-          ✓ Signed in successfully as <strong>{user.email}</strong>
-        </div>
-
-        {/* Registration data */}
-        {reg ? (
-          <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 bg-gma-surface border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">Registration Record</h2>
-              <p className="text-xs text-gray-400 mt-0.5">ID: {reg.id}</p>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {[
-                ["Registered As",       reg.register_as],
-                ["Company Name",        reg.company_name],
-                ["Website URL",         reg.website_url],
-                ["Primary Category",    reg.primary_category],
-                ["Sub Category",        reg.sub_category],
-                ["Headquarters",        [reg.headquarters_city, reg.headquarters_country].filter(Boolean).join(", ")],
-                ["Countries Served",    Array.isArray(reg.countries_served) ? reg.countries_served.join(", ") : reg.countries_served],
-                ["Delivery Model",      reg.delivery_model],
-                ["Company Size",        reg.company_size],
-                ["Certifications",      reg.certifications],
-                ["Primary Contact",     reg.primary_contact_name],
-                ["Contact Email",       reg.primary_contact_email],
-                ["Contact Phone",       reg.primary_contact_phone],
-                ["Membership Plan",     reg.membership_plan],
-                ["Billing Cycle",       reg.membership_billing],
-                ["Status",              reg.status],
-                ["Created",             new Date(reg.created_at).toLocaleString()],
-              ].map(([label, value]) => (
-                <div key={label as string} className="flex px-6 py-3 text-sm">
-                  <span className="w-44 shrink-0 text-gray-400 font-medium">{label}</span>
-                  <span className="text-gray-800">{value || <span className="text-gray-300 italic">—</span>}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-4 text-sm text-yellow-700">
-            No registration record found for this account. If you just registered, it may take a moment.
-          </div>
-        )}
-
-      </div>
-    </div>
+    <DashboardClient
+      user={{ id: user.id, email: user.email ?? "" }}
+      reg={reg as ServiceReg | null}
+      reviews={reviews}
+      avgRating={avgRating}
+      completionFields={completionFields}
+      completionPct={completionPct}
+      initialPanel={initialPanel}
+    />
   );
 }
