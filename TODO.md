@@ -243,15 +243,54 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 - [ ] **Task S5:** Update `FinishStep` — for paid plans, show "Payment confirmed via Stripe" badge; for Free, current flow unchanged
 - [ ] **Task S6:** End-to-end QA — test Free (bypass), Standard (Stripe test card), Premium (Stripe test card)
 
-### Environment variables needed
+### API keys and credentials needed
 
-| Variable | Where | Value |
+#### Where to find each key in the Stripe Dashboard
+
+1. **Publishable Key + Secret Key**
+   - Log in to [dashboard.stripe.com](https://dashboard.stripe.com)
+   - Top-right: make sure you're in the correct account (live or test mode toggle top-left)
+   - Go to **Developers → API keys**
+   - Copy **Publishable key** (`pk_live_*`) and **Secret key** (`sk_live_*`)
+   - ⚠️ For testing first, use the **test mode** keys (`pk_test_*` / `sk_test_*`) — toggle at top-left of dashboard
+
+2. **Price IDs for Standard and Premium**
+   - Go to **Product catalog** (left sidebar)
+   - Find or create the Standard product → open it → copy the **Price ID** under the price (`price_*`)
+   - Repeat for Premium
+   - If products don't exist yet: **+ Add product** → set name, price ($100/mo or $200/mo), billing = **Recurring / Monthly**
+
+3. **Webhook Signing Secret**
+   - Go to **Developers → Webhooks**
+   - Click **+ Add endpoint**
+   - Endpoint URL: `https://partnerportal.gmaadmin001.workers.dev/api/stripe-webhook`
+   - Events to listen for: `checkout.session.completed`
+   - After saving, click the webhook → **Reveal** signing secret → copy `whsec_*`
+   - For local testing: install Stripe CLI → `stripe listen --forward-to localhost:3000/api/stripe-webhook` → it prints a local `whsec_*`
+
+#### Add to `.dev.vars` (local development)
+
+```
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_STANDARD_PRICE_ID=price_...
+STRIPE_PREMIUM_PRICE_ID=price_...
+```
+
+#### Add to Cloudflare Dashboard (production)
+
+> Workers & Pages → `partnerportal` → Settings → Variables and Secrets
+
+| Variable | Type | Value |
 |---|---|---|
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Cloudflare **build variable** | `pk_live_*` |
-| `STRIPE_SECRET_KEY` | Cloudflare **runtime secret** | `sk_live_*` |
-| `STRIPE_WEBHOOK_SECRET` | Cloudflare **runtime secret** | `whsec_*` |
-| `STRIPE_STANDARD_PRICE_ID` | Cloudflare **runtime secret** | `price_*` |
-| `STRIPE_PREMIUM_PRICE_ID` | Cloudflare **runtime secret** | `price_*` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **Plain text build variable** | `pk_live_*` |
+| `STRIPE_SECRET_KEY` | **Encrypted secret** | `sk_live_*` |
+| `STRIPE_WEBHOOK_SECRET` | **Encrypted secret** | `whsec_*` |
+| `STRIPE_STANDARD_PRICE_ID` | **Encrypted secret** | `price_*` |
+| `STRIPE_PREMIUM_PRICE_ID` | **Encrypted secret** | `price_*` |
+
+> ⚠️ `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` **must** be a build variable (not a runtime secret) — it is inlined into the browser bundle at build time.
 
 ---
 
