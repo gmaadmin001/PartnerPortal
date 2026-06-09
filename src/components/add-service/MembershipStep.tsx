@@ -74,18 +74,18 @@ export default function MembershipStep({ initial, onSelect, onPrevious }: Member
     <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 max-w-6xl mx-auto">
 
       {/* Billing toggle */}
-      <div className="flex items-center justify-center gap-4 mb-8">
+      <div className="flex items-center justify-center gap-3 mb-8">
         <span className={`text-sm font-semibold ${billing === "monthly" ? "text-gray-900" : "text-gray-400"}`}>
           Monthly
         </span>
         <button
           type="button"
           onClick={() => setBilling((b) => b === "monthly" ? "annual" : "monthly")}
-          className={`relative w-12 h-6 rounded-full transition-colors ${billing === "annual" ? "bg-gma-primary" : "bg-gray-300"}`}
+          className={`relative inline-flex shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${billing === "annual" ? "bg-gma-primary" : "bg-gray-300"}`}
           aria-label="Toggle billing period"
         >
           <span
-            className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${billing === "annual" ? "translate-x-7" : "translate-x-1"}`}
+            className={`inline-block mt-0.5 ml-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${billing === "annual" ? "translate-x-5" : "translate-x-0"}`}
           />
         </button>
         <span className={`text-sm font-semibold ${billing === "annual" ? "text-gray-900" : "text-gray-400"}`}>
