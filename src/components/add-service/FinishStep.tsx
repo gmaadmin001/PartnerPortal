@@ -63,7 +63,10 @@ export default function FinishStep({ serviceData, detailsData, membershipData, o
           primaryContactName: detailsData.primaryContactName,
           primaryContactEmail: detailsData.primaryContactEmail,
           primaryContactPhone: detailsData.primaryContactPhone,
-          membershipPlan: membershipData.plan,
+          membershipPlan: membershipData.plan === "Basic"
+            ? "Basic"
+            : `${membershipData.plan} – ${membershipData.billing === "annual" ? "Annual" : "Monthly"}`,
+          membershipBilling: membershipData.plan === "Basic" ? null : membershipData.billing,
         }),
       });
       const json = await res.json();
@@ -95,7 +98,9 @@ export default function FinishStep({ serviceData, detailsData, membershipData, o
           Welcome to the GMA Partner Portal, <strong>{detailsData.companyName}</strong>.
         </p>
         <p className="text-gray-500 text-base mb-8">
-          You&apos;re registered as a <strong>{serviceData.registerAs}</strong> on the <strong>{membershipData.plan}</strong> plan.
+          You&apos;re registered as a <strong>{serviceData.registerAs}</strong> on the{" "}
+          <strong>{membershipData.plan}</strong>
+          {membershipData.plan !== "Basic" && ` (${membershipData.billing === "annual" ? "Annual" : "Monthly"})`} plan.
         </p>
         <Link
           href="/register"
@@ -124,7 +129,14 @@ export default function FinishStep({ serviceData, detailsData, membershipData, o
         </div>
         <div>
           <p className="text-gray-400 uppercase tracking-widest text-xs mb-1">Plan</p>
-          <p className="font-semibold text-gray-800">{membershipData.plan}</p>
+          <p className="font-semibold text-gray-800">
+            {membershipData.plan}
+            {membershipData.plan !== "Basic" && (
+              <span className="text-gray-400 font-normal text-xs ml-1">
+                ({membershipData.billing === "annual" ? "Annual" : "Monthly"})
+              </span>
+            )}
+          </p>
         </div>
       </div>
 

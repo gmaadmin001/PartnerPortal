@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
       primaryContactEmail,
       primaryContactPhone,
       membershipPlan,
+      membershipBilling,
     } = body;
 
     if (!email || !password) {
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
       primary_contact_email: primaryContactEmail,
       primary_contact_phone: primaryContactPhone,
       membership_plan: membershipPlan,
+      membership_billing: membershipBilling ?? null,
       status: "pending",
       current_step: 4,
     });

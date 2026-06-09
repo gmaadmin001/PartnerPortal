@@ -16,7 +16,7 @@ export default function AddServicePage() {
     subCategory: "",
   });
 
-  const [membershipData, setMembershipData] = useState<MembershipStepData>({ plan: "" });
+  const [membershipData, setMembershipData] = useState<MembershipStepData>({ plan: "", billing: "monthly" });
 
   const [detailsData, setDetailsData] = useState<DetailsStepData>({
     companyName: "",

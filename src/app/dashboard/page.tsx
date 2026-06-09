@@ -74,6 +74,7 @@ export default async function DashboardPage() {
                 ["Contact Email",       reg.primary_contact_email],
                 ["Contact Phone",       reg.primary_contact_phone],
                 ["Membership Plan",     reg.membership_plan],
+                ["Billing Cycle",       reg.membership_billing],
                 ["Status",              reg.status],
                 ["Created",             new Date(reg.created_at).toLocaleString()],
               ].map(([label, value]) => (
