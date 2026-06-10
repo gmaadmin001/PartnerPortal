@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 6 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details from boss). Phase 8 (vendor claim) and Phase 9 (production email) also pending.
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 6 ✅ Phase 8 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details from boss). Phase 9 (production email) also pending.
 
 ---
 
@@ -368,22 +368,20 @@ STRIPE_PREMIUM_PRICE_ID=price_...
 
 ---
 
-## PHASE 8 — Vendor Claim Process
+## PHASE 8 — Vendor Claim Process ✅
 
 > Allow an existing user (or new registrant) to claim an already-listed vendor profile —
 > e.g. a company that was added to the directory by an admin but not yet owned by a portal account.
+> See `VENDOR_CLAIM.md` for full operating guide.
 
-### Task 21: Claim a vendor listing
+### Task 21: Claim a vendor listing ✅
 
-- [ ] **Design:** Decide claim trigger — button on a `/services-page` provider card ("Is this your company?") or a dedicated `/claim` page
-- [ ] **DB:** Add `claimed_by` (UUID FK → `auth.users`), `claimed_at` (timestamptz), and `claim_status` (`pending` | `approved` | `rejected`) columns to `service_registrations` via migration
-- [ ] **Claim request flow:**
-  - Logged-in user submits a claim on a vendor they don't own
-  - Creates a claim record (or updates `claim_status = pending` on the existing row)
-  - Notifies admin (email via EmailJS helper per `architecture.md`)
-- [ ] **Admin approval:** Admin reviews and sets `claim_status = approved` → transfers `user_id` ownership to claimant; or `rejected` → notifies claimant
-- [ ] **Unauthenticated claim:** If user is not logged in, redirect to `/register` with `?claim=<vendor_id>` param so the flow resumes after sign-in/registration
-- [ ] **RLS:** Ensure a user can only see/edit a vendor row once `user_id` matches their own account (already enforced by existing policy — verify claim approval path uses service-role)
+- [x] **DB:** `claimed_by`, `claimed_at`, `claim_status` columns added to `service_registrations`; RLS SELECT policy for users to read their own claim status
+- [x] **Claim request flow:** `POST /api/claim` — validates session, checks no active claim, writes via service-role; shown as "Is this your company?" section on ownerless profile pages
+- [x] **Admin approval:** `POST /api/admin/approve-claim` transfers `user_id` ownership; `POST /api/admin/reject-claim` clears claim fields
+- [x] **Admin UI:** `/admin/claims` — gated to `ADMIN_EMAIL` env var; lists pending claims with approve/reject buttons
+- [x] **Unauthenticated claim:** "Claim Listing" links to `/register?claim=<slug>`; LoginForm redirects back to listing after sign-in
+- [x] **`ADMIN_EMAIL`** env var documented in `.dev.vars.example` and `VENDOR_CLAIM.md`
 
 ---
 
