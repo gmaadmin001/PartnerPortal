@@ -237,7 +237,7 @@
 
 <script>
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  sb.auth.getUser().then(({data:{user}})=>{ if(user) location.href='dashboard.html'; });
+  sb.auth.getSession().then(({data:{session}})=>{ if(session) location.href='dashboard.html'; });
 
   const sp = new URLSearchParams(location.search);
   const hp = new URLSearchParams(location.hash.replace(/^#/,''));

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Find a Service — Global Mobility Adviser Partner Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
+    .dsp{font-family:'Space Grotesk',sans-serif}
+    body{min-height:100vh;background:#eef1f8;display:flex;flex-direction:column;color:#111}
+
+    /* ── Navbar ── */
+    .site-nav{position:sticky;top:0;z-index:200;flex-shrink:0}
+    .nav-accent{height:4px;background:#1E2E61}
+    .nav-bar{background:#fff;border-bottom:1px solid #e9edf4;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+    .nav-inner{max-width:1440px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:96px}
+    .nav-links{display:flex;align-items:center;gap:26px}
+    .nav-link{font-size:11.5px;font-weight:700;color:#0a1628;letter-spacing:0.1em;text-decoration:none;text-transform:uppercase;transition:color 0.15s}
+    .nav-link:hover{color:#1C66AD}
+    .nav-btn{display:flex;align-items:center;gap:8px;padding:10px 22px;border-radius:9999px;background:#1E2E61;color:#fff;font-size:11.5px;font-weight:700;letter-spacing:0.08em;text-decoration:none;text-transform:uppercase;transition:background 0.2s;white-space:nowrap;border:none;cursor:pointer}
+    .nav-btn:hover{background:#1C66AD}
+    .nav-auth-skel{width:150px;height:44px;border-radius:9999px;background:#f3f4f6;animation:pulse 1.5s ease-in-out infinite}
+    .nav-dd-wrap{position:relative}
+    .nav-dropdown{position:absolute;right:0;top:calc(100% + 8px);width:215px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.12);border:1px solid #f0f0f0;padding:8px 0;z-index:300;display:none}
+    .nav-dropdown.open{display:block;animation:ddFade 0.15s ease both}
+    @keyframes ddFade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+    .nav-dd-item{display:flex;align-items:center;gap:12px;padding:10px 16px;font-size:13px;font-weight:600;color:#374151;text-decoration:none;background:none;border:none;cursor:pointer;width:100%;text-align:left;transition:background 0.12s,color 0.12s}
+    .nav-dd-item:hover{background:#f5f7fb;color:#1C66AD}
+    .nav-dd-item.danger{color:#ef4444}
+    .nav-dd-item.danger:hover{background:#fef2f2;color:#ef4444}
+    .nav-dd-divider{margin:6px 8px;height:1px;background:#f3f4f6}
+    .nav-chevron{transition:transform 0.2s}
+    .nav-chevron.open{transform:rotate(180deg)}
+
+    /* ── Layout ── */
+    .page-wrapper{flex:1;display:flex}
+    .page-main{flex:1;overflow-x:hidden}
+
+    /* ── Search hero (initial state) ── */
+    .hero{flex:1;display:flex;flex-direction:column;align-items:center;padding:56px 24px 64px;background:radial-gradient(ellipse at 65% 0%,rgba(28,102,173,0.09) 0%,transparent 55%),radial-gradient(ellipse at 10% 90%,rgba(30,46,97,0.06) 0%,transparent 50%),#eef1f8}
+    .hero-inner{width:100%;max-width:880px}
+
+    /* ── Results layout ── */
+    .results-wrap{max-width:1280px;margin:0 auto;padding:40px 32px;display:flex;gap:28px;align-items:flex-start}
+    .filter-aside{width:288px;flex-shrink:0;position:sticky;top:120px}
+    .results-main{flex:1;min-width:0}
+
+    /* ── Inputs ── */
+    .lbl{display:block;font-size:11px;font-weight:700;color:#5b6a7e;margin-bottom:6px;letter-spacing:0.04em;text-transform:uppercase}
+    .inp{width:100%;padding:10px 14px;border:1.5px solid #dde3ee;border-radius:10px;font-size:14px;color:#0a1628;background:#fff;outline:none;transition:all 0.2s;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+    .inp:focus{border-color:#1C66AD;box-shadow:0 0 0 3.5px rgba(28,102,173,0.1)}
+    select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:36px;cursor:pointer;-webkit-appearance:none;appearance:none}
+
+    /* ── Filter card ── */
+    .filter-card{background:#fff;border-radius:16px;border:1px solid #dde3ee;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+    .filter-section-head{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#f5f7fb;border-bottom:1px solid #eaeff6;border-top:1px solid #eaeff6}
+    .filter-section-head svg{color:#1C66AD;width:14px;height:14px;flex-shrink:0}
+    .filter-section-head span{font-size:10px;font-weight:700;color:#6b7280;letter-spacing:0.09em;text-transform:uppercase}
+    .filter-body{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+    .filter-body.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+    /* ── Searchable multi-select ── */
+    .ms-wrap{position:relative}
+    .ms-input-row{display:flex;align-items:center;border:1.5px solid #dde3ee;border-radius:10px;background:#fff;padding:6px 10px;gap:6px;cursor:text;transition:border-color 0.2s,box-shadow 0.2s}
+    .ms-input-row:focus-within{border-color:#1C66AD;box-shadow:0 0 0 3.5px rgba(28,102,173,0.1)}
+    .ms-text{flex:1;border:none;outline:none;font-size:13px;color:#0a1628;background:transparent;min-width:60px}
+    .ms-text::placeholder{color:#9ca3af}
+    .ms-chevron{color:#9ca3af;flex-shrink:0}
+    .ms-dropdown{position:absolute;left:0;right:0;top:calc(100%+4px);background:#fff;border:1.5px solid #dde3ee;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.09);z-index:100;max-height:200px;overflow-y:auto;display:none}
+    .ms-dropdown.open{display:block}
+    .ms-option{padding:9px 12px;font-size:13px;color:#374151;cursor:pointer;transition:background 0.1s}
+    .ms-option:hover{background:#f0f4fa;color:#1C66AD}
+    .ms-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+    .ms-chip{display:inline-flex;align-items:center;gap:4px;background:#1E2E61;color:#fff;border-radius:20px;padding:3px 10px 3px 10px;font-size:11.5px;font-weight:600}
+    .ms-chip button{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:15px;line-height:1;padding:0 0 0 2px;display:flex;align-items:center}
+    .ms-chip button:hover{color:#fff}
+
+    /* ── Diversity chips ── */
+    .div-chips{display:flex;flex-wrap:wrap;gap:6px}
+    .div-chip{padding:5px 12px;border-radius:20px;font-size:11.5px;font-weight:600;border:1.5px solid #dde3ee;background:#fff;color:#374151;cursor:pointer;transition:all 0.15s}
+    .div-chip:hover{border-color:#1C66AD;color:#1C66AD}
+    .div-chip.active{background:#1E2E61;color:#fff;border-color:#1E2E61}
+
+    /* ── CTA button ── */
+    .btn-primary{width:100%;padding:12px;border-radius:10px;background:linear-gradient(135deg,#1E2E61 0%,#1C66AD 100%);color:#fff;font-size:13.5px;font-weight:700;border:none;cursor:pointer;letter-spacing:0.04em;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s,transform 0.2s;box-shadow:0 4px 14px rgba(28,102,173,0.3)}
+    .btn-primary:hover{opacity:0.92;transform:translateY(-1px)}
+    .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+    .btn-ghost{padding:9px 20px;border-radius:10px;background:#fff;color:#374151;font-size:13px;font-weight:600;border:1.5px solid #dde3ee;cursor:pointer;transition:background 0.15s}
+    .btn-ghost:hover{background:#f5f7fb}
+
+    /* ── Provider cards ── */
+    .provider-card{background:#fff;border-radius:16px;border:1px solid #dde3ee;padding:22px 24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:box-shadow 0.2s,border-color 0.2s}
+    .provider-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.09);border-color:#c8d6e8}
+    .badge{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 9px;font-size:11.5px;font-weight:700}
+    .badge-green{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+    .badge-amber{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+    .cert-chip{display:inline-block;background:#eff6ff;color:#1E2E61;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border:1px solid #bfdbfe}
+
+    /* ── Empty / loading states ── */
+    .skel{background:#dde3ee;border-radius:8px;animation:pulse 1.5s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .empty-box{background:#fff;border-radius:16px;border:1px solid #dde3ee;padding:64px 24px;text-align:center}
+
+    /* ── Stats callout (hero) ── */
+    .stat-callout{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:32px}
+    .stat-callout-item{background:#fff;border:1px solid #dde3ee;border-radius:12px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+
+    /* ── Footer ── */
+    .site-footer{background:#0d1b36;flex-shrink:0}
+    .footer-accent{height:3px;background:linear-gradient(90deg,#1C66AD 0%,#43B4E3 50%,#1C66AD 100%)}
+    .footer-inner{max-width:1280px;margin:0 auto;padding:56px 48px 0}
+    .footer-grid{display:grid;grid-template-columns:1.9fr 1.7fr 1fr 1fr;gap:52px;padding-bottom:48px}
+    .footer-col-head{font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:20px}
+    .footer-link{display:block;font-size:13.5px;color:rgba(255,255,255,0.55);text-decoration:none;margin-bottom:12px;transition:color 0.15s;line-height:1.4}
+    .footer-link:hover{color:#43B4E3}
+    .footer-contact-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px;text-decoration:none;color:inherit;transition:opacity 0.15s}
+    .footer-contact-item:hover{opacity:0.8}
+    .footer-contact-icon{width:36px;height:36px;border-radius:9px;background:rgba(28,102,173,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .footer-contact-icon svg{width:16px;height:16px;color:#43B4E3}
+    .footer-bottom{border-top:1px solid rgba(255,255,255,0.07);padding:22px 0 30px;display:flex;align-items:center;justify-content:space-between}
+    .footer-sub-inp{flex:1;min-width:0;padding:10px 14px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:13px;outline:none}
+    .footer-sub-inp::placeholder{color:rgba(255,255,255,0.3)}
+    .footer-sub-btn{padding:10px 16px;border-radius:8px;background:#1C66AD;color:#fff;font-size:11.5px;font-weight:700;border:none;cursor:pointer;letter-spacing:0.04em;white-space:nowrap;transition:background 0.2s}
+    .footer-sub-btn:hover{background:#157ABE}
+    .linkedin-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);transition:all 0.2s;text-decoration:none}
+    .linkedin-btn:hover{border-color:#43B4E3;color:#43B4E3;background:rgba(67,180,227,0.1)}
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<header class="site-nav">
+  <div class="nav-accent"></div>
+  <div class="nav-bar">
+    <div class="nav-inner">
+      <a href="https://honeydew-capybara-608687.hostingersite.com/" style="display:flex;align-items:center;flex-shrink:0">
+        <img src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png" alt="Global Mobility Adviser" style="height:28px;width:auto"/>
+      </a>
+      <div style="display:flex;align-items:center;gap:32px">
+        <nav class="nav-links">
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/">HOME</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/solutions/">SOLUTIONS</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/">COURSES</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/about-us/">ABOUT US</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/resources/">RESOURCES</a>
+          <a class="nav-link" href="https://honeydew-capybara-608687.hostingersite.com/contact-us/">CONTACT US</a>
+        </nav>
+        <div id="nav-auth-area" style="min-width:150px;display:flex;justify-content:flex-end;align-items:center">
+          <div class="nav-auth-skel"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── PAGE MAIN ── -->
+<div class="page-main">
+
+  <!-- ── INITIAL SEARCH STATE ── -->
+  <div id="hero-panel" style="display:none">
+    <div class="hero">
+      <div class="hero-inner">
+        <div style="text-align:center;margin-bottom:36px">
+          <p style="font-size:11px;font-weight:700;color:#1C66AD;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px">GMA Partner Directory</p>
+          <h1 class="dsp" style="font-size:36px;font-weight:800;color:#0a1628;line-height:1.15;margin-bottom:10px">Find Global Mobility Services</h1>
+          <p style="font-size:15px;color:#6b7280;max-width:520px;margin:0 auto;line-height:1.6">Search through our vetted network of certified relocation and mobility partners worldwide.</p>
+        </div>
+
+        <!-- Hero filter panel -->
+        <div id="hero-filter"></div>
+
+        <!-- Stats -->
+        <div class="stat-callout">
+          <div class="stat-callout-item">
+            <p class="dsp" style="font-size:26px;font-weight:800;color:#1C66AD;line-height:1">190+</p>
+            <p style="font-size:12px;color:#374151;font-weight:600;margin-top:4px">Partner Listings</p>
+            <p style="font-size:11px;color:#9ca3af;margin-top:2px">across the network</p>
+          </div>
+          <div class="stat-callout-item">
+            <p class="dsp" style="font-size:26px;font-weight:800;color:#1C66AD;line-height:1">50+</p>
+            <p style="font-size:12px;color:#374151;font-weight:600;margin-top:4px">Countries Covered</p>
+            <p style="font-size:11px;color:#9ca3af;margin-top:2px">global service reach</p>
+          </div>
+          <div class="stat-callout-item">
+            <p class="dsp" style="font-size:26px;font-weight:800;color:#059669;line-height:1">10</p>
+            <p style="font-size:12px;color:#374151;font-weight:600;margin-top:4px">Service Categories</p>
+            <p style="font-size:11px;color:#9ca3af;margin-top:2px">specialised providers</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTS STATE ── -->
+  <div id="results-panel" style="display:none">
+    <div class="results-wrap">
+
+      <!-- Sidebar filter -->
+      <aside class="filter-aside">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h2 class="dsp" style="font-size:14px;font-weight:700;color:#0a1628">Filters</h2>
+          <button onclick="clearAll()" style="font-size:12px;font-weight:600;color:#1C66AD;background:none;border:none;cursor:pointer;text-decoration:underline">Clear all</button>
+        </div>
+        <div id="sidebar-filter"></div>
+      </aside>
+
+      <!-- Results -->
+      <div class="results-main">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h1 class="dsp" style="font-size:22px;font-weight:800;color:#0a1628">Search Results</h1>
+          <span id="results-count" style="font-size:13px;color:#6b7280;font-weight:500"></span>
+        </div>
+
+        <!-- Loading skeletons -->
+        <div id="results-loading" style="display:none;display:flex;flex-direction:column;gap:14px">
+          <div style="height:140px;border-radius:16px" class="skel"></div>
+          <div style="height:140px;border-radius:16px" class="skel"></div>
+          <div style="height:140px;border-radius:16px" class="skel"></div>
+        </div>
+
+        <!-- Results list -->
+        <div id="results-list" style="display:flex;flex-direction:column;gap:14px"></div>
+
+        <!-- Empty -->
+        <div id="results-empty" style="display:none">
+          <div class="empty-box">
+            <div style="font-size:36px;margin-bottom:16px">🔍</div>
+            <h3 class="dsp" style="font-size:17px;font-weight:700;color:#0a1628;margin-bottom:8px">No partners found</h3>
+            <p style="font-size:13.5px;color:#6b7280;margin-bottom:20px">Try broadening your filters or clearing some criteria.</p>
+            <button onclick="clearAll()" class="btn-ghost">Clear All Filters</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end .page-main -->
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="footer-accent"></div>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <a href="https://honeydew-capybara-608687.hostingersite.com/" style="display:inline-block;margin-bottom:18px">
+          <img src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png" alt="Global Mobility Adviser" style="height:26px;width:auto;filter:brightness(0) invert(1)"/>
+        </a>
+        <p style="font-size:13.5px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:24px">At Global Mobility Adviser, we deliver results you can trust, led by Michael Ray — an expert in Talent Mobility, Relocation, and Remote Work strategies.</p>
+        <p class="footer-col-head" style="margin-bottom:10px">Stay updated</p>
+        <form onsubmit="return false" style="display:flex;gap:8px">
+          <input type="email" placeholder="Your email address" class="footer-sub-inp"/>
+          <button type="submit" class="footer-sub-btn">Subscribe</button>
+        </form>
+      </div>
+      <div>
+        <p class="footer-col-head">Contact</p>
+        <a href="tel:6232901143" class="footer-contact-item">
+          <div class="footer-contact-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></div>
+          <div><p style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Phone</p><p style="font-size:14px;color:#fff;font-weight:500">(623)-290-1143</p></div>
+        </a>
+        <a href="mailto:contactus@honeydew-capybara-608687.hostingersite.com" class="footer-contact-item">
+          <div class="footer-contact-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+          <div><p style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Email</p><p style="font-size:13px;color:#fff;font-weight:500;word-break:break-all">contactus@honeydew&#8209;capybara&#8209;608687.hostingersite.com</p></div>
+        </a>
+      </div>
+      <div>
+        <p class="footer-col-head">Site Map</p>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/solutions/">Solutions</a>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/">Education</a>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/about-us/">About Us</a>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/resources/">Resources</a>
+        <a class="footer-link" href="https://honeydew-capybara-608687.hostingersite.com/contact-us/">Contact Us</a>
+      </div>
+      <div>
+        <p class="footer-col-head">Policies</p>
+        <a class="footer-link" href="#">Privacy Policy</a>
+        <a class="footer-link" href="#">Copyright Policy</a>
+        <a class="footer-link" href="#">Terms of Service</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p style="font-size:12px;color:rgba(255,255,255,0.3)">© 2025 Global Mobility Adviser. All rights reserved.</p>
+      <a href="https://www.linkedin.com/company/global-mobility-adviser" target="_blank" rel="noopener" class="linkedin-btn" aria-label="LinkedIn">
+        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── Static data (mirrors FilterPanel.tsx exactly) ─────────────────────────────
+const SUBCATS = {
+  'Getting Established at the Destination': ['Destination Services Providers (DSPs)','School Search & Education Consultants'],
+  'Health, Safety & Security': ['International Health Insurance','Travel Health & Medical Services','Travel Risk & Security Services'],
+  'Housing & Accommodation': ['Corporate Housing / Temporary Accommodations','Furniture & Appliance Rental','Home Sale Program Administrators','Property Management Services','Real Estate Brokers & Agents','Title, Appraisal & Closing Services'],
+  'Immigration & Work Authorization': ['Corporate Immigration Service Providers','Document & Credential Services','Immigration Law Firms'],
+  'Moving Belongings': ['Freight Forwarders','Household Goods Movers','Pet Relocation Specialists','Vehicle Transport Specialists'],
+  'Program Management & Outsourcing': ['Lump Sum / Flex Program Administrators','Move Coordination Specialists','Relocation Management Companies (RMCs)'],
+  'Strategy, Policy & Advisory': ['Benchmarking & Data Service','Mobility Consulting Firms'],
+  'Supporting Employees & Families': ['Executive Coaching','Intercultural & Cross-Cultural Training','Language Training Providers','Mental Health & Wellbeing Services','Spouse & Partner Career Services'],
+  'Tax, Payroll & Compensation': ['Compensation & Benefits Consulting','Employer of Record / PEO Services','Expatriate Tax Services','Global Payroll Providers'],
+  'Technology & Data': ['Compliance & Tracking Tools','Cost of Living & Hardship Data','Expense Management Software','Immigration Technology','Mobility Management Platforms','Tax Technology Platforms'],
+};
+const CATEGORIES = Object.keys(SUBCATS);
+const DIVERSITY_OPTIONS = ['CRP Certified','GMS Certified','ERC® Appraisal Trained','Woman Owned','Veteran Owned','Minority Owned','LGBTQ+ Owned'];
+const SERVICE_SCOPES = ['International','National','Local','Hybrid'];
+const COMPANY_SIZES = ['1–50','51–500','500+'];
+const COLS = 'id,slug,company_name,website_url,short_description,logo_url,primary_category,sub_category,headquarters_country,headquarters_city,countries_served,states_served,industry_focus,service_scope,company_size,certifications,diversity_flags,core_services,membership_plan,is_verified,is_featured,created_at';
+
+// ── Filter state ──────────────────────────────────────────────────────────────
+const state = {
+  primaryServices: [],
+  subServices: [],
+  countries: [],
+  companyName: '',
+  serviceScope: '',
+  companySize: '',
+  diversityFlags: [],
+};
+
+// ── URL param helpers ─────────────────────────────────────────────────────────
+function parseParams() {
+  const sp = new URLSearchParams(location.search);
+  return {
+    primaryServices: (sp.get('primaryService') || '').split('|').filter(Boolean),
+    subServices:     (sp.get('subService')     || '').split('|').filter(Boolean),
+    countries:       (sp.get('country')        || '').split('|').filter(Boolean),
+    companyName:     sp.get('companyName')     || '',
+    serviceScope:    sp.get('serviceScope')    || '',
+    companySize:     sp.get('companySize')     || '',
+    diversityFlags:  (sp.get('diversityFlags') || '').split('|').filter(Boolean),
+  };
+}
+
+function buildParams(s) {
+  const p = new URLSearchParams();
+  if (s.primaryServices.length) p.set('primaryService', s.primaryServices.join('|'));
+  if (s.subServices.length)     p.set('subService',     s.subServices.join('|'));
+  if (s.countries.length)       p.set('country',        s.countries.join('|'));
+  if (s.companyName)            p.set('companyName',    s.companyName);
+  if (s.serviceScope)           p.set('serviceScope',   s.serviceScope);
+  if (s.companySize)            p.set('companySize',    s.companySize);
+  if (s.diversityFlags.length)  p.set('diversityFlags', s.diversityFlags.join('|'));
+  return p.toString();
+}
+
+function hasFilters(s) {
+  return s.primaryServices.length > 0 || s.subServices.length > 0 ||
+    s.countries.length > 0 || s.companyName || s.serviceScope ||
+    s.companySize || s.diversityFlags.length > 0;
+}
+
+// ── Nav dropdown ──────────────────────────────────────────────────────────────
+function buildAccountNav(listingHref, hasSlug) {
+  const target = hasSlug ? 'target="_blank" rel="noopener noreferrer"' : '';
+  return `
+    <div class="nav-dd-wrap" id="nav-dd-wrap">
+      <button class="nav-btn" onclick="toggleNavDD()">
+        ACCOUNT
+        <svg class="nav-chevron" id="nav-chevron" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div class="nav-dropdown" id="nav-dd">
+        <a class="nav-dd-item" href="dashboard.html">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Dashboard
+        </a>
+        <a class="nav-dd-item" href="${listingHref}" ${target}>
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          My Listing
+        </a>
+        <a class="nav-dd-item" href="services.html">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          Find a Service
+        </a>
+        <div class="nav-dd-divider"></div>
+        <button class="nav-dd-item danger" onclick="navSignOut()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Sign Out
+        </button>
+      </div>
+    </div>`;
+}
+
+function toggleNavDD() {
+  const dd = document.getElementById('nav-dd');
+  const ch = document.getElementById('nav-chevron');
+  if (!dd) return;
+  const open = dd.classList.toggle('open');
+  ch.classList.toggle('open', open);
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('nav-dd-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('nav-dd');
+    const ch = document.getElementById('nav-chevron');
+    if (dd) dd.classList.remove('open');
+    if (ch) ch.classList.remove('open');
+  }
+});
+
+async function initNav() {
+  const { data: { user } } = await sb.auth.getUser();
+  const authArea = document.getElementById('nav-auth-area');
+  if (!user) {
+    authArea.innerHTML = `<a href="login.html" class="nav-btn">SIGN IN <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></a>`;
+    return;
+  }
+  const { data: reg } = await sb.from('service_registrations').select('slug').eq('user_id', user.id).maybeSingle();
+  const slug = reg?.slug;
+  authArea.innerHTML = buildAccountNav(slug ? DEPLOYED_API + '/services/' + slug : '#', !!slug);
+}
+
+async function navSignOut() { await sb.auth.signOut(); location.href = 'login.html'; }
+
+// ── Searchable multi-select component ────────────────────────────────────────
+function createMultiSelect(id, options, selectedArr, placeholder, onChange) {
+  const container = document.getElementById(id);
+  let query = '';
+  let open = false;
+
+  function getFiltered() {
+    return options.filter(o => !selectedArr.includes(o) && o.toLowerCase().includes(query.toLowerCase()));
+  }
+
+  function render() {
+    const filtered = getFiltered();
+    container.innerHTML = `
+      <div class="ms-wrap">
+        <div class="ms-input-row" onclick="document.getElementById('ms-inp-${id}').focus()">
+          <input id="ms-inp-${id}" class="ms-text" placeholder="${placeholder}" value="${query}" autocomplete="off"/>
+          <svg class="ms-chevron" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="ms-dropdown ${open && filtered.length ? 'open' : ''}" id="ms-dd-${id}">
+          ${filtered.slice(0, 50).map(o => `<div class="ms-option" data-val="${o.replace(/"/g,'&quot;')}">${o}</div>`).join('')}
+        </div>
+        <div class="ms-chips">
+          ${selectedArr.map((s,i) => `<span class="ms-chip">${s}<button type="button" data-idx="${i}">×</button></span>`).join('')}
+        </div>
+      </div>`;
+
+    const inp = document.getElementById('ms-inp-' + id);
+    const dd  = document.getElementById('ms-dd-' + id);
+
+    inp.addEventListener('input', e => {
+      query = e.target.value;
+      open = true;
+      render();
+    });
+    inp.addEventListener('focus', () => { open = true; render(); });
+    inp.addEventListener('blur', () => { setTimeout(() => { open = false; render(); }, 150); });
+
+    dd.querySelectorAll('.ms-option').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        selectedArr.push(el.dataset.val);
+        query = '';
+        open = false;
+        onChange([...selectedArr]);
+        render();
+      });
+    });
+
+    container.querySelectorAll('.ms-chip button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedArr.splice(parseInt(btn.dataset.idx), 1);
+        onChange([...selectedArr]);
+        render();
+      });
+    });
+  }
+
+  render();
+  return { refresh: () => render() };
+}
+
+// ── Filter panel renderer ─────────────────────────────────────────────────────
+function renderFilter(containerId, compact) {
+  const container = document.getElementById(containerId);
+  const cardCls = compact ? '' : '';
+  const availableSubs = state.primaryServices.length
+    ? state.primaryServices.flatMap(p => SUBCATS[p] || [])
+    : Object.values(SUBCATS).flat();
+
+  container.innerHTML = `
+    <div class="filter-card">
+
+      <!-- Service Classification -->
+      <div class="filter-section-head">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <span>Service Classification</span>
+      </div>
+      <div class="filter-body ${compact ? '' : 'grid2'}">
+        <div>
+          <label class="lbl">Primary Service</label>
+          <div id="ms-primary-wrap"></div>
+        </div>
+        <div>
+          <label class="lbl">Sub Service</label>
+          <div id="ms-sub-wrap"></div>
+        </div>
+      </div>
+
+      <!-- Geographic -->
+      <div class="filter-section-head" style="margin-top:-1px">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Geographic Coverage</span>
+      </div>
+      <div class="filter-body">
+        <div>
+          <label class="lbl">Country</label>
+          <div id="ms-country-wrap"></div>
+        </div>
+      </div>
+
+      <!-- Company -->
+      <div class="filter-section-head" style="margin-top:-1px">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <span>Company</span>
+      </div>
+      <div class="filter-body ${compact ? '' : 'grid2'}">
+        <div>
+          <label class="lbl">Company Name</label>
+          <input class="inp" id="flt-name" type="text" placeholder="Search…" value="${state.companyName}"/>
+        </div>
+        <div>
+          <label class="lbl">Company Size</label>
+          <select class="inp" id="flt-size">
+            <option value="">Any size</option>
+            ${COMPANY_SIZES.map(s => `<option${state.companySize === s ? ' selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <!-- Scope -->
+      <div class="filter-section-head" style="margin-top:-1px">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Service Scope</span>
+      </div>
+      <div class="filter-body">
+        <select class="inp" id="flt-scope">
+          <option value="">Any scope</option>
+          ${SERVICE_SCOPES.map(s => `<option${state.serviceScope === s ? ' selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </div>
+
+      <!-- Diversity -->
+      <div class="filter-section-head" style="margin-top:-1px">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        <span>Diversity &amp; Certifications</span>
+      </div>
+      <div class="filter-body">
+        <div class="div-chips">
+          ${DIVERSITY_OPTIONS.map(opt => `
+            <button type="button" class="div-chip${state.diversityFlags.includes(opt) ? ' active' : ''}" data-flag="${opt.replace(/"/g,'&quot;')}">${opt}</button>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div style="padding:14px 16px">
+        <button class="btn-primary" onclick="submitSearch()">
+          Perform Discovery
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </button>
+      </div>
+    </div>`;
+
+  // Wire multi-selects
+  createMultiSelect('ms-primary-wrap', CATEGORIES, state.primaryServices, 'Search categories…', v => {
+    state.primaryServices = v;
+    state.subServices = state.subServices.filter(s => v.flatMap(p => SUBCATS[p] || []).includes(s));
+    // Re-render only the sub-select
+    const subWrap = document.getElementById('ms-sub-wrap');
+    if (subWrap) wireSubSelect();
+  });
+
+  wireSubSelect();
+
+  const allCountries = ['Afghanistan','Albania','Algeria','Argentina','Australia','Austria','Bahrain','Bangladesh','Belgium','Bolivia','Brazil','Bulgaria','Cambodia','Canada','Chile','China','Colombia','Croatia','Czech Republic','Denmark','Ecuador','Egypt','Estonia','Ethiopia','Finland','France','Germany','Ghana','Greece','Guatemala','Honduras','Hong Kong','Hungary','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Japan','Jordan','Kazakhstan','Kenya','Kuwait','Latvia','Lebanon','Lithuania','Luxembourg','Malaysia','Mexico','Morocco','Netherlands','New Zealand','Nigeria','Norway','Pakistan','Panama','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Saudi Arabia','Senegal','Serbia','Singapore','Slovakia','South Africa','South Korea','Spain','Sri Lanka','Sweden','Switzerland','Taiwan','Tanzania','Thailand','Turkey','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Venezuela','Vietnam','Zambia','Zimbabwe'];
+  createMultiSelect('ms-country-wrap', allCountries, state.countries, 'Search countries…', v => { state.countries = v; });
+
+  // Text + select inputs
+  document.getElementById('flt-name').addEventListener('input', e => { state.companyName = e.target.value; });
+  document.getElementById('flt-size').addEventListener('change', e => { state.companySize = e.target.value; });
+  document.getElementById('flt-scope').addEventListener('change', e => { state.serviceScope = e.target.value; });
+
+  // Diversity chips
+  container.querySelectorAll('.div-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const flag = btn.dataset.flag;
+      if (state.diversityFlags.includes(flag)) {
+        state.diversityFlags = state.diversityFlags.filter(f => f !== flag);
+        btn.classList.remove('active');
+      } else {
+        state.diversityFlags.push(flag);
+        btn.classList.add('active');
+      }
+    });
+  });
+
+  function wireSubSelect() {
+    const subWrap = document.getElementById('ms-sub-wrap');
+    if (!subWrap) return;
+    const subs = state.primaryServices.length
+      ? state.primaryServices.flatMap(p => SUBCATS[p] || [])
+      : Object.values(SUBCATS).flat();
+    createMultiSelect('ms-sub-wrap', subs, state.subServices, 'Search sub-services…', v => { state.subServices = v; });
+  }
+}
+
+// ── Query Supabase ────────────────────────────────────────────────────────────
+async function queryProviders() {
+  let q = sb.from('service_registrations').select(COLS, { count: 'exact' }).eq('status', 'active');
+
+  if (state.primaryServices.length) q = q.in('primary_category', state.primaryServices);
+
+  if (state.subServices.length) {
+    const qv = state.subServices.map(s => `"${s}"`).join(',');
+    q = q.or(`sub_category.in.(${qv}),core_services.ov.{${qv}}`);
+  }
+
+  if (state.countries.length) q = q.overlaps('countries_served', state.countries);
+  if (state.companyName)      q = q.ilike('company_name', `%${state.companyName}%`);
+  if (state.serviceScope)     q = q.eq('service_scope', state.serviceScope);
+  if (state.companySize)      q = q.eq('company_size', state.companySize);
+  if (state.diversityFlags.length) q = q.overlaps('diversity_flags', state.diversityFlags);
+
+  q = q.order('is_featured', { ascending: false })
+       .order('is_verified',  { ascending: false })
+       .order('created_at',   { ascending: false })
+       .range(0, 49);
+
+  return q;
+}
+
+// ── Render provider card ──────────────────────────────────────────────────────
+function renderCard(p) {
+  const initial = (p.company_name || '?')[0].toUpperCase();
+  const logoHtml = p.logo_url
+    ? `<img src="${p.logo_url}" alt="${p.company_name}" style="width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0"/>`
+    : `<div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#1E2E61,#1C66AD);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="color:#fff;font-size:17px;font-weight:700">${initial}</span></div>`;
+
+  const websiteDisplay = (p.website_url || '').replace(/^https?:\/\//,'').replace(/\/$/,'');
+  const areas = [...(p.countries_served || []), ...(p.states_served || [])];
+  const visAreas = areas.slice(0, 3);
+  const extraAreas = areas.length - visAreas.length;
+  const services = [...(p.sub_category ? [p.sub_category] : []), ...(p.core_services || [])]
+    .filter((v, i, a) => a.indexOf(v) === i).slice(0, 3);
+  const certs = (p.certifications || '').split(',').map(c => c.trim()).filter(Boolean);
+
+  return `
+    <div class="provider-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px">
+        <div style="display:flex;align-items:flex-start;gap:12px;min-width:0">
+          ${logoHtml}
+          <div style="min-width:0">
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-bottom:3px">
+              <h3 style="font-size:16px;font-weight:700;color:#0a1628;line-height:1.2">${p.company_name}</h3>
+              ${p.is_verified ? '<span class="badge badge-green"><svg width="11" height="11" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>VERIFIED</span>' : ''}
+              ${p.is_featured ? '<span class="badge badge-amber">BEST MATCH</span>' : ''}
+            </div>
+            ${p.website_url ? `<a href="${p.website_url}" target="_blank" rel="noopener" style="font-size:12.5px;color:#1C66AD;text-decoration:none;display:flex;align-items:center;gap:4px"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>${websiteDisplay}</a>` : ''}
+          </div>
+        </div>
+        <a href="${DEPLOYED_API}/services/${p.slug}" target="_blank" rel="noopener" style="flex-shrink:0;display:inline-block;background:linear-gradient(135deg,#1E2E61,#1C66AD);color:#fff;font-size:12.5px;font-weight:700;padding:9px 18px;border-radius:10px;text-decoration:none;white-space:nowrap;transition:opacity 0.2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">View Profile</a>
+      </div>
+
+      <div style="display:grid;gap:6px;font-size:13px">
+        ${visAreas.length ? `<div style="display:flex;gap:8px"><span style="font-weight:600;color:#374151;min-width:140px;flex-shrink:0">Service Areas:</span><span style="color:#6b7280">${visAreas.join(', ')}${extraAreas > 0 ? ` <span style="color:#9ca3af">+${extraAreas} more</span>` : ''}</span></div>` : ''}
+        ${p.headquarters_country ? `<div style="display:flex;gap:8px"><span style="font-weight:600;color:#374151;min-width:140px;flex-shrink:0">Headquartered:</span><span style="color:#6b7280">${[p.headquarters_country, p.headquarters_city].filter(Boolean).join(', ')}</span></div>` : ''}
+        ${services.length ? `<div style="display:flex;gap:8px"><span style="font-weight:600;color:#374151;min-width:140px;flex-shrink:0">Services:</span><div style="display:flex;flex-direction:column;gap:2px">${services.map(s => `<a href="services.html?subService=${encodeURIComponent(s)}" style="color:#1C66AD;text-decoration:none;font-size:13px" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">→ ${s}</a>`).join('')}</div></div>` : ''}
+        ${p.company_size ? `<div style="display:flex;gap:8px"><span style="font-weight:600;color:#374151;min-width:140px;flex-shrink:0">Company Size:</span><span style="color:#6b7280">${p.company_size}</span></div>` : ''}
+        ${certs.length ? `<div style="display:flex;gap:8px;align-items:flex-start"><span style="font-weight:600;color:#374151;min-width:140px;flex-shrink:0">Certifications:</span><div style="display:flex;flex-wrap:wrap;gap:4px">${certs.map(c => `<span class="cert-chip">${c}</span>`).join('')}</div></div>` : ''}
+        ${p.short_description ? `<div style="display:flex;gap:8px"><span style="font-weight:600;color:#374151;min-width:140px;flex-shrink:0">About:</span><span style="color:#6b7280;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.short_description}</span></div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ── Submit search ─────────────────────────────────────────────────────────────
+async function submitSearch() {
+  // Sync any typed-but-not-yet-saved text inputs
+  const nameEl  = document.getElementById('flt-name');
+  const sizeEl  = document.getElementById('flt-size');
+  const scopeEl = document.getElementById('flt-scope');
+  if (nameEl)  state.companyName  = nameEl.value;
+  if (sizeEl)  state.companySize  = sizeEl.value;
+  if (scopeEl) state.serviceScope = scopeEl.value;
+
+  // Show results panel
+  document.getElementById('hero-panel').style.display    = 'none';
+  document.getElementById('results-panel').style.display = 'block';
+
+  // Update URL
+  const qs = buildParams(state);
+  history.pushState({}, '', qs ? '?'+qs : location.pathname);
+
+  // Render sidebar filter
+  renderFilter('sidebar-filter', true);
+
+  // Loading
+  document.getElementById('results-loading').style.display = 'flex';
+  document.getElementById('results-list').style.display    = 'none';
+  document.getElementById('results-empty').style.display   = 'none';
+
+  const { data, count, error } = await queryProviders();
+
+  document.getElementById('results-loading').style.display = 'none';
+
+  if (error || !data || data.length === 0) {
+    document.getElementById('results-count').textContent = '';
+    document.getElementById('results-empty').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('results-count').textContent = `Showing ${count ?? data.length} verified partner${(count ?? data.length) !== 1 ? 's' : ''}`;
+  document.getElementById('results-list').style.display = 'flex';
+  document.getElementById('results-list').innerHTML = data.map(renderCard).join('');
+}
+
+function clearAll() {
+  state.primaryServices = [];
+  state.subServices     = [];
+  state.countries       = [];
+  state.companyName     = '';
+  state.serviceScope    = '';
+  state.companySize     = '';
+  state.diversityFlags  = [];
+  history.pushState({}, '', location.pathname);
+  document.getElementById('hero-panel').style.display    = 'block';
+  document.getElementById('results-panel').style.display = 'none';
+  renderFilter('hero-filter', false);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  initNav();
+
+  // Parse URL params
+  const parsed = parseParams();
+  Object.assign(state, parsed);
+
+  if (hasFilters(state)) {
+    // Auto-search from URL params
+    document.getElementById('results-panel').style.display = 'block';
+    renderFilter('sidebar-filter', true);
+    document.getElementById('results-loading').style.display = 'flex';
+
+    const { data, count, error } = await queryProviders();
+    document.getElementById('results-loading').style.display = 'none';
+
+    if (!error && data && data.length > 0) {
+      document.getElementById('results-count').textContent = `Showing ${count ?? data.length} verified partner${(count ?? data.length) !== 1 ? 's' : ''}`;
+      document.getElementById('results-list').style.display = 'flex';
+      document.getElementById('results-list').innerHTML = data.map(renderCard).join('');
+    } else {
+      document.getElementById('results-empty').style.display = 'block';
+    }
+  } else {
+    // Show initial hero search panel
+    document.getElementById('hero-panel').style.display = 'block';
+    renderFilter('hero-filter', false);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
