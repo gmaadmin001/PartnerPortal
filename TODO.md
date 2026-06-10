@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 6 ✅ Phase 8 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details from boss). Phase 9 (production email) also pending.
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 6 ✅ Phase 8 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details). Phase 9 (production email) also pending.
 
 ---
 
@@ -210,7 +210,7 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 ## PHASE 5.5 — Stripe Payment Integration 🔜 BLOCKED
 
-> **Blocked on:** Stripe account credentials from boss + Price IDs for Standard and Premium plans.
+> **Blocked on:** Stripe account credentials + Price IDs for Standard and Premium plans.
 > The original WordPress site used Stripe via Shopify for paid plan checkout — that flow is being
 > rebuilt natively here.
 
@@ -221,78 +221,108 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 - After payment: Stripe fires a webhook → our API verifies signature → creates auth account + saves registration
 - Webhook verification: HMAC-SHA256 via Web Crypto (Edge-compatible, no Node SDK)
 
-### What we need from boss before starting
+### Tasks — execution order (Gate 1 required for each before building)
 
-- [ ] Stripe **Publishable Key** (`pk_live_*` or `pk_test_*`)
-- [ ] Stripe **Secret Key** (`sk_live_*` or `sk_test_*`)
-- [ ] Stripe **Price ID** for Standard plan (`price_*`) — $100/mo recurring
-- [ ] Stripe **Price ID** for Premium plan (`price_*`) — $200/mo recurring
-- [ ] Stripe **Webhook Signing Secret** (`whsec_*`) — generated when registering webhook endpoint
+> Ordered by dependency: decide prices → create all Stripe objects → checkout/webhook
+> plumbing → subscription-status model → entitlement/feature gating → feature slices →
+> wire UI → QA last. Task IDs (S0–S12) are stable identifiers; follow the numbered steps
+> below for execution order.
 
-### Tasks (Gate 1 required for each before building)
+1. [ ] **Task S0 — Finalize canonical price/tier table:** Reconcile the stale TODO
+   numbers (Standard $100 / Premium $200) against the built UI (Basic free /
+   Professional $25 / Premier $50). Lock tier names, monthly + annual amounts, and the
+   Verified Badge price. **Prerequisite for everything below** — Stripe products and
+   Price IDs depend on it.
+2. [ ] **Task S1 — Stripe env vars + create all Stripe objects:** Add env vars to
+   Cloudflare (build + runtime) and `.dev.vars`. In one pass, create monthly + annual
+   prices per tier, the one-time badge price, and register the webhook endpoint URL to
+   obtain `whsec_*` (the URL is known up front, so this works before S3's code exists).
 
-- [ ] **Task S1:** Add Stripe env vars to Cloudflare (build + runtime) and `.dev.vars`
-- [ ] **Task S2:** `src/app/api/stripe-checkout/route.ts` — creates Checkout Session, returns redirect URL
-  - Free plan: returns `{ skip: true }` → client proceeds to Finish
-  - Paid plan: `fetch` to `https://api.stripe.com/v1/checkout/sessions` (plain fetch, no SDK)
-  - `success_url` → `/add-service?step=finish&session_id={CHECKOUT_SESSION_ID}`
-  - `cancel_url` → `/add-service?step=plans`
-- [ ] **Task S3:** `src/app/api/stripe-webhook/route.ts` — receives `checkout.session.completed`
-  - Verify Stripe-Signature header (HMAC-SHA256, Web Crypto)
-  - Extract metadata (all form data passed as Checkout Session metadata)
-  - Call same account-creation logic as current `/api/finish-registration`
-- [ ] **Task S4:** Update `MembershipStep` + `add-service/page.tsx` — wire paid plans through Stripe Checkout before advancing to Finish
-- [ ] **Task S5:** Update `FinishStep` — for paid plans, show "Payment confirmed via Stripe" badge; for Free, current flow unchanged
-- [ ] **Task S6:** End-to-end QA — test Free (bypass), Standard (Stripe test card), Premium (Stripe test card)
+   **Credentials to gather first** — Price IDs only after **S0** finalizes the price table;
+   gather every ID in one pass to avoid repeat dashboard trips:
+   - [ ] Stripe **Publishable Key** (`pk_live_*` or `pk_test_*`)
+   - [ ] Stripe **Secret Key** (`sk_live_*` or `sk_test_*`)
+   - [ ] **Monthly** recurring Price ID for each paid tier (`price_*`)
+   - [ ] **Annual** recurring Price ID for each paid tier (`price_*`) — feeds the Annual toggle (S9)
+   - [ ] **One-time** Price ID for the Verified Badge (`price_*`) — feeds S10
+   - [ ] Stripe **Webhook Signing Secret** (`whsec_*`) — from registering the endpoint URL
 
-### API keys and credentials needed
+   **Where to find each key in the Stripe Dashboard:**
+   1. **Publishable + Secret Key** — Log in to [dashboard.stripe.com](https://dashboard.stripe.com)
+      → **Developers → API keys**. Copy **Publishable key** (`pk_live_*`) and **Secret key**
+      (`sk_live_*`). ⚠️ Use **test mode** keys (`pk_test_*` / `sk_test_*`) first — toggle top-left.
+   2. **Price IDs** — **Product catalog** (left sidebar). For each paid tier, create/open the
+      product and copy the **Price ID** (`price_*`) for **both** its monthly and annual prices;
+      also create the **one-time Verified Badge** price. Tier names + amounts come from **S0**
+      (don't use the old $100/$200). New product: **+ Add product** → add a **Recurring / Monthly**
+      and a **Recurring / Yearly** price per tier; badge = **One-time**.
+   3. **Webhook Signing Secret** — **Developers → Webhooks** → **+ Add endpoint**. URL:
+      `https://partnerportal.gmaadmin001.workers.dev/api/stripe-webhook`; events:
+      `checkout.session.completed` (+ `customer.subscription.*` for S11). After saving, **Reveal**
+      the signing secret → copy `whsec_*`. Local dev: `stripe listen --forward-to
+      localhost:3000/api/stripe-webhook` prints its own local `whsec_*`.
 
-#### Where to find each key in the Stripe Dashboard
+   **Add to `.dev.vars` (local development):**
+   ```
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+   STRIPE_SECRET_KEY=sk_test_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   # One monthly + one annual price ID per paid tier, plus the badge — final names follow S0:
+   STRIPE_<TIER>_MONTHLY_PRICE_ID=price_...
+   STRIPE_<TIER>_ANNUAL_PRICE_ID=price_...
+   STRIPE_VERIFIED_BADGE_PRICE_ID=price_...
+   ```
 
-1. **Publishable Key + Secret Key**
-   - Log in to [dashboard.stripe.com](https://dashboard.stripe.com)
-   - Top-right: make sure you're in the correct account (live or test mode toggle top-left)
-   - Go to **Developers → API keys**
-   - Copy **Publishable key** (`pk_live_*`) and **Secret key** (`sk_live_*`)
-   - ⚠️ For testing first, use the **test mode** keys (`pk_test_*` / `sk_test_*`) — toggle at top-left of dashboard
+   **Add to Cloudflare Dashboard (production):** Workers & Pages → `partnerportal` → Settings →
+   Variables and Secrets.
 
-2. **Price IDs for Standard and Premium**
-   - Go to **Product catalog** (left sidebar)
-   - Find or create the Standard product → open it → copy the **Price ID** under the price (`price_*`)
-   - Repeat for Premium
-   - If products don't exist yet: **+ Add product** → set name, price ($100/mo or $200/mo), billing = **Recurring / Monthly**
+   | Variable | Type | Value |
+   |---|---|---|
+   | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **Plain text build variable** | `pk_live_*` |
+   | `STRIPE_SECRET_KEY` | **Encrypted secret** | `sk_live_*` |
+   | `STRIPE_WEBHOOK_SECRET` | **Encrypted secret** | `whsec_*` |
+   | `STRIPE_<TIER>_MONTHLY_PRICE_ID` (per tier) | **Encrypted secret** | `price_*` |
+   | `STRIPE_<TIER>_ANNUAL_PRICE_ID` (per tier) | **Encrypted secret** | `price_*` |
+   | `STRIPE_VERIFIED_BADGE_PRICE_ID` | **Encrypted secret** | `price_*` |
 
-3. **Webhook Signing Secret**
-   - Go to **Developers → Webhooks**
-   - Click **+ Add endpoint**
-   - Endpoint URL: `https://partnerportal.gmaadmin001.workers.dev/api/stripe-webhook`
-   - Events to listen for: `checkout.session.completed`
-   - After saving, click the webhook → **Reveal** signing secret → copy `whsec_*`
-   - For local testing: install Stripe CLI → `stripe listen --forward-to localhost:3000/api/stripe-webhook` → it prints a local `whsec_*`
+   > ⚠️ `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` **must** be a build variable (not a runtime secret) —
+   > it is inlined into the browser bundle at build time.
 
-#### Add to `.dev.vars` (local development)
-
-```
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_STANDARD_PRICE_ID=price_...
-STRIPE_PREMIUM_PRICE_ID=price_...
-```
-
-#### Add to Cloudflare Dashboard (production)
-
-> Workers & Pages → `partnerportal` → Settings → Variables and Secrets
-
-| Variable | Type | Value |
-|---|---|---|
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **Plain text build variable** | `pk_live_*` |
-| `STRIPE_SECRET_KEY` | **Encrypted secret** | `sk_live_*` |
-| `STRIPE_WEBHOOK_SECRET` | **Encrypted secret** | `whsec_*` |
-| `STRIPE_STANDARD_PRICE_ID` | **Encrypted secret** | `price_*` |
-| `STRIPE_PREMIUM_PRICE_ID` | **Encrypted secret** | `price_*` |
-
-> ⚠️ `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` **must** be a build variable (not a runtime secret) — it is inlined into the browser bundle at build time.
+3. [ ] **Task S2 — `src/app/api/stripe-checkout/route.ts`:** Creates Checkout Session,
+   returns redirect URL.
+   - Free plan: returns `{ skip: true }` → client proceeds to Finish
+   - Paid plan: `fetch` to `https://api.stripe.com/v1/checkout/sessions` (plain fetch, no SDK)
+   - `success_url` → `/add-service?step=finish&session_id={CHECKOUT_SESSION_ID}`
+   - `cancel_url` → `/add-service?step=plans`
+4. [ ] **Task S3 — `src/app/api/stripe-webhook/route.ts`:** Receives `checkout.session.completed`.
+   - Verify Stripe-Signature header (HMAC-SHA256, Web Crypto)
+   - Extract metadata (all form data passed as Checkout Session metadata)
+   - Call same account-creation logic as current `/api/finish-registration`
+   - Build/test locally via `stripe listen` before the production endpoint (S1) is live —
+     the handler code and the dashboard registration are independent.
+5. [ ] **Task S11 — `Suspended` subscription state:** Add the subscription-status model
+   (incl. `Suspended` for lapsed/canceled) and the lifecycle webhooks that drive it
+   (`customer.subscription.*`, not just `checkout.session.completed`). **Before** the
+   gating tasks, which key off this status.
+6. [ ] **Task S7 — Plan entitlement / feature-gating logic:** Enforce per-tier
+   service-count limits (Basic = 1, Professional = 3, Premier = unlimited; spec said
+   Premium = 10) in the dashboard + APIs, not just at checkout.
+7. [ ] **Task S8 — Field-level tier gating:** Gate which profile fields are
+   editable/visible per tier (Logo, Company Statement, Reviews, Media Gallery = top tier;
+   Contact, Certifications, Countries Served = mid tier). Wire to the active subscription.
+8. [ ] **Task S9 — Annual billing wiring:** Route the existing Monthly/Annual toggle
+   ($250/yr, $500/yr "2 months free") to the annual Price IDs created in S1.
+9. [ ] **Task S10 — Verified Badge one-time fee:** Add the "$100 one-time Verified Badge"
+   as a one-time Checkout line item (or separate session) + fulfilment.
+10. [ ] **Task S4 — Wire `MembershipStep` + `add-service/page.tsx`:** Route paid plans
+    through Stripe Checkout before advancing to Finish.
+11. [ ] **Task S5 — Update `FinishStep`:** For paid plans, show "Payment confirmed via
+    Stripe" badge; for Free, current flow unchanged.
+12. [ ] **Task S12 — Claim-then-pay model:** Pre-loaded/pre-populated listings must
+    convert to a paid subscription before the vendor can edit. Plan the claim → checkout
+    → unlock-edit flow (distinct from new self-registration checkout).
+13. [ ] **Task S6 — Final end-to-end QA:** Test Free (bypass), each paid tier monthly +
+    annual (Stripe test card), badge purchase, suspension, and claim-then-pay.
 
 ---
 
@@ -363,7 +393,7 @@ STRIPE_PREMIUM_PRICE_ID=price_...
 | Email confirmation | Disabled at account creation — `auth.admin.createUser` with `email_confirm: true` skips email loop; users can sign in immediately after registration |
 | wrangler.jsonc name | Changed `partner-portal` → `partnerportal` (no hyphen) — Cloudflare was complaining about the hyphenated name |
 | /add-service auth | Guard removed from middleware — unauthenticated users can fill the form; auth enforced at API layer (`finish-registration`) |
-| Stripe payments | Planned for Phase 5.5 — using Stripe Checkout (hosted), plain fetch (no SDK), webhook verification via Web Crypto. Blocked on Stripe account details from boss. |
+| Stripe payments | Planned for Phase 5.5 — using Stripe Checkout (hosted), plain fetch (no SDK), webhook verification via Web Crypto. Blocked on Stripe account details. |
 | Dashboard | `/dashboard` is a temporary test/verification page — will evolve into the full partner portal in later phases |
 
 ---
