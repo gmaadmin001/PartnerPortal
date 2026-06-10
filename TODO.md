@@ -415,12 +415,18 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 ---
 
-## PHASE 9 — Production Email (Resend + Custom Domain)
+## PHASE 9 — Production Email (domain auth + app-owned auth emails)
 
 > Currently the portal uses Resend's SMTP with `onboarding@resend.dev` as the sender address.
 > This is Resend's sandbox address and can **only** send to the Resend account owner's email
 > (`gmaadmin001@gmail.com`). All other recipients are blocked with a `550` error.
 > This must be resolved before the portal goes live with real users.
+>
+> **Two parts:** (A) **Task 22** — authenticate a sending domain so mail is deliverable
+> (interim fix; keeps Supabase's built-in mailer). (B) **Tasks E1–E7** — conform to the master
+> architecture by moving auth emails into an app-owned Send Email hook + branded EmailJS template,
+> per `architecture.md` → "Auth emails delegated to the app." The end state runs (B); (A)'s
+> domain authentication is reused by (B).
 
 ### Task 22: Verify a custom domain in Resend and update Supabase sender address
 
@@ -459,6 +465,44 @@ password reset and any future auth emails can only reach `gmaadmin001@gmail.com`
 **Code changes required:** None — the SMTP credentials and `request-reset` API route are already
 in place. This is a dashboard-only configuration step.
 
-**Future consideration:** Per `architecture.md`, auth emails should eventually be routed through
-a custom Send Email hook (Supabase Auth → Edge Function → EmailJS/Resend) so branding and copy
-live in the app. That is a more involved change and can be done in a later phase.
+> **Interim vs. end state:** Task 22's **domain authentication** (SPF/DKIM/DMARC) is permanent —
+> the ESP backing EmailJS in Task E1 reuses it. Its **"Update Supabase sender email"** step
+> (built-in mailer) is an *interim* deliverability fix and is **superseded** by Task E4: once the
+> Send Email hook is active, Supabase delegates auth mail to our route instead of sending it.
+
+### Conform to architecture: app-owned auth emails (tasks E1–E7)
+
+> Implements `architecture.md` → **"Email & messaging" → "Auth emails delegated to the app"**:
+> Supabase Auth fires a Send Email hook → an Edge route in our app verifies the signature, maps
+> the action type to a branded template, and sends via a shared EmailJS helper. This replaces
+> Supabase's built-in templated mailer for auth mail. The same helper later serves claim
+> notifications and the dashboard notification toggles. Each task runs its own Gate 1 before building.
+
+- [ ] **Task E1 — Shared EmailJS send helper:** One helper POSTs to a single reusable EmailJS
+      template (`https://api.emailjs.com/api/v1.0/email/send`) parameterized by `template_params`
+      (subject, greeting, headline, `message_html`, button label/url, footnote). **Fails soft** —
+      logs a warning and returns (never throws) if env vars are missing, so a misconfigured
+      environment never crashes a request. Point EmailJS's underlying SMTP at the domain
+      authenticated in Task 22 so SPF/DKIM/DMARC align.
+      Env: `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`.
+- [ ] **Task E2 — Auth-email webhook Edge route** (`src/app/api/auth-email-hook/route.ts`, Edge
+      runtime): verify the Standard Webhooks signature before trusting the payload — HMAC-SHA256
+      via Web Crypto (`crypto.subtle`), **constant-time** comparison, **±5-min** timestamp
+      tolerance, **multi-signature** support (space-separated `v1,<sig>` for key rotation).
+      Secret `SUPABASE_AUTH_HOOK_SECRET` (format `v1,whsec_<base64>`).
+- [ ] **Task E3 — Action-type → branded templates:** Map `email_action_type` (`signup`,
+      `recovery`, `magiclink`, `email_change`, `invite`) to branded copy; build the provider's
+      `/auth/v1/verify?token=…&type=…&redirect_to=…` confirmation URL; send via the E1 helper.
+- [ ] **Task E4 — Configure the Supabase Send Email hook:** Dashboard → **Authentication → Hooks**
+      → **Send Email Hook** → point to the deployed Edge route URL and set the signing secret.
+      Once active, Supabase delegates these emails to our route instead of its built-in mailer.
+- [ ] **Task E5 — Env wiring:** Add `EMAILJS_*` and `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars`
+      and Cloudflare (build var vs. encrypted secret as appropriate — keys/secrets stay encrypted).
+- [ ] **Task E6 — Reconcile the existing recovery flow:** The current `/api/request-reset` +
+      `resetPasswordForEmail` still triggers Supabase, which now fires the hook → our route.
+      Confirm the recovery email comes from our branded template; keep the `clear_user_recovery`
+      RPC that clears stale tokens first.
+- [ ] **Task E7 — QA:** Trigger `recovery` (signup is disabled via `email_confirm: true`, so it's
+      lower priority); confirm the branded email arrives from the authenticated domain and lands in
+      the inbox (check Spam/Promotions); confirm bad/replayed/expired signatures are rejected.
+      A `200` from EmailJS means *accepted for sending*, **not** delivered — verify inbox placement.
