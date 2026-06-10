@@ -56,7 +56,8 @@ export default function LoginForm() {
     if (error) {
       setError(error.message);
     } else {
-      router.push("/dashboard");
+      const claimSlug = new URLSearchParams(window.location.search).get("claim");
+      router.push(claimSlug ? `/services/${claimSlug}` : "/dashboard");
     }
   }
 

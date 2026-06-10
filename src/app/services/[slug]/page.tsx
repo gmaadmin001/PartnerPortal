@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import PhotoCarousel from "@/components/services/PhotoCarousel";
 import ReviewForm from "@/components/services/ReviewForm";
+import ClaimSection from "@/components/services/ClaimSection";
 
 interface Review {
   id: string;
@@ -97,6 +98,14 @@ export default async function ProviderProfilePage({
   const existingReview = user
     ? reviews.find((r) => r.reviewer_user_id === user.id)
     : undefined;
+
+  // Claim state — only relevant when the listing has no current owner
+  const hasOwner = !!provider.user_id;
+  const userClaimStatus = !hasOwner && user
+    ? provider.claimed_by === user.id
+      ? (provider.claim_status as "pending" | "rejected" | null) ?? "none"
+      : "none"
+    : "none";
   const avgRating = reviews.length
     ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)
     : 0;
@@ -413,6 +422,16 @@ export default async function ProviderProfilePage({
                 Sign In
               </Link>
             </div>
+          )}
+
+          {/* Claim section — only for listings with no current owner */}
+          {!hasOwner && !isOwner && (
+            <ClaimSection
+              providerId={provider.id}
+              slug={provider.slug ?? slug}
+              isLoggedIn={!!user}
+              claimStatus={userClaimStatus as "none" | "pending" | "rejected"}
+            />
           )}
 
         </div>
