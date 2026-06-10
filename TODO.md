@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details from boss).
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 6 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details from boss). Phase 8 (vendor claim) and Phase 9 (production email) also pending.
 
 ---
 
@@ -66,9 +66,9 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 - [x] Supabase project confirmed via MCP (`list_projects`, `get_project_url`)
 - [x] `.dev.vars` populated with all three keys for local development
-- [ ] **MANUAL — STILL NEEDED:** Add to Cloudflare Dashboard → `partner-portal` → Settings → Variables and Secrets:
-  - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` → **plain text build variables**
-  - `SUPABASE_SERVICE_ROLE_KEY` → **encrypted secret (runtime only)**
+- [x] **MANUAL — DONE:** Cloudflare Dashboard → `partnerportal` → Build → Variables and secrets:
+  - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` → plain text build variables ✅
+  - `SUPABASE_SERVICE_ROLE_KEY` → encrypted secret (runtime only) ✅
 
 ---
 
@@ -201,8 +201,10 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 
 - [x] `src/components/add-service/FinishStep.tsx` — summary card, email (read-only), password strength meter, Create Account button
 - [x] `src/app/api/finish-registration/route.ts` — service-role client, `auth.admin.createUser` + DB insert
-- [x] `src/app/dashboard/page.tsx` — post-login test page; shows full registration record from DB; Sign Out button
+- [x] `src/app/dashboard/page.tsx` — full partner dashboard (overview, profile view, profile edit, plans, reviews, settings panels)
+- [x] `src/app/dashboard/DashboardClient.tsx` — client shell with sidebar nav, completion meter, edit panel with all fields, plans panel with upgrade/downgrade logic, reviews panel
 - [x] Login redirects to `/dashboard` on success
+- [x] Dead legacy route `src/app/api/add-service/route.ts` removed (replaced by `finish-registration`)
 
 ---
 
@@ -294,26 +296,28 @@ STRIPE_PREMIUM_PRICE_ID=price_...
 
 ---
 
-## PHASE 6 — Page 3: /services-page
+## PHASE 6 — Page 3: /services ✅
 
-### Task 17: Services page — filter panel
+> **Actual:** Built at `/services` (not `/services-page`). Server-rendered with URL-param driven filters.
+> Full provider profile pages at `/services/[slug]`. Review system with edit/delete built here too.
 
-- [ ] Create `src/app/services-page/page.tsx`
-- [ ] Create `src/components/services/FilterPanel.tsx`:
-  - Service Type, Sub-service, Country, State/Region, Industry, Integration Scope
-  - Company Size, Company Name, Zip Code, Certifications, Diversity badges
-- [ ] "Search / Apply Filters" + "Clear All" buttons
+### Task 17: Services page — filter panel ✅
+
+- [x] `src/app/services/page.tsx` + `src/app/services/ServicesClient.tsx`
+- [x] `src/components/services/FilterPanel.tsx` — Primary Service (10-category Relocentra taxonomy), Sub-service (dependent dropdown), Country, US State, City, Zip, Industry, Service Scope, Company Size, Company Name, Diversity badges
+- [x] Filters encoded as URL params (pipe-separated for values with commas); server-renders results on each navigation
+- [x] "Apply Filters" + "Clear All" buttons; compact sidebar mode for results view
 
 ---
 
-### Task 18: Services page — results area and provider cards
+### Task 18: Services page — results area and provider cards ✅
 
-- [ ] Create `src/components/services/ResultsArea.tsx` (count, loading skeleton, empty state)
-- [ ] Create `src/components/services/ProviderCard.tsx`:
-  - Company Name, Category badges, Short Description, HQ, Website CTA, Premium badge
-- [ ] Create `src/app/api/services/route.ts` — GET, anon Supabase client, filter + paginate
-- [ ] Wire filter → API → results
-- [ ] Pagination (next/prev or load-more)
+- [x] `src/components/services/ProviderCard.tsx` — company name, plan badge, verified badge, category, description, HQ, website CTA
+- [x] `src/components/services/PhotoCarousel.tsx` — photo gallery component used on profile pages
+- [x] `src/components/services/ReviewForm.tsx` — star picker, profanity filter, edit + delete own review
+- [x] `src/app/services/[slug]/page.tsx` — full public provider profile: hero, contact sidebar, bio, photo gallery, core services, reviews, review form (non-owners), owner preview banner for pending listings
+- [x] `src/app/api/services/route.ts` + `src/app/api/services/[slug]/route.ts` — GET endpoints
+- [x] Filter → server query → results wired end-to-end; sub-service filter searches both `sub_category` and `core_services` array
 
 ---
 
@@ -329,12 +333,11 @@ STRIPE_PREMIUM_PRICE_ID=price_...
 
 ---
 
-### Task 20: Environment variable audit + production readiness
+### Task 20: Environment variable audit + production readiness ✅
 
-- [ ] Confirm `NEXT_PUBLIC_*` vars set as Cloudflare **build variables** (see Task 4 manual step)
-- [ ] Confirm `SUPABASE_SERVICE_ROLE_KEY` is Cloudflare **runtime secret** only
-- [ ] Run `npm run preview` locally — verify all three pages load
-- [ ] Push to main → confirm Cloudflare build green → smoke test on `partnerportal.gmaadmin001.workers.dev`
+- [x] `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` confirmed as Cloudflare **build variables**
+- [x] `SUPABASE_SERVICE_ROLE_KEY` confirmed as Cloudflare **encrypted secret** (runtime only)
+- [x] Site live and functional at `partnerportal.gmaadmin001.workers.dev`
 
 ---
 
