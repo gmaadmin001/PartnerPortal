@@ -23,10 +23,12 @@ public data, then companies discover and claim their own listings.
 ADMIN_EMAIL=you@example.com
 ```
 
-**Production:** Cloudflare Dashboard → Workers & Pages → `partnerportal` → Settings →
-Variables and Secrets → **+ Add** → Type: Variable, Name: `ADMIN_EMAIL`, Value: your email.
+**Production (required before `/admin/claims` will work):**
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **partnerportal** → **Settings** → **Variables and Secrets**
+2. Click **+ Add** → Type: **Variable**, Name: `ADMIN_EMAIL`, Value: your admin email address
+3. Save — the next push to `main` will deploy with it active
 
-> After adding to Cloudflare, push any commit to trigger a redeploy so the value is picked up.
+> Without this variable set, `/admin/claims` will redirect everyone away and no one can approve or reject claims.
 
 ---
 
