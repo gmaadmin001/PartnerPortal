@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const SELECTED_COLUMNS = [
   "id",
@@ -77,6 +78,12 @@ export async function GET(req: NextRequest) {
   if (error) {
     console.error("GET /api/services error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const ids = ((data ?? []) as unknown as { id: string }[]).map((r) => r.id).filter(Boolean);
+  if (ids.length > 0) {
+    const serviceClient = createServiceClient();
+    await serviceClient.rpc("increment_search_impressions", { supplier_ids: ids });
   }
 
   return NextResponse.json({ data: data ?? [], total: count ?? 0, page, limit });

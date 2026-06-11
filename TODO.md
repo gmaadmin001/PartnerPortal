@@ -509,36 +509,13 @@ in place. This is a dashboard-only configuration step.
 
 ## Feedback
 
-- [x] **Plan-gated profile fields:** Public listing gated by plan tier (Basic/Pro/Premier).
-      Dashboard profile editor also done: logo, bio (Pro), core services, photo gallery
-      (Premier) are greyed-out with disabled inputs, an ★ upgrade icon next to the label,
-      and a tooltip on hover. Nothing is hidden — all locked fields show the upgrade path.
-- [x] **Upgrade button is broken:** Fixed — plans page (`/dashboard/plans`) calls Supabase to
-      update `membership_plan` on upgrade/downgrade; slug rotation logic also wired.
-- [x] **Company logo → file upload:** Done — file upload to Supabase Storage (`logos` bucket,
-      RLS-scoped per userId). Thumbnail preview + remove button. URL stored in `logo_url`.
-- [x] **Profile Preview URL hardcodes "WORDPRESS":** Fixed — dashboard sidebar "Preview Page"
-      link now derives URL from `reg.slug` via `${MAIN_APP}/services/${reg.slug}` and updates
-      when the slug changes.
+### Blocked
+
 - [ ] **Domain setup — Relocentra + GMA redirect:** `relocentra.com` is the primary domain
       for the Cloudflare deployment (Michael purchased it ~1 year ago; plan is to market it as
       a standalone product powered by Global Mobility Adviser). `GlobalMobilityAdvisor.net`
       should redirect to `relocentra.com`. Cloudflare handles both. Not touching yet — needs
       domain DNS to be pointed at Cloudflare first.
-- [x] **Menu items → marketing site:** Done — all nav and footer links now point to
-      `globalmobilityadviser.com`. Logo image CDN stays on Hostinger until assets migrate.
-- [ ] **Verified + Recommended badge logic — two separate gates (not touching yet):**
-      - **VERIFIED (`is_verified`):** Set automatically when a user completes email verification
-        during account creation (Phase 9 email flow). When they verify their email, flip
-        `is_verified = true` on their `service_registrations` row. Badge shows for Premier
-        members who have verified.
-      - **RECOMMENDED (`is_recommended`):** Admin-controlled flag — admins toggle it per-supplier
-        via the admin dashboard. Add the column + toggle when building the admin dashboard.
-- [ ] **Discuss with Michael — searcher registration & gating:** Decide on registration for the
-      searcher role. Put **search** behind a **Searcher Login**, and gate **Reviews** behind it
-      as well.
-- [x] **Client Reviews → Release 2 (feature flag):** Done — removed from public listings and
-      "Client Reviews" removed from the dashboard sidebar nav entirely. Deferred to R2.
 - [ ] **Updated supplier taxonomy (from Michael):** Michael to send updated taxonomy +
       briefing documents. 11-category system confirmed. Apply once received.
 - [ ] **Load suppliers:** Michael providing ~420 supplier entries via spreadsheet. Mechanism:
@@ -548,6 +525,20 @@ in place. This is a dashboard-only configuration step.
       Must handle: account management, supplier verification (approve/reject), toggling
       `is_recommended` per supplier, viewing metrics (search impressions + page views),
       editing records, and admin notifications for new account signups.
+
+### Design decisions needed
+
+- [ ] **Verified + Recommended badge logic — two separate gates:**
+      - **VERIFIED (`is_verified`):** Set automatically when a user completes email verification
+        during account creation (Phase 9 email flow). When they verify their email, flip
+        `is_verified = true` on their `service_registrations` row. Badge shows for Premier
+        members who have verified. Blocked on Phase 9.
+      - **RECOMMENDED (`is_recommended`):** Admin-controlled flag — admins toggle it per-supplier
+        via the admin dashboard. Add the column + toggle when building the admin dashboard.
+        Blocked on admin dashboard (Paul).
+- [ ] **Discuss with Michael — searcher registration & gating:** Decide on registration for the
+      searcher role. Put **search** behind a **Searcher Login**, and gate **Reviews** behind it
+      as well.
 - [ ] **Metrics tracking — search impressions + page views:** Two metrics confirmed in meeting:
       - **Search surfacing count** — increment a counter each time a supplier appears in search
         results. Surfaced in admin dashboard and to suppliers as a sales/value tool.
@@ -555,6 +546,33 @@ in place. This is a dashboard-only configuration step.
       Both surfaced to suppliers as part of the monthly metric summary (marketing service) and
       to admins for oversight. Used as upgrade sales tool: "You surfaced X times this month —
       upgrade to Premier to stand out."
+      Ready to build — no external dependency. Approach: two integer columns on
+      `service_registrations` + Postgres RPC for atomic increments + service-role client in
+      the search API and listing page server component.
+
+### Completed
+
+- [x] **Plan-gated profile fields:** Public listing gated by plan tier (Basic/Pro/Premier).
+      Dashboard profile editor also done: logo, bio (Pro), core services, photo gallery
+      (Premier) are greyed-out with disabled inputs, an ★ upgrade icon next to the label,
+      and a tooltip on hover. Nothing is hidden — all locked fields show the upgrade path.
+- [x] **Upgrade button is broken:** Fixed — plans page (`/dashboard/plans`) calls Supabase to
+      update `membership_plan` on upgrade/downgrade; slug rotation logic also wired.
+- [x] **Company logo → file upload:** Done — file upload to Supabase Storage (`logos` bucket,
+      RLS-scoped per userId). Thumbnail preview + remove button. URL stored in `logo_url`.
+- [x] **Photo gallery → file upload:** Done — upload from PC in both main app (Edit Profile
+      panel) and Wireframe (Profile page). Uploads to `logos` bucket under `{userId}/gallery/`
+      prefix. URL paste kept as fallback.
+- [x] **Profile Preview URL hardcodes "WORDPRESS":** Fixed — dashboard sidebar "Preview Page"
+      link now derives URL from `reg.slug` via `${MAIN_APP}/services/${reg.slug}` and updates
+      when the slug changes.
+- [x] **Menu items → marketing site:** Done — all nav and footer links now point to
+      `globalmobilityadviser.com`. Logo image CDN stays on Hostinger until assets migrate.
+- [x] **Client Reviews → Release 2 (feature flag):** Done — removed from public listings and
+      "Client Reviews" removed from the dashboard sidebar nav entirely. Deferred to R2.
 - [x] **Upgrade ad banner in dashboard:** Done — amber banner for Basic, blue for Professional,
       hidden for Premier. Shows locked feature chips, links to plans panel, dismissible
       per-session via sessionStorage.
+- [x] **Wireframe dashboard features ported to main app:** Plan-aware profile completion with
+      lock icons, real upgrade/downgrade Supabase logic with downgrade modal, slug rotation,
+      and removal of reviews from nav/stat cards.

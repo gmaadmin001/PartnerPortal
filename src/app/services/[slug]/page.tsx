@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import PhotoCarousel from "@/components/services/PhotoCarousel";
 import ClaimSection from "@/components/services/ClaimSection";
 
@@ -63,6 +64,11 @@ export default async function ProviderProfilePage({
   const isOwner = user?.id === provider.user_id;
 
   if (provider.status !== "active" && !isOwner) notFound();
+
+  if (!isOwner) {
+    const serviceClient = createServiceClient();
+    await serviceClient.rpc("increment_profile_view", { supplier_id: provider.id });
+  }
 
   // Claim state — only relevant when the listing has no current owner
   const hasOwner = !!provider.user_id;
