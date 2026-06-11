@@ -8,16 +8,16 @@ import { createClient } from "@/lib/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 
 const navLinks = [
-  { label: "HOME",       href: "https://honeydew-capybara-608687.hostingersite.com/" },
-  { label: "SOLUTIONS",  href: "https://honeydew-capybara-608687.hostingersite.com/solutions/" },
-  { label: "COURSES",    href: "https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/" },
-  { label: "ABOUT US",   href: "https://honeydew-capybara-608687.hostingersite.com/about-us/" },
-  { label: "RESOURCES",  href: "https://honeydew-capybara-608687.hostingersite.com/resources/" },
-  { label: "CONTACT US", href: "https://honeydew-capybara-608687.hostingersite.com/contact-us/" },
+  { label: "HOME",       href: "https://www.globalmobilityadviser.com/" },
+  { label: "SOLUTIONS",  href: "https://www.globalmobilityadviser.com/solutions/" },
+  { label: "COURSES",    href: "https://www.globalmobilityadviser.com/global-mobility-courses/" },
+  { label: "ABOUT US",   href: "https://www.globalmobilityadviser.com/about-us/" },
+  { label: "RESOURCES",  href: "https://www.globalmobilityadviser.com/resources/" },
+  { label: "CONTACT US", href: "https://www.globalmobilityadviser.com/contact-us/" },
 ];
 
 const SIGN_IN_HREF = "/register";
-const LOGO_HREF    = "https://honeydew-capybara-608687.hostingersite.com/";
+const LOGO_HREF    = "https://www.globalmobilityadviser.com/";
 
 function PersonIcon() {
   return (

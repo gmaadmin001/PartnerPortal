@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -619,6 +619,116 @@ function EditSelect({ label, value, onChange, options, placeholder }: {
   );
 }
 
+function LogoUpload({ userId, value, onChange }: {
+  userId: string;
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+    const supabase = createClient();
+    const { error: upErr } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
+    setUploading(false);
+    if (upErr) { setUploadError(upErr.message); return; }
+    const { data } = supabase.storage.from("logos").getPublicUrl(path);
+    onChange(data.publicUrl);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  return (
+    <div>
+      <label className={EDIT_LABEL_CLS}>Company Logo</label>
+      <div className="flex items-center gap-4">
+        {value ? (
+          <div className="relative shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={value} alt="Logo preview" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center"
+              aria-label="Remove logo"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <div className="w-16 h-16 shrink-0 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50">
+            <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="text-sm font-bold px-4 py-2 rounded-xl border border-gma-primary text-gma-primary hover:bg-gma-blue-pale transition-colors disabled:opacity-50"
+          >
+            {uploading ? "Uploading…" : value ? "Change Logo" : "Upload Logo"}
+          </button>
+          <span className="text-xs text-gray-400">JPEG, PNG, WebP · max 2 MB</span>
+        </div>
+        <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" className="hidden" onChange={handleFile} />
+      </div>
+      {uploadError && <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>}
+    </div>
+  );
+}
+
+function LockedField({ label, plan, textarea }: {
+  label: string;
+  plan: "Professional" | "Premier";
+  textarea?: boolean;
+}) {
+  const [tip, setTip] = useState(false);
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">{label}</label>
+        <div className="relative" onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}>
+          <svg className="w-3.5 h-3.5 text-amber-400 cursor-help" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          {tip && (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-gma-navy text-white text-xs rounded-lg px-3 py-2 shadow-lg z-10 pointer-events-none">
+              Upgrade to <span className="font-bold">{plan}</span> to unlock this field
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gma-navy" />
+            </div>
+          )}
+        </div>
+      </div>
+      {textarea ? (
+        <textarea
+          disabled
+          rows={3}
+          placeholder={`Available on ${plan} plan`}
+          className={EDIT_TEXTAREA_CLS + " opacity-50 bg-gray-50 cursor-not-allowed"}
+        />
+      ) : (
+        <input
+          disabled
+          type="text"
+          placeholder={`Available on ${plan} plan`}
+          className={EDIT_INPUT_CLS + " opacity-50 bg-gray-50 cursor-not-allowed"}
+        />
+      )}
+    </div>
+  );
+}
+
 function EditProfilePanel({ reg, userId, setActive, onSaved }: {
   reg: ServiceReg;
   userId: string;
@@ -667,6 +777,11 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
       setForm((f) => ({ ...f, [key]: value }));
     }
   }
+
+  const PLAN_RANK: Record<string, number> = { Basic: 0, Professional: 1, Premier: 2 };
+  const planRank = PLAN_RANK[reg.membership_plan ?? "Basic"] ?? 0;
+  const isPro    = planRank >= 1;
+  const isPremier = planRank >= 2;
 
   function splitTrim(s: string): string[] {
     return s.split(",").map((v) => v.trim()).filter(Boolean);
@@ -756,13 +871,19 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <EditField label="Company Name" value={form.company_name} onChange={(v) => set("company_name", v)} placeholder="Acme Relocation Co." />
           <EditField label="Website URL"  value={form.website_url}  onChange={(v) => set("website_url", v)}  placeholder="https://yoursite.com" />
-          <EditField label="Logo URL"     value={form.logo_url}     onChange={(v) => set("logo_url", v)}     placeholder="https://yoursite.com/logo.png" />
+          {isPro
+            ? <LogoUpload userId={userId} value={form.logo_url} onChange={(url) => set("logo_url", url)} />
+            : <LockedField label="Company Logo" plan="Professional" />
+          }
         </div>
         <div className="mt-4">
           <EditField label="Short Statement (1–2 sentences shown on listing card)" value={form.short_description} onChange={(v) => set("short_description", v)} placeholder="We help companies move employees globally..." textarea />
         </div>
         <div className="mt-4">
-          <EditField label="Company Bio (full description shown on profile page)" value={form.company_bio} onChange={(v) => set("company_bio", v)} placeholder="Founded in..." textarea />
+          {isPro
+            ? <EditField label="Company Bio (full description shown on profile page)" value={form.company_bio} onChange={(v) => set("company_bio", v)} placeholder="Founded in..." textarea />
+            : <LockedField label="Company Bio (full description shown on profile page)" plan="Professional" textarea />
+          }
         </div>
       </Section>
 
@@ -809,7 +930,10 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
           <EditField  label="Service Scope"  value={form.service_scope}   onChange={(v) => set("service_scope", v)}   placeholder="Global, Regional, National..." />
         </div>
         <div className="mt-4">
-          <EditField label="Core Services (comma-separated)" value={form.core_services} onChange={(v) => set("core_services", v)} placeholder="Immigration, Tax Advisory, Destination Services" />
+          {isPremier
+            ? <EditField label="Core Services (comma-separated)" value={form.core_services} onChange={(v) => set("core_services", v)} placeholder="Immigration, Tax Advisory, Destination Services" />
+            : <LockedField label="Core Services (comma-separated)" plan="Premier" />
+          }
         </div>
       </Section>
 
@@ -823,43 +947,55 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
 
       {/* Photo Gallery */}
       <Section title="Photo Gallery">
-        <p className="text-xs text-gray-400 mb-4">Photos appear in the carousel on your public profile page. Paste a direct image URL and click Add.</p>
-        {photos.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-            {photos.map((url, idx) => (
-              <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 aspect-video bg-gray-50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                <button
-                  onClick={() => removePhoto(idx)}
-                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label="Remove photo"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+        {isPremier ? (
+          <>
+            <p className="text-xs text-gray-400 mb-4">Photos appear in the carousel on your public profile page. Paste a direct image URL and click Add.</p>
+            {photos.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                {photos.map((url, idx) => (
+                  <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 aspect-video bg-gray-50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removePhoto(idx)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Remove photo"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newPhotoUrl}
+                onChange={(e) => setNewPhotoUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addPhoto())}
+                placeholder="https://example.com/photo.jpg"
+                className={EDIT_INPUT_CLS}
+              />
+              <button
+                onClick={addPhoto}
+                disabled={!newPhotoUrl.trim()}
+                className="shrink-0 bg-gma-navy text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-gma-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Add
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-8 text-center">
+            <svg className="w-8 h-8 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <p className="text-sm font-bold text-gma-navy">Available on Premier</p>
+            <p className="text-xs text-gray-400">Upgrade your plan to add a photo gallery to your profile.</p>
           </div>
         )}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newPhotoUrl}
-            onChange={(e) => setNewPhotoUrl(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addPhoto())}
-            placeholder="https://example.com/photo.jpg"
-            className={EDIT_INPUT_CLS}
-          />
-          <button
-            onClick={addPhoto}
-            disabled={!newPhotoUrl.trim()}
-            className="shrink-0 bg-gma-navy text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-gma-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Add
-          </button>
-        </div>
       </Section>
 
       {/* Social */}

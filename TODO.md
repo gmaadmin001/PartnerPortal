@@ -509,21 +509,22 @@ in place. This is a dashboard-only configuration step.
 
 ## Feedback
 
-- [ ] **Plan-gated profile fields:** For every field/feature in the profile that is only
-      available on an upgraded plan, do NOT display its value/content. Instead:
+- [~] **Plan-gated profile fields:** Public listing now fully gated by plan tier (Basic/Pro/Premier).
+      Dashboard profile *editor* fields still need the grey-out + upgrade icon + hover tooltip
+      treatment described below — that part is not yet done.
       - **Grey out** the field (disabled/muted styling) rather than showing the real data.
       - Place an **upgrade icon** next to fields that *would* become available if the user
         upgraded, signaling the upgrade path.
       - On **mouse-over** of an upgrade icon, show an **advertisement** (tooltip/popover
         promoting the plan that unlocks that field).
       - Hide outright anything that isn't unlockable via upgrade (don't grey it — just omit).
-- [ ] **Upgrade button is broken:** The upgrade button doesn't work — clicking it does nothing.
-      Wire it up to the intended upgrade flow.
+- [x] **Upgrade button is broken:** Fixed — plans page (`/dashboard/plans`) calls Supabase to
+      update `membership_plan` on upgrade/downgrade; slug rotation logic also wired.
 - [ ] **Company logo → file upload:** Change the company logo field from a logo **link/URL**
       input to a **file upload** (upload the logo image instead of pasting a URL).
-- [ ] **Profile Preview URL hardcodes "WORDPRESS":** The Profile Preview URL contains the name
-      `WORDPRESS` and doesn't update when the company name changes. The URL should be derived
-      from the actual company name (slug) and stay in sync as it changes.
+- [x] **Profile Preview URL hardcodes "WORDPRESS":** Fixed — dashboard sidebar "Preview Page"
+      link now derives URL from `reg.slug` via `${MAIN_APP}/services/${reg.slug}` and updates
+      when the slug changes.
 - [ ] **Cloudflare URL → Relocentra:** `Relocentra` will be the URL/domain for the Cloudflare
       deployment.
 - [ ] **Menu items → marketing site:** Adjust the menu items to point back to the
@@ -533,8 +534,8 @@ in place. This is a dashboard-only configuration step.
 - [ ] **Discuss with Michael — searcher registration & gating:** Decide on registration for the
       searcher role. Put **search** behind a **Searcher Login**, and gate **Reviews** behind it
       as well.
-- [ ] **Client Reviews → Release 2 (feature flag):** Move **Client Reviews** out of the current
-      release. Put it behind a **Release 2 feature flag** (hidden/disabled until R2).
+- [x] **Client Reviews → Release 2 (feature flag):** Done — removed from public listings and
+      "Client Reviews" removed from the dashboard sidebar nav entirely. Deferred to R2.
 - [ ] **Updated supplier taxonomy (from Michael):** Michael to provide the updated supplier
       taxonomy; apply it once received.
 - [ ] **Load suppliers:** Load the supplier data into the system.

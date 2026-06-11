@@ -3,11 +3,11 @@
 import Image from "next/image";
 
 const sitemapLinks = [
-  { label: "Solutions",   href: "https://honeydew-capybara-608687.hostingersite.com/solutions/" },
-  { label: "Education",   href: "https://honeydew-capybara-608687.hostingersite.com/global-mobility-courses/" },
-  { label: "About Us",    href: "https://honeydew-capybara-608687.hostingersite.com/about-us/" },
-  { label: "Resources",   href: "https://honeydew-capybara-608687.hostingersite.com/resources/" },
-  { label: "Contact Us",  href: "https://honeydew-capybara-608687.hostingersite.com/contact-us/" },
+  { label: "Solutions",   href: "https://www.globalmobilityadviser.com/solutions/" },
+  { label: "Education",   href: "https://www.globalmobilityadviser.com/global-mobility-courses/" },
+  { label: "About Us",    href: "https://www.globalmobilityadviser.com/about-us/" },
+  { label: "Resources",   href: "https://www.globalmobilityadviser.com/resources/" },
+  { label: "Contact Us",  href: "https://www.globalmobilityadviser.com/contact-us/" },
 ];
 
 const policyLinks = [
@@ -42,7 +42,7 @@ export default function Footer() {
 
           {/* Col 1 — Brand + subscribe */}
           <div>
-            <a href="https://honeydew-capybara-608687.hostingersite.com/" className="inline-block mb-4">
+            <a href="https://www.globalmobilityadviser.com/" className="inline-block mb-4">
               <Image
                 src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png"
                 alt="Global Mobility Adviser"
@@ -87,12 +87,12 @@ export default function Footer() {
                   <div className="text-base text-white group-hover:text-gma-blue-light transition-colors">(623)-290-1143</div>
                 </div>
               </a>
-              <a href="mailto:contactus@honeydew-capybara-608687.hostingersite.com" className="flex gap-3 items-start group hover:text-gma-blue-light transition-colors">
+              <a href="mailto:info@globalmobilityadviser.com" className="flex gap-3 items-start group hover:text-gma-blue-light transition-colors">
                 <EmailIcon />
                 <div>
                   <div className="text-sm font-bold uppercase tracking-wider text-white mb-1 group-hover:text-gma-blue-light transition-colors">Send Us Email</div>
                   <div className="text-base text-white break-all group-hover:text-gma-blue-light transition-colors">
-                    contactus@honeydew-capybara-608687.hostingersite.com
+                    info@globalmobilityadviser.com
                   </div>
                 </div>
               </a>
