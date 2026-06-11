@@ -197,6 +197,25 @@ export default async function ProviderProfilePage({
                 </p>
               )}
 
+              {/* Category + location — visible on all plans */}
+              <div className="flex flex-wrap items-center gap-3 mt-2">
+                {provider.primary_category && (
+                  <span className="bg-gma-blue-pale text-gma-navy text-xs font-bold px-3 py-1 rounded-full">
+                    {provider.primary_category}
+                    {provider.sub_category ? ` · ${provider.sub_category}` : ""}
+                  </span>
+                )}
+                {(provider.headquarters_city || provider.headquarters_country) && (
+                  <span className="flex items-center gap-1 text-xs text-gray-500">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {[provider.headquarters_city, provider.headquarters_country].filter(Boolean).join(", ")}
+                  </span>
+                )}
+              </div>
+
               {isPremier && reviews.length > 0 && (
                 <div className="flex items-center gap-2 mt-3">
                   <Stars rating={avgRating} />
@@ -341,6 +360,45 @@ export default async function ProviderProfilePage({
 
         {/* ── Main content ─────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0 space-y-6">
+
+          {/* Service Coverage — visible on all plans */}
+          {serviceAreas.length > 0 && (
+            <SectionCard label="Service Coverage" icon={<PinIcon />}>
+              <div className="flex flex-wrap gap-2">
+                {serviceAreas.map((area) => (
+                  <span key={area} className="bg-gma-blue-pale text-gma-navy text-xs font-semibold px-2.5 py-1 rounded-lg">
+                    {area}
+                  </span>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Service Details — visible on all plans */}
+          {(provider.register_as || provider.delivery_model || provider.company_size) && (
+            <SectionCard label="Service Details" icon={<InfoIcon />}>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {provider.register_as && (
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Type</p>
+                    <p className="text-sm text-gray-700">{provider.register_as}</p>
+                  </div>
+                )}
+                {provider.delivery_model && (
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Delivery</p>
+                    <p className="text-sm text-gray-700">{provider.delivery_model}</p>
+                  </div>
+                )}
+                {provider.company_size && (
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Company Size</p>
+                    <p className="text-sm text-gray-700">{provider.company_size}</p>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+          )}
 
           {/* Company Bio */}
           {isPro && provider.company_bio && (
