@@ -2,32 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import PhotoCarousel from "@/components/services/PhotoCarousel";
-import ReviewForm from "@/components/services/ReviewForm";
 import ClaimSection from "@/components/services/ClaimSection";
 
-interface Review {
-  id: string;
-  rating: number;
-  body: string | null;
-  reviewer_name: string | null;
-  reviewer_user_id: string | null;
-  created_at: string;
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "lg" }) {
-  const cls = size === "lg" ? "w-5 h-5" : "w-4 h-4";
-  return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: 5 }, (_, i) => (
-        <svg key={i} className={`${cls} ${i < rating ? "text-amber-400" : "text-gray-200"}`} fill="currentColor" viewBox="0 0 20 20">
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
 
 function SideCard({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
@@ -63,7 +40,6 @@ const InfoIcon = () => <svg fill="none" stroke="currentColor" viewBox="0 0 24 24
 const ShareIcon = () => <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>;
 const ShieldIcon = () => <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>;
 const GearIcon = () => <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
-const StarIcon = () => <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -88,17 +64,6 @@ export default async function ProviderProfilePage({
 
   if (provider.status !== "active" && !isOwner) notFound();
 
-  const { data: reviewRows } = await supabase
-    .from("provider_reviews")
-    .select("id, rating, body, reviewer_name, reviewer_user_id, created_at")
-    .eq("provider_id", provider.id)
-    .order("created_at", { ascending: false });
-
-  const reviews = (reviewRows ?? []) as Review[];
-  const existingReview = user
-    ? reviews.find((r) => r.reviewer_user_id === user.id)
-    : undefined;
-
   // Claim state — only relevant when the listing has no current owner
   const hasOwner = !!provider.user_id;
   const userClaimStatus = !hasOwner && user
@@ -106,9 +71,6 @@ export default async function ProviderProfilePage({
       ? (provider.claim_status as "pending" | "rejected" | null) ?? "none"
       : "none"
     : "none";
-  const avgRating = reviews.length
-    ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)
-    : 0;
 
   const photos = Array.isArray(provider.photos) ? (provider.photos as string[]) : [];
   const certs = (provider.certifications ?? "").split(",").map((c: string) => c.trim()).filter(Boolean);
@@ -216,14 +178,6 @@ export default async function ProviderProfilePage({
                 )}
               </div>
 
-              {isPremier && reviews.length > 0 && (
-                <div className="flex items-center gap-2 mt-3">
-                  <Stars rating={avgRating} />
-                  <span className="text-sm text-gray-500">
-                    {avgRating}.0 · {reviews.length} review{reviews.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              )}
             </div>
 
             {/* Back link */}
@@ -430,59 +384,6 @@ export default async function ProviderProfilePage({
                 ))}
               </div>
             </SectionCard>
-          )}
-
-          {/* Client Feedback */}
-          {isPremier && reviews.length > 0 && (
-            <SectionCard label="Client Feedback" icon={<StarIcon />}>
-              <div className="flex items-center gap-3 mb-5 pb-5 border-b border-gray-100">
-                <Stars rating={avgRating} size="lg" />
-                <span className="font-display text-2xl font-bold text-gma-navy">{avgRating}.0</span>
-                <span className="text-sm text-gray-500">out of 5 · {reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
-              </div>
-              <div className="space-y-4">
-                {reviews.map((r) => (
-                  <div key={r.id} className="bg-gma-surface rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <Stars rating={r.rating} />
-                      <span className="text-xs text-gray-400">
-                        {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                      </span>
-                    </div>
-                    {r.body && <p className="text-sm text-gray-700 leading-relaxed mb-2">{r.body}</p>}
-                    {r.reviewer_name && (
-                      <p className="text-xs font-semibold text-gray-500">— {r.reviewer_name}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          )}
-
-          {/* Review form — Premier providers only, signed-in non-owners */}
-          {isPremier && user && !isOwner && (
-            <ReviewForm
-              providerId={provider.id}
-              userId={user.id}
-              reviewerName={user.email?.split("@")[0] ?? ""}
-              existingReview={existingReview}
-            />
-          )}
-
-          {/* Sign-in prompt for guests — Premier providers only */}
-          {isPremier && !user && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center justify-between gap-4">
-              <div>
-                <p className="font-bold text-gma-navy text-sm">Have experience with this company?</p>
-                <p className="text-xs text-gray-500 mt-0.5">Sign in to leave a review.</p>
-              </div>
-              <Link
-                href="/register"
-                className="shrink-0 bg-gma-navy text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gma-primary transition-colors"
-              >
-                Sign In
-              </Link>
-            </div>
           )}
 
           {/* Claim section — only for listings with no current owner */}
