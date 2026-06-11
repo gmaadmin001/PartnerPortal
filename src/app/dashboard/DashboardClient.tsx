@@ -115,6 +115,73 @@ function StatCard({ label, value, sub, icon, color }: {
   );
 }
 
+// ── Upgrade Banner ────────────────────────────────────────────────────────────
+
+const BANNER_KEY = "upgrade_banner_dismissed";
+
+function UpgradeBanner({ plan, onUpgrade }: { plan: string; onUpgrade: () => void }) {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return sessionStorage.getItem(BANNER_KEY) === plan; } catch { return false; }
+  });
+
+  if (plan === "Premier" || dismissed) return null;
+
+  function dismiss() {
+    try { sessionStorage.setItem(BANNER_KEY, plan); } catch { /* ignore */ }
+    setDismissed(true);
+  }
+
+  const isPro = plan === "Professional";
+
+  const lockedChips = isPro
+    ? ["Photo Gallery", "Core Services", "Verified Badge", "Recommended"]
+    : ["Logo", "Company Bio", "Photo Gallery", "Core Services", "Verified Badge", "Recommended"];
+
+  const bg      = isPro ? "bg-gma-blue-pale border-gma-primary/20" : "bg-amber-50 border-amber-200";
+  const text    = isPro ? "text-gma-navy" : "text-amber-900";
+  const sub     = isPro ? "text-gma-primary/80" : "text-amber-700";
+  const chipCls = isPro ? "bg-white border border-gma-primary/20 text-gma-primary" : "bg-white border border-amber-200 text-amber-800";
+  const btnCls  = isPro ? "bg-gma-navy text-white hover:bg-gma-primary" : "bg-amber-500 text-white hover:bg-amber-600";
+
+  const headline = isPro
+    ? "Upgrade to Premier and unlock the full suite"
+    : "You're on the Basic Plan — upgrade to unlock your full profile";
+
+  const cta = isPro ? "Upgrade to Premier →" : "View Plans →";
+
+  return (
+    <div className={`border-b ${bg} px-8 py-3.5 flex items-center gap-4 flex-wrap`}>
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-bold ${text}`}>{headline}</p>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          {lockedChips.map((chip) => (
+            <span key={chip} className={`text-xs font-semibold px-2 py-0.5 rounded-md ${chipCls}`}>
+              {chip}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <button
+          onClick={onUpgrade}
+          className={`text-xs font-bold px-4 py-2 rounded-xl transition-colors ${btnCls}`}
+        >
+          {cta}
+        </button>
+        <button
+          onClick={dismiss}
+          aria-label="Dismiss"
+          className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${sub} hover:opacity-70`}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Sidebar icons ──────────────────────────────────────────────────────────────
 
 const OverviewIcon  = () => <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>;
@@ -1481,6 +1548,9 @@ export default function DashboardClient({
             <p className="text-xs text-gray-400">{user.email}</p>
           </div>
         </div>
+
+        {/* Upgrade banner — Basic and Professional only */}
+        <UpgradeBanner plan={reg?.membership_plan ?? "Basic"} onUpgrade={() => setActive("plans")} />
 
         {/* Panel */}
         <div className="flex-1 p-8">
