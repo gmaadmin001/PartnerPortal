@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useDashboard } from "../layout";
 import { cap } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 function Toast({ msg }: { msg: string }) {
   return (
@@ -17,8 +18,21 @@ function SkelCard() {
 }
 
 export default function ProfilePage() {
-  const { reg, loading, noListing } = useDashboard();
+  const { reg, loading, noListing, user } = useDashboard();
   const [toast, setToast] = useState("");
+
+  // Photo gallery state
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+  const [galleryNewUrl, setGalleryNewUrl] = useState("");
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryUploadErr, setGalleryUploadErr] = useState<string | null>(null);
+  const [gallerySaving, setGallerySaving] = useState(false);
+  const [gallerySaved, setGallerySaved] = useState(false);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (reg) setGalleryPhotos((reg.photos ?? []) as unknown as string[]);
+  }, [reg]);
 
   function showToast(m: string) {
     setToast(m);
@@ -57,6 +71,47 @@ export default function ProfilePage() {
       <span className="field-val">{value}</span>
     </div>
   );
+
+  async function handleGalleryFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setGalleryUploadErr(null);
+    setGalleryUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${user.id}/gallery/${crypto.randomUUID()}.${ext}`;
+    const supabase = createClient();
+    const { error: upErr } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
+    setGalleryUploading(false);
+    if (upErr) { setGalleryUploadErr(upErr.message); return; }
+    const { data } = supabase.storage.from("logos").getPublicUrl(path);
+    setGalleryPhotos(p => [...p, data.publicUrl]);
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
+  }
+
+  function addGalleryUrl() {
+    const url = galleryNewUrl.trim();
+    if (!url) return;
+    setGalleryPhotos(p => [...p, url]);
+    setGalleryNewUrl("");
+  }
+
+  async function saveGallery() {
+    if (!user) return;
+    setGallerySaving(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("service_registrations")
+      .update({ photos: galleryPhotos })
+      .eq("user_id", user.id);
+    setGallerySaving(false);
+    if (!error) {
+      setGallerySaved(true);
+      showToast("Photos saved!");
+      setTimeout(() => setGallerySaved(false), 2500);
+    } else {
+      showToast("Failed to save photos.");
+    }
+  }
 
   return (
     <div className="dash-content">
@@ -121,6 +176,87 @@ export default function ProfilePage() {
               {reg.states_served.map(s => <span key={s} className="country-chip">{s}</span>)}
             </div>
           } />
+        )}
+      </Section>
+
+      {/* Photo Gallery */}
+      <Section title="Photo Gallery" color="#7c3aed" bg="#f5f3ff"
+        icon={<svg width="14" height="14" fill="none" stroke="#7c3aed" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>}>
+        {!(reg.membership_plan || "").includes("Premier") ? (
+          <div style={{ textAlign: "center", padding: "24px 0", color: "#9ca3af" }}>
+            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ margin: "0 auto 10px", display: "block", opacity: 0.4 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 4 }}>Premier Plan required</p>
+            <p style={{ fontSize: 12 }}>Upgrade to Premier to add a photo gallery to your profile.</p>
+          </div>
+        ) : (
+          <>
+            <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 14 }}>
+              Photos appear in the carousel on your public listing. Upload from your PC or paste a URL, then click Save.
+            </p>
+
+            {/* Existing photos grid */}
+            {galleryPhotos.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
+                {galleryPhotos.map((url, idx) => (
+                  <div key={idx} style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb", aspectRatio: "16/9", background: "#f9fafb" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Photo ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <button
+                      onClick={() => setGalleryPhotos(p => p.filter((_, i) => i !== idx))}
+                      style={{ position: "absolute", top: 5, right: 5, width: 22, height: 22, borderRadius: "50%", background: "#ef4444", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}
+                      aria-label="Remove"
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload from PC */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+              <button
+                onClick={() => galleryInputRef.current?.click()}
+                disabled={galleryUploading}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", background: "#1C66AD", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: galleryUploading ? "not-allowed" : "pointer", opacity: galleryUploading ? 0.6 : 1, transition: "opacity 0.2s" }}
+              >
+                {galleryUploading ? (
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style={{ animation: "spin 1s linear infinite" }}><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25"/><path fill="currentColor" opacity="0.75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                ) : (
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                )}
+                {galleryUploading ? "Uploading…" : "Upload Photo"}
+              </button>
+              <span style={{ fontSize: 11, color: "#9ca3af" }}>JPEG, PNG, WebP · max 2 MB</span>
+              <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: "none" }} onChange={handleGalleryFile} />
+            </div>
+            {galleryUploadErr && <p style={{ fontSize: 12, color: "#ef4444", marginBottom: 10 }}>{galleryUploadErr}</p>}
+
+            {/* URL paste */}
+            <p style={{ fontSize: 10.5, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Or paste a URL</p>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              <input
+                type="text"
+                value={galleryNewUrl}
+                onChange={e => setGalleryNewUrl(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addGalleryUrl())}
+                placeholder="https://example.com/photo.jpg"
+                style={{ flex: 1, padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none" }}
+              />
+              <button
+                onClick={addGalleryUrl}
+                disabled={!galleryNewUrl.trim()}
+                style={{ padding: "8px 16px", background: "#1E2E61", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: galleryNewUrl.trim() ? "pointer" : "not-allowed", opacity: galleryNewUrl.trim() ? 1 : 0.4 }}
+              >Add</button>
+            </div>
+
+            {/* Save */}
+            <button
+              onClick={saveGallery}
+              disabled={gallerySaving || gallerySaved}
+              style={{ padding: "9px 22px", background: gallerySaved ? "#16a34a" : "#1E2E61", color: "#fff", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: gallerySaving || gallerySaved ? "not-allowed" : "pointer", opacity: gallerySaving ? 0.6 : 1, transition: "all 0.2s" }}
+            >
+              {gallerySaved ? "✓ Saved!" : gallerySaving ? "Saving…" : "Save Photos"}
+            </button>
+          </>
         )}
       </Section>
     </div>

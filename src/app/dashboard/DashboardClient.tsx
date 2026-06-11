@@ -868,6 +868,9 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
   const [saved, setSaved] = useState(false);
   const [photos, setPhotos] = useState<string[]>(reg.photos ?? []);
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     company_name:          reg.company_name          ?? "",
@@ -912,6 +915,22 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
 
   function splitTrim(s: string): string[] {
     return s.split(",").map((v) => v.trim()).filter(Boolean);
+  }
+
+  async function handlePhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploadError(null);
+    setPhotoUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${userId}/gallery/${crypto.randomUUID()}.${ext}`;
+    const supabase = createClient();
+    const { error: upErr } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
+    setPhotoUploading(false);
+    if (upErr) { setPhotoUploadError(upErr.message); return; }
+    const { data } = supabase.storage.from("logos").getPublicUrl(path);
+    setPhotos((p) => [...p, data.publicUrl]);
+    if (photoInputRef.current) photoInputRef.current.value = "";
   }
 
   function addPhoto() {
@@ -1076,7 +1095,31 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
       <Section title="Photo Gallery">
         {isPremier ? (
           <>
-            <p className="text-xs text-gray-400 mb-4">Photos appear in the carousel on your public profile page. Paste a direct image URL and click Add.</p>
+            <p className="text-xs text-gray-400 mb-4">Photos appear in the carousel on your public profile page. Upload from your PC or paste a direct image URL.</p>
+            <div className="flex items-center gap-3 mb-2">
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={photoUploading}
+                className="flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl border border-gma-primary text-gma-primary hover:bg-gma-blue-pale transition-colors disabled:opacity-50"
+              >
+                {photoUploading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    Uploading…
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                    Upload Photo
+                  </>
+                )}
+              </button>
+              <span className="text-xs text-gray-400">JPEG, PNG, WebP · max 2 MB</span>
+              <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handlePhotoFile} />
+            </div>
+            {photoUploadError && <p className="text-xs text-red-500 mb-3">{photoUploadError}</p>}
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-4">Or paste a URL</p>
             {photos.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
                 {photos.map((url, idx) => (
