@@ -2,9 +2,12 @@ export interface ServiceRegistration {
   id: string;
   user_id: string;
   company_name: string | null;
-  slug: string | null;
+  slug: string; // NOT NULL in DB
   website_url: string | null;
   short_description: string | null;
+  company_bio: string | null;
+  logo_url: string | null;
+  photos: object[] | null; // jsonb array
   primary_category: string | null;
   sub_category: string | null;
   register_as: string | null;
@@ -15,16 +18,21 @@ export interface ServiceRegistration {
   headquarters_city: string | null;
   countries_served: string[] | null;
   states_served: string[] | null;
+  diversity_flags: string[] | null;
   primary_contact_name: string | null;
   primary_contact_email: string | null;
   primary_contact_phone: string | null;
   membership_plan: string | null;
   membership_billing: string | null;
-  status: string | null;
+  status: string;
+  is_verified: boolean;
+  is_featured: boolean;
   claimed_by: string | null;
   claimed_at: string | null;
   claim_status: string | null;
+  premium_slug: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Review {

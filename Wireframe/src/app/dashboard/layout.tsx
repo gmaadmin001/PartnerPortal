@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const initial = (reg?.company_name ?? "?")[0].toUpperCase();
-  const listingHref = reg?.slug ? `${MAIN_APP}/services/${reg.slug}` : "#";
+  const listingHref = reg?.slug ? `${MAIN_APP}/services/${reg.slug}` : null;
 
   return (
     <DashboardContext.Provider value={{ user, reg, loading, noListing }}>
@@ -106,9 +106,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Preview link */}
           <a
-            href={listingHref}
-            target={reg?.slug ? "_blank" : undefined}
-            rel={reg?.slug ? "noopener noreferrer" : undefined}
+            href={listingHref ?? undefined}
+            target={listingHref ? "_blank" : undefined}
+            rel={listingHref ? "noopener noreferrer" : undefined}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 20px 14px", fontSize: 11.5, color: "rgba(255,255,255,0.38)", textDecoration: "none", transition: "color 0.15s" }}
             onMouseOver={e => (e.currentTarget.style.color = "#43B4E3")}
             onMouseOut={e => (e.currentTarget.style.color = "rgba(255,255,255,0.38)")}
@@ -127,9 +127,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     return (
                       <a
                         key={item.label}
-                        href={listingHref}
-                        target={reg?.slug ? "_blank" : undefined}
+                        href={listingHref ?? undefined}
+                        target={listingHref ? "_blank" : undefined}
                         className="nav-item"
+                        style={{ opacity: listingHref ? 1 : 0.4, pointerEvents: listingHref ? "auto" : "none" }}
                       >
                         {item.icon}
                         {item.label}

@@ -3,8 +3,28 @@
 import Link from "next/link";
 import { useDashboard } from "./layout";
 import { cap, fmtDate } from "@/lib/utils";
+import type { ServiceRegistration } from "@/types";
 
 const MAIN_APP = process.env.NEXT_PUBLIC_MAIN_APP_URL || "";
+
+const PLAN_RANK: Record<string, number> = { Basic: 0, Professional: 1, Premier: 2 };
+
+const COMPLETION_ITEMS: {
+  label: string;
+  minPlan: "Basic" | "Professional" | "Premier";
+  check: (r: ServiceRegistration) => boolean;
+}[] = [
+  { label: "Company name",    minPlan: "Basic",        check: r => !!r.company_name },
+  { label: "Custom URL",      minPlan: "Professional", check: r => !!r.website_url },
+  { label: "Primary category",minPlan: "Basic",        check: r => !!r.primary_category },
+  { label: "Countries served",minPlan: "Basic",        check: r => Array.isArray(r.countries_served) && r.countries_served.length > 0 },
+  { label: "Membership plan", minPlan: "Basic",        check: r => !!r.membership_plan },
+  { label: "Company bio",     minPlan: "Professional", check: r => !!r.company_bio },
+  { label: "Logo uploaded",   minPlan: "Professional", check: r => !!r.logo_url },
+  { label: "Contact email",   minPlan: "Professional", check: r => !!r.primary_contact_email },
+  { label: "Contact phone",   minPlan: "Professional", check: r => !!r.primary_contact_phone },
+  { label: "Photos added",    minPlan: "Premier",      check: r => Array.isArray(r.photos) && (r.photos?.length ?? 0) > 0 },
+];
 
 function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -155,21 +175,83 @@ export default function DashboardOverview() {
 
       {/* Content cards */}
       <div className="grid-2" style={{ marginBottom: 20 }}>
-        {/* Company Profile card */}
-        <div className="crd" style={{ borderTop: "3px solid #1C66AD" }}>
-          <div className="crd-title">
-            <div className="crd-title-icon" style={{ background: "#eff6ff" }}>
-              <svg width="14" height="14" fill="none" stroke="#1C66AD" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        {/* Profile Completion card */}
+        {(() => {
+          const planName = (reg.membership_plan || "Basic").split(/\s*[–—]\s*/)[0].trim();
+          const planRank = PLAN_RANK[planName] ?? 0;
+          const available = COMPLETION_ITEMS.filter(i => (PLAN_RANK[i.minPlan] ?? 0) <= planRank);
+          const completed = available.filter(i => i.check(reg)).length;
+          const pct = available.length ? Math.round((completed / available.length) * 100) : 0;
+          const barColor = pct === 100 ? "#16a34a" : pct >= 60 ? "#1C66AD" : "#f59e0b";
+          return (
+            <div className="crd" style={{ borderTop: "3px solid #1C66AD" }}>
+              <div className="crd-title">
+                <div className="crd-title-icon" style={{ background: "#eff6ff" }}>
+                  <svg width="14" height="14" fill="none" stroke="#1C66AD" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                </div>
+                Profile Completion
+              </div>
+
+              {/* Progress */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "#374151" }}>Overall completeness</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: barColor }}>{pct}%</span>
+                </div>
+                <div style={{ height: 8, background: "#f3f4f6", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: 4, transition: "width 0.5s ease" }} />
+                </div>
+              </div>
+
+              {/* Items */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {COMPLETION_ITEMS.map(item => {
+                  const itemRank = PLAN_RANK[item.minPlan] ?? 0;
+                  const locked = itemRank > planRank;
+                  const done = !locked && item.check(reg);
+                  const planBadge = item.minPlan === "Premier"
+                    ? "Premier Only"
+                    : "Professional & Premier";
+
+                  return (
+                    <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {/* Check / X / Lock icon */}
+                      {locked ? (
+                        <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#f3f4f6", border: "1.5px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <svg width="9" height="9" fill="none" stroke="#9ca3af" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </span>
+                      ) : done ? (
+                        <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#f0fdf4", border: "1.5px solid #86efac", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <svg width="10" height="10" fill="none" stroke="#16a34a" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
+                        </span>
+                      ) : (
+                        <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff7ed", border: "1.5px solid #fed7aa", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <svg width="9" height="9" fill="none" stroke="#f59e0b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01"/></svg>
+                        </span>
+                      )}
+
+                      <span style={{ fontSize: 13, color: locked ? "#9ca3af" : "#374151", flex: 1 }}>
+                        {item.label}
+                      </span>
+
+                      {locked && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: item.minPlan === "Premier" ? "#7c3aed" : "#1C66AD", background: item.minPlan === "Premier" ? "#f5f3ff" : "#eff6ff", border: `1px solid ${item.minPlan === "Premier" ? "#ddd6fe" : "#bfdbfe"}`, borderRadius: 20, padding: "2px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                          {planBadge}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {pct < 100 && !COMPLETION_ITEMS.filter(i => (PLAN_RANK[i.minPlan] ?? 0) <= planRank).every(i => i.check(reg)) && (
+                <Link href="/dashboard/profile" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 16, fontSize: 12.5, fontWeight: 700, color: "#1C66AD", textDecoration: "none" }}>
+                  Complete your profile →
+                </Link>
+              )}
             </div>
-            Company Profile
-          </div>
-          <FieldRow label="Company" value={reg.company_name || "—"} />
-          <FieldRow label="Category" value={`${reg.primary_category || "—"}${reg.sub_category ? ` › ${reg.sub_category}` : ""}`} />
-          <FieldRow label="Website" value={reg.website_url ? <a href={reg.website_url} target="_blank" rel="noopener noreferrer">{reg.website_url}</a> : "—"} />
-          <FieldRow label="Description" value={reg.short_description || "—"} />
-          <FieldRow label="Delivery Model" value={cap(reg.delivery_model) || "—"} />
-          <FieldRow label="Company Size" value={reg.company_size || "—"} />
-        </div>
+          );
+        })()}
 
         {/* Contact + Coverage */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>

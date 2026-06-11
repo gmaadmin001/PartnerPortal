@@ -2,47 +2,152 @@
 
 import { useState } from "react";
 import { useDashboard } from "../layout";
+import { createClient } from "@/lib/supabase/client";
+import { slugify } from "@/lib/utils";
+
+const PLAN_RANK: Record<string, number> = { Basic: 0, Professional: 1, Premier: 2 };
 
 const PLANS = [
   {
     id: "Basic",
-    features: ["Company name & website","1 service category","HQ city listing","Standard search placement"],
+    features: ["Company name & website", "1 service category", "HQ city listing", "Standard search placement"],
     featLabel: "What's included",
-    monthlyPrice: null,
-    yearlyPrice: null,
+    monthlyPrice: null as number | null,
+    yearlyPrice: null as number | null,
   },
   {
     id: "Professional",
-    features: ["Company logo & description","Contact details shown","Up to 3 service categories","Up to 3 service areas","Self-service profile editing"],
+    features: ["Company logo & description", "Contact details shown", "Up to 3 service categories", "Up to 3 service areas", "Self-service profile editing"],
     featLabel: "Everything in Basic, plus",
     monthlyPrice: 25,
     yearlyPrice: 250,
-    popular: true,
-    extra: "Verified Badge available — $100 one-time",
+    extra: true,
   },
   {
     id: "Premier",
-    features: ["Unlimited categories & areas","Verified Badge — included","Star ratings & reviews","Preferred search placement*","Thought leadership posts","Media gallery"],
+    features: ["Unlimited categories & areas", "Verified Badge — included", "Star ratings & reviews", "Preferred search placement*", "Thought leadership posts", "Media gallery"],
     featLabel: "Everything in Professional, plus",
     monthlyPrice: 50,
     yearlyPrice: 500,
   },
 ];
 
-function Toast({ msg }: { msg: string }) {
+// Features that require a paid plan — used to show what is lost on downgrade
+const GATED_FEATURES: { label: string; minPlan: "Professional" | "Premier" }[] = [
+  { label: "Company bio & description", minPlan: "Professional" },
+  { label: "Company logo display", minPlan: "Professional" },
+  { label: "Contact details on public profile", minPlan: "Professional" },
+  { label: "Up to 3 service categories", minPlan: "Professional" },
+  { label: "Up to 3 service areas", minPlan: "Professional" },
+  { label: "Self-service profile editing", minPlan: "Professional" },
+  { label: "Unlimited categories & areas", minPlan: "Premier" },
+  { label: "Verified Badge — included", minPlan: "Premier" },
+  { label: "Star ratings & reviews", minPlan: "Premier" },
+  { label: "Preferred search placement", minPlan: "Premier" },
+  { label: "Thought leadership posts", minPlan: "Premier" },
+  { label: "Media gallery (photos)", minPlan: "Premier" },
+];
+
+function getLostFeatures(fromPlan: string, toPlan: string) {
+  const fromRank = PLAN_RANK[fromPlan] ?? 0;
+  const toRank = PLAN_RANK[toPlan] ?? 0;
+  return GATED_FEATURES.filter(f => {
+    const r = PLAN_RANK[f.minPlan] ?? 0;
+    return r > toRank && r <= fromRank;
+  });
+}
+
+function Toast({ msg, type }: { msg: string; type: "info" | "success" | "error" }) {
+  const bg = type === "error" ? "#dc2626" : type === "success" ? "#16a34a" : "#1E2E61";
   return (
-    <div style={{ position: "fixed", bottom: 28, right: 28, background: "#1E2E61", color: "#fff", padding: "12px 22px", borderRadius: 12, fontSize: 14, fontWeight: 600, boxShadow: "0 8px 24px rgba(0,0,0,0.2)", zIndex: 9999 }}>
+    <div style={{ position: "fixed", bottom: 28, right: 28, background: bg, color: "#fff", padding: "12px 22px", borderRadius: 12, fontSize: 14, fontWeight: 600, boxShadow: "0 8px 24px rgba(0,0,0,0.2)", zIndex: 9999 }}>
       {msg}
     </div>
   );
 }
 
 export default function PlansPage() {
-  const { reg, loading } = useDashboard();
+  const { reg, loading, user } = useDashboard();
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState<{ msg: string; type: "info" | "success" | "error" } | null>(null);
+  const [downgradeTarget, setDowngradeTarget] = useState<typeof PLANS[0] | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
-  function showToast(m: string) { setToast(m); setTimeout(() => setToast(""), 3000); }
+  function showToast(msg: string, type: "info" | "success" | "error" = "info") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  async function confirmDowngrade() {
+    if (!downgradeTarget || !user) return;
+    setConfirming(true);
+    const supabase = createClient();
+
+    const targetRankForUpdate = PLAN_RANK[downgradeTarget.id] ?? 0;
+    const losingPremier = currentRank >= PLAN_RANK["Premier"] && targetRankForUpdate < PLAN_RANK["Premier"];
+
+    const updateData: Record<string, unknown> = {
+      membership_plan: downgradeTarget.id,
+      membership_billing: downgradeTarget.id === "Basic" ? null : reg?.membership_billing,
+    };
+
+    // Losing Premier → clear media gallery
+    if (losingPremier) {
+      updateData.photos = null;
+    }
+
+    // Downgrading to Basic → save premium slug, swap in a generated basic slug
+    if (downgradeTarget.id === "Basic" && reg?.slug) {
+      updateData.premium_slug = reg.slug;
+      updateData.slug = "basic-" + user.id.replace(/-/g, "").substring(0, 8);
+    }
+
+    const { error } = await supabase
+      .from("service_registrations")
+      .update(updateData)
+      .eq("user_id", user.id);
+
+    setConfirming(false);
+    if (error) {
+      showToast("Failed to update plan. Please try again.", "error");
+    } else {
+      showToast(`Downgraded to ${downgradeTarget.id} successfully.`, "success");
+      setDowngradeTarget(null);
+      setTimeout(() => window.location.reload(), 1200);
+    }
+  }
+
+  async function handleUpgrade(targetPlan: typeof PLANS[0]) {
+    if (!user) return;
+    setConfirming(true);
+    const supabase = createClient();
+
+    const updateData: Record<string, unknown> = {
+      membership_plan: targetPlan.id,
+      membership_billing: billing,
+    };
+
+    // Upgrading from Basic → restore premium slug if stored, else generate from company name
+    if (currentPlanName === "Basic") {
+      const restored = reg?.premium_slug
+        || (reg?.company_name ? slugify(reg.company_name) : "basic-" + user.id.replace(/-/g, "").substring(0, 8));
+      updateData.slug = restored;
+      updateData.premium_slug = null;
+    }
+
+    const { error } = await supabase
+      .from("service_registrations")
+      .update(updateData)
+      .eq("user_id", user.id);
+
+    setConfirming(false);
+    if (error) {
+      showToast("Failed to upgrade plan. Please try again.", "error");
+    } else {
+      showToast(`Upgraded to ${targetPlan.id} successfully.`, "success");
+      setTimeout(() => window.location.reload(), 1200);
+    }
+  }
 
   if (loading) {
     return (
@@ -53,10 +158,77 @@ export default function PlansPage() {
   }
 
   const currentPlanName = (reg?.membership_plan || "Basic").split(/\s*[–—]\s*/)[0].trim();
+  const currentRank = PLAN_RANK[currentPlanName] ?? 0;
+  const lostFeatures = downgradeTarget ? getLostFeatures(currentPlanName, downgradeTarget.id) : [];
 
   return (
     <div className="dash-content">
-      {toast && <Toast msg={toast} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
+
+      {/* Downgrade confirmation modal */}
+      {downgradeTarget && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setDowngradeTarget(null); }}
+        >
+          <div style={{ background: "#fff", borderRadius: 18, padding: "32px 36px", maxWidth: 480, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,0.3)" }}>
+            {/* Modal header */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
+              <div>
+                <p style={{ fontSize: 10.5, fontWeight: 700, color: "#ef4444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Confirm Downgrade</p>
+                <h2 className="dsp" style={{ fontSize: 22, fontWeight: 800, color: "#0a1628" }}>
+                  Switch to {downgradeTarget.id}
+                </h2>
+              </div>
+              <button onClick={() => setDowngradeTarget(null)} style={{ background: "#f3f4f6", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
+            </div>
+            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 24 }}>
+              {downgradeTarget.monthlyPrice === null
+                ? "The Basic plan is free."
+                : `${downgradeTarget.id} is $${billing === "annual" ? downgradeTarget.yearlyPrice + "/yr" : downgradeTarget.monthlyPrice + "/mo"}.`}
+              {" "}This change takes effect immediately.
+            </p>
+
+            {/* Lost features */}
+            {lostFeatures.length > 0 && (
+              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "16px 18px", marginBottom: 20 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#b91c1c", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  You will lose these features
+                </p>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 9 }}>
+                  {lostFeatures.map(f => (
+                    <li key={f.label} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#374151" }}>
+                      <span style={{ color: "#ef4444", fontSize: 15, fontWeight: 700, flexShrink: 0 }}>✕</span>
+                      <span>{f.label}</span>
+                      <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: "#6b7280", background: "#f3f4f6", borderRadius: 20, padding: "2px 8px", flexShrink: 0 }}>
+                        {f.minPlan === "Premier" ? "PREMIER" : "PROFESSIONAL"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setDowngradeTarget(null)}
+                style={{ flex: 1, padding: "11px 0", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDowngrade}
+                disabled={confirming}
+                style={{ flex: 1, padding: "11px 0", background: confirming ? "#fca5a5" : "#ef4444", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: confirming ? "not-allowed" : "pointer", transition: "background 0.2s" }}
+              >
+                {confirming ? "Updating…" : `Confirm Downgrade`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
@@ -95,13 +267,28 @@ export default function PlansPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22 }}>
         {PLANS.map(p => {
           const isCurrent = p.id === currentPlanName;
+          const targetRank = PLAN_RANK[p.id] ?? 0;
+          const isDowngrade = !isCurrent && targetRank < currentRank;
           const price = p.monthlyPrice === null ? "Free" : billing === "annual" ? `$${p.yearlyPrice}` : `$${p.monthlyPrice}`;
           const priceSuffix = p.monthlyPrice === null ? "" : billing === "annual" ? "/yr" : "/mo";
           const saving = billing === "annual" && p.monthlyPrice ? `Save $${p.monthlyPrice * 12 - (p.yearlyPrice ?? 0)} vs monthly` : null;
 
+          let btnLabel: string;
+          if (isCurrent) btnLabel = "Current Plan";
+          else if (isDowngrade) btnLabel = `Downgrade to ${p.id}`;
+          else btnLabel = `Upgrade to ${p.id}`;
+
+          let btnBg: string;
+          if (isCurrent) btnBg = "#1E2E61";
+          else if (isDowngrade) btnBg = "#f3f4f6";
+          else if (p.id === "Professional") btnBg = "#1C66AD";
+          else btnBg = "#1E2E61";
+
+          const btnColor = isCurrent ? "#fff" : isDowngrade ? "#374151" : "#fff";
+
           return (
             <div key={p.id} className="crd" style={{
-              borderTop: `3px solid ${isCurrent ? "#1E2E61" : "#dde3ee"}`,
+              borderTop: `3px solid ${isCurrent ? "#1E2E61" : isDowngrade ? "#e5e7eb" : "#1C66AD"}`,
               background: isCurrent ? "linear-gradient(180deg,#f0f4ff 0%,#fff 100%)" : "#fff",
               position: "relative",
             }}>
@@ -135,17 +322,26 @@ export default function PlansPage() {
               )}
 
               <button
-                onClick={() => isCurrent ? null : showToast(`Switching to ${p.id} — billing management coming soon`)}
-                disabled={isCurrent}
+                onClick={() => {
+                  if (isCurrent) return;
+                  if (isDowngrade) {
+                    setDowngradeTarget(p);
+                  } else {
+                    handleUpgrade(p);
+                  }
+                }}
+                disabled={isCurrent || confirming}
                 style={{
-                  width: "100%", padding: 11, borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: isCurrent ? "default" : "pointer",
-                  border: "none", transition: "all 0.2s",
-                  background: isCurrent ? "#1E2E61" : p.id === "Basic" ? "#f3f4f6" : p.id === "Professional" ? "#1C66AD" : "#1E2E61",
-                  color: isCurrent ? "#fff" : p.id === "Basic" ? "#374151" : "#fff",
+                  width: "100%", padding: 11, borderRadius: 9, fontSize: 13, fontWeight: 700,
+                  cursor: isCurrent ? "default" : "pointer",
+                  border: isDowngrade && !isCurrent ? "1.5px solid #e5e7eb" : "none",
+                  transition: "all 0.2s",
+                  background: btnBg,
+                  color: btnColor,
                   opacity: isCurrent ? 0.9 : 1,
                 }}
               >
-                {isCurrent ? "Current Plan" : p.id === "Basic" ? "Downgrade to Basic" : `Upgrade to ${p.id}`}
+                {btnLabel}
               </button>
             </div>
           );

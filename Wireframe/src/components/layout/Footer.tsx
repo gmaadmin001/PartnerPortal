@@ -1,3 +1,5 @@
+"use client";
+
 const GMA_SITE = "https://honeydew-capybara-608687.hostingersite.com";
 
 export default function Footer() {
