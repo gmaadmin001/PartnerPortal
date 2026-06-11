@@ -539,16 +539,6 @@ in place. This is a dashboard-only configuration step.
 - [ ] **Discuss with Michael — searcher registration & gating:** Decide on registration for the
       searcher role. Put **search** behind a **Searcher Login**, and gate **Reviews** behind it
       as well.
-- [ ] **Metrics tracking — search impressions + page views:** Two metrics confirmed in meeting:
-      - **Search surfacing count** — increment a counter each time a supplier appears in search
-        results. Surfaced in admin dashboard and to suppliers as a sales/value tool.
-      - **Page views** — increment a counter each time someone views a supplier's listing page.
-      Both surfaced to suppliers as part of the monthly metric summary (marketing service) and
-      to admins for oversight. Used as upgrade sales tool: "You surfaced X times this month —
-      upgrade to Premier to stand out."
-      Ready to build — no external dependency. Approach: two integer columns on
-      `service_registrations` + Postgres RPC for atomic increments + service-role client in
-      the search API and listing page server component.
 
 ### Completed
 
@@ -576,3 +566,11 @@ in place. This is a dashboard-only configuration step.
 - [x] **Wireframe dashboard features ported to main app:** Plan-aware profile completion with
       lock icons, real upgrade/downgrade Supabase logic with downgrade modal, slug rotation,
       and removal of reviews from nav/stat cards.
+- [x] **Metrics tracking — search impressions + page views:** Two counters on
+      `service_registrations` (`search_impressions`, `profile_views`). Search API increments
+      impressions for every supplier returned in results; listing page increments profile views
+      for every non-owner visit. Both use the service-role client + Postgres RPCs for atomic
+      increments. Displayed in the dashboard Overview panel as two new stat cards. Admin
+      dashboard (Paul) can read the same columns directly from the table.
+      **Note:** Not wired to the Wireframe — the Wireframe has its own separate routes and
+      dashboard. Wireframe is the prototype; metrics are intentionally main-app only.

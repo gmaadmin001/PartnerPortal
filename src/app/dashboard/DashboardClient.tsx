@@ -289,7 +289,7 @@ function OverviewPanel({ reg, setActive }: {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           label="Listing Status"
           value={reg?.status ? (reg.status.charAt(0).toUpperCase() + reg.status.slice(1)) : "None"}
@@ -305,18 +305,11 @@ function OverviewPanel({ reg, setActive }: {
           icon={<svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>}
         />
         <StatCard
-          label="Search Appearances"
-          value={reg?.search_impressions ?? 0}
-          sub="Times shown in search"
-          color="bg-violet-500"
-          icon={<svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
-        />
-        <StatCard
-          label="Profile Views"
-          value={reg?.profile_views ?? 0}
-          sub="Times listing was opened"
-          color="bg-teal-500"
-          icon={<svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
+          label="Listing Type"
+          value={reg?.register_as ?? "Provider"}
+          sub={reg?.membership_plan ? `${reg.membership_plan} Plan` : "Not registered"}
+          color="bg-amber-400"
+          icon={<svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
         />
         <StatCard
           label="Profile Complete"
