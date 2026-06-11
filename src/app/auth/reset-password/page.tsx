@@ -13,11 +13,6 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const criteria = {
     length:    password.length >= 8,
     uppercase: /[A-Z]/.test(password),
@@ -42,6 +37,10 @@ export default function ResetPasswordPage() {
     if (!canSubmit) return;
     setError(null);
     setLoading(true);
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {

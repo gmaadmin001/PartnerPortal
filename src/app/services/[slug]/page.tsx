@@ -119,7 +119,10 @@ export default async function ProviderProfilePage({
     ...((provider.states_served ?? []) as string[]),
   ];
   const social = (provider.social_profiles ?? {}) as Record<string, string>;
-  const isPremier = provider.membership_plan === "Premier";
+  const PLAN_RANK: Record<string, number> = { Basic: 0, Professional: 1, Premier: 2 };
+  const rank = PLAN_RANK[provider.membership_plan ?? "Basic"] ?? 0;
+  const isPro = rank >= 1;
+  const isPremier = rank >= 2;
   const websiteDisplay = (provider.website_url ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "");
 
   return (
@@ -146,7 +149,7 @@ export default async function ProviderProfilePage({
         <div className="max-w-screen-xl mx-auto px-6 py-8">
           <div className="flex items-start gap-6">
             {/* Logo */}
-            {provider.logo_url ? (
+            {isPro && provider.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={provider.logo_url}
@@ -167,7 +170,7 @@ export default async function ProviderProfilePage({
                 <h1 className="font-display text-2xl font-bold text-gma-navy">
                   {provider.company_name}
                 </h1>
-                {provider.is_verified && (
+                {isPremier && provider.is_verified && (
                   <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide">
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -180,7 +183,7 @@ export default async function ProviderProfilePage({
                     ⭐ RECOMMENDED
                   </span>
                 )}
-                {provider.is_featured && (
+                {isPremier && provider.is_featured && (
                   <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide">
                     👍 BEST MATCH
                   </span>
@@ -194,7 +197,7 @@ export default async function ProviderProfilePage({
                 </p>
               )}
 
-              {reviews.length > 0 && (
+              {isPremier && reviews.length > 0 && (
                 <div className="flex items-center gap-2 mt-3">
                   <Stars rating={avgRating} />
                   <span className="text-sm text-gray-500">
@@ -221,8 +224,8 @@ export default async function ProviderProfilePage({
       {/* ── Two-column body ──────────────────────────────────────────────────── */}
       <div className="max-w-screen-xl mx-auto px-6 py-8 flex gap-8 items-start">
 
-        {/* ── Left sidebar ─────────────────────────────────────────────────── */}
-        <aside className="w-72 shrink-0 space-y-4 sticky top-6">
+        {/* ── Left sidebar (Professional+ only) ───────────────────────────── */}
+        {isPro && <aside className="w-72 shrink-0 space-y-4 sticky top-6">
 
           {/* Contact Details */}
           <SideCard label="Contact Details" icon={<PhoneIcon />}>
@@ -334,23 +337,23 @@ export default async function ProviderProfilePage({
               </div>
             </SideCard>
           )}
-        </aside>
+        </aside>}
 
         {/* ── Main content ─────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0 space-y-6">
 
           {/* Company Bio */}
-          {provider.company_bio && (
+          {isPro && provider.company_bio && (
             <SectionCard label="Company Bio" icon={<InfoIcon />}>
               <p className="text-gray-700 text-sm leading-relaxed">{provider.company_bio}</p>
             </SectionCard>
           )}
 
           {/* Photo Gallery */}
-          {photos.length > 0 && <PhotoCarousel photos={photos} />}
+          {isPremier && photos.length > 0 && <PhotoCarousel photos={photos} />}
 
           {/* Core Services */}
-          {coreServices.length > 0 && (
+          {isPremier && coreServices.length > 0 && (
             <SectionCard label="Core Services" icon={<GearIcon />}>
               <div className="divide-y divide-gray-100">
                 {coreServices.map((svc) => (
@@ -372,7 +375,7 @@ export default async function ProviderProfilePage({
           )}
 
           {/* Client Feedback */}
-          {reviews.length > 0 && (
+          {isPremier && reviews.length > 0 && (
             <SectionCard label="Client Feedback" icon={<StarIcon />}>
               <div className="flex items-center gap-3 mb-5 pb-5 border-b border-gray-100">
                 <Stars rating={avgRating} size="lg" />
@@ -398,8 +401,8 @@ export default async function ProviderProfilePage({
             </SectionCard>
           )}
 
-          {/* Review form — signed-in non-owners only */}
-          {user && !isOwner && (
+          {/* Review form — Premier providers only, signed-in non-owners */}
+          {isPremier && user && !isOwner && (
             <ReviewForm
               providerId={provider.id}
               userId={user.id}
@@ -408,8 +411,8 @@ export default async function ProviderProfilePage({
             />
           )}
 
-          {/* Sign-in prompt for guests */}
-          {!user && (
+          {/* Sign-in prompt for guests — Premier providers only */}
+          {isPremier && !user && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center justify-between gap-4">
               <div>
                 <p className="font-bold text-gma-navy text-sm">Have experience with this company?</p>
