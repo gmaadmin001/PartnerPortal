@@ -15,8 +15,6 @@ interface Review {
   created_at: string;
 }
 
-interface CompletionField { label: string; done: boolean; }
-
 export interface ServiceReg {
   id: string;
   slug: string;
@@ -49,6 +47,8 @@ export interface ServiceReg {
   status: string | null;
   is_verified: boolean;
   is_featured: boolean;
+  premium_slug?: string | null;
+  register_as?: string | null;
   created_at: string;
 }
 
@@ -57,11 +57,54 @@ export type Panel = "overview" | "profile" | "listing" | "plans" | "reviews" | "
 interface Props {
   user: { id: string; email: string };
   reg: ServiceReg | null;
-  reviews: Review[];
-  avgRating: number;
-  completionFields: CompletionField[];
-  completionPct: number;
   initialPanel: Panel;
+}
+
+const PLAN_RANK: Record<string, number> = { Basic: 0, Professional: 1, Premier: 2 };
+
+const COMPLETION_ITEMS: {
+  label: string;
+  minPlan: "Basic" | "Professional" | "Premier";
+  check: (r: ServiceReg) => boolean;
+}[] = [
+  { label: "Company name",     minPlan: "Basic",        check: r => !!r.company_name },
+  { label: "Primary category", minPlan: "Basic",        check: r => !!r.primary_category },
+  { label: "Countries served", minPlan: "Basic",        check: r => Array.isArray(r.countries_served) && r.countries_served.length > 0 },
+  { label: "Membership plan",  minPlan: "Basic",        check: r => !!r.membership_plan },
+  { label: "Custom URL",       minPlan: "Professional", check: r => !!r.website_url },
+  { label: "Company bio",      minPlan: "Professional", check: r => !!r.company_bio },
+  { label: "Logo uploaded",    minPlan: "Professional", check: r => !!r.logo_url },
+  { label: "Contact email",    minPlan: "Professional", check: r => !!r.primary_contact_email },
+  { label: "Contact phone",    minPlan: "Professional", check: r => !!r.primary_contact_phone },
+  { label: "Photos added",     minPlan: "Premier",      check: r => Array.isArray(r.photos) && (r.photos?.length ?? 0) > 0 },
+];
+
+const GATED_FEATURES: { label: string; minPlan: "Professional" | "Premier" }[] = [
+  { label: "Company bio & description",     minPlan: "Professional" },
+  { label: "Company logo display",          minPlan: "Professional" },
+  { label: "Contact details on profile",    minPlan: "Professional" },
+  { label: "Up to 3 service categories",    minPlan: "Professional" },
+  { label: "Up to 3 service areas",         minPlan: "Professional" },
+  { label: "Self-service profile editing",  minPlan: "Professional" },
+  { label: "Unlimited categories & areas",  minPlan: "Premier" },
+  { label: "Verified Badge — included",     minPlan: "Premier" },
+  { label: "Star ratings & reviews",        minPlan: "Premier" },
+  { label: "Preferred search placement",    minPlan: "Premier" },
+  { label: "Thought leadership posts",      minPlan: "Premier" },
+  { label: "Media gallery (photos)",        minPlan: "Premier" },
+];
+
+function getLostFeatures(fromPlan: string, toPlan: string) {
+  const fromRank = PLAN_RANK[fromPlan] ?? 0;
+  const toRank   = PLAN_RANK[toPlan]   ?? 0;
+  return GATED_FEATURES.filter(f => {
+    const r = PLAN_RANK[f.minPlan] ?? 0;
+    return r > toRank && r <= fromRank;
+  });
+}
+
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
@@ -194,12 +237,16 @@ const SignOutIcon   = () => <svg fill="none" stroke="currentColor" viewBox="0 0 
 
 // ── Panel: Overview ───────────────────────────────────────────────────────────
 
-function OverviewPanel({ reg, reviews, avgRating, completionFields, completionPct, setActive }: {
-  reg: ServiceReg | null; reviews: Review[]; avgRating: number;
-  completionFields: CompletionField[]; completionPct: number;
+function OverviewPanel({ reg, setActive }: {
+  reg: ServiceReg | null;
   setActive: (p: Panel) => void;
 }) {
   const plan = reg?.membership_plan ?? "Basic";
+  const planRank = PLAN_RANK[plan] ?? 0;
+  const unlockedItems = COMPLETION_ITEMS.filter(item => (PLAN_RANK[item.minPlan] ?? 0) <= planRank);
+  const lockedItems   = COMPLETION_ITEMS.filter(item => (PLAN_RANK[item.minPlan] ?? 0) >  planRank);
+  const doneCount     = unlockedItems.filter(item => reg ? item.check(reg) : false).length;
+  const completionPct = unlockedItems.length > 0 ? Math.round((doneCount / unlockedItems.length) * 100) : 0;
   const planBadge: Record<string, string> = {
     Basic:        "bg-gray-100 text-gray-600 border-gray-200",
     Professional: "bg-gma-blue-pale text-gma-primary border-gma-primary/30",
@@ -210,7 +257,6 @@ function OverviewPanel({ reg, reviews, avgRating, completionFields, completionPc
     { icon: "✏️", label: "Edit Company Profile",  desc: "Update your business info",      action: () => setActive("profile"),  href: null },
     { icon: "👁️", label: "View Public Listing",    desc: "See how partners find you",      action: null, href: reg ? `/services/${reg.slug}` : null },
     { icon: "👑", label: "Upgrade Plan",           desc: "Unlock more features",           action: () => setActive("plans"),    href: null },
-    { icon: "⭐", label: "Manage Reviews",         desc: "See client feedback",            action: () => setActive("reviews"),  href: null },
     { icon: "📋", label: "Update Listing",         desc: "Edit service categories",        action: () => setActive("listing"),  href: null },
     { icon: "⚙️", label: "Account Settings",      desc: "Password & preferences",        action: () => setActive("settings"), href: null },
   ];
@@ -257,16 +303,16 @@ function OverviewPanel({ reg, reviews, avgRating, completionFields, completionPc
           icon={<svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>}
         />
         <StatCard
-          label="Client Reviews"
-          value={reviews.length}
-          sub={reviews.length > 0 ? `${avgRating}.0 avg rating` : "No reviews yet"}
+          label="Listing Type"
+          value={reg?.register_as ?? "Provider"}
+          sub={reg?.membership_plan ? `${reg.membership_plan} Plan` : "Not registered"}
           color="bg-amber-400"
-          icon={<svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>}
+          icon={<svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
         />
         <StatCard
           label="Profile Complete"
           value={`${completionPct}%`}
-          sub={completionPct === 100 ? "Fully complete!" : `${completionFields.filter((f) => !f.done).length} items remaining`}
+          sub={completionPct === 100 ? "Fully complete!" : `${unlockedItems.length - doneCount} items remaining`}
           color="bg-gma-blue-mid"
           icon={<svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
         />
@@ -285,20 +331,35 @@ function OverviewPanel({ reg, reviews, avgRating, completionFields, completionPc
             </div>
           </div>
           <div className="space-y-2">
-            {completionFields.map(({ label, done }) => (
-              <div key={label} className="flex items-center gap-3 text-sm">
-                {done ? (
-                  <svg className="w-4 h-4 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                ) : (
+            {unlockedItems.map(item => {
+              const done = reg ? item.check(reg) : false;
+              return (
+                <div key={item.label} className="flex items-center gap-3 text-sm">
+                  {done ? (
+                    <svg className="w-4 h-4 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-orange-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="5" />
+                    </svg>
+                  )}
+                  <span className={done ? "text-gray-700" : "text-gray-500"}>{item.label}</span>
+                </div>
+              );
+            })}
+            {lockedItems.map(item => {
+              const badge = item.minPlan === "Premier" ? "Premier Only" : "Professional & Premier";
+              return (
+                <div key={item.label} className="flex items-center gap-3 text-sm">
                   <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9" strokeWidth={2} />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
-                )}
-                <span className={done ? "text-gray-700" : "text-gray-400"}>{label}</span>
-              </div>
-            ))}
+                  <span className="text-gray-300">{item.label}</span>
+                  <span className="ml-auto text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 shrink-0">{badge}</span>
+                </div>
+              );
+            })}
           </div>
         </Section>
 
@@ -845,7 +906,6 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
     }
   }
 
-  const PLAN_RANK: Record<string, number> = { Basic: 0, Professional: 1, Premier: 2 };
   const planRank = PLAN_RANK[reg.membership_plan ?? "Basic"] ?? 0;
   const isPro    = planRank >= 1;
   const isPremier = planRank >= 2;
@@ -1150,14 +1210,129 @@ const PLANS = [
   },
 ];
 
-function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+function PlansPanel({ currentPlan, userId, reg }: {
+  currentPlan: string | null;
+  userId: string;
+  reg: ServiceReg | null;
+}) {
+  const [billing, setBilling]               = useState<"monthly" | "annual">("monthly");
+  const [toast, setToast]                   = useState<{ msg: string; type: "info" | "success" | "error" } | null>(null);
+  const [downgradeTarget, setDowngradeTarget] = useState<typeof PLANS[0] | null>(null);
+  const [confirming, setConfirming]         = useState(false);
+
   const PLAN_ORDER = ["Basic", "Professional", "Premier"];
-  const active = PLAN_ORDER.find(n => (currentPlan ?? "").startsWith(n)) ?? "Basic";
-  const activeIdx = PLAN_ORDER.indexOf(active);
+  const active     = PLAN_ORDER.find(n => (currentPlan ?? "").startsWith(n)) ?? "Basic";
+  const activeIdx  = PLAN_ORDER.indexOf(active);
+  const activeRank = PLAN_RANK[active] ?? 0;
+  const lostFeatures = downgradeTarget ? getLostFeatures(active, downgradeTarget.name) : [];
+
+  function showToast(msg: string, type: "info" | "success" | "error" = "info") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  async function handleUpgrade(plan: typeof PLANS[0]) {
+    setConfirming(true);
+    const supabase = createClient();
+    const updateData: Record<string, unknown> = {
+      membership_plan:    plan.name,
+      membership_billing: billing,
+    };
+    if (active === "Basic") {
+      const restored = reg?.premium_slug
+        || (reg?.company_name ? slugify(reg.company_name) : "basic-" + userId.replace(/-/g, "").substring(0, 8));
+      updateData.slug         = restored;
+      updateData.premium_slug = null;
+    }
+    const { error } = await supabase.from("service_registrations").update(updateData).eq("user_id", userId);
+    setConfirming(false);
+    if (error) {
+      showToast("Failed to upgrade. Please try again.", "error");
+    } else {
+      showToast(`Upgraded to ${plan.name}!`, "success");
+      setTimeout(() => window.location.reload(), 1200);
+    }
+  }
+
+  async function confirmDowngrade() {
+    if (!downgradeTarget) return;
+    setConfirming(true);
+    const supabase = createClient();
+    const targetRank    = PLAN_RANK[downgradeTarget.name] ?? 0;
+    const losingPremier = activeRank >= (PLAN_RANK["Premier"] ?? 2) && targetRank < (PLAN_RANK["Premier"] ?? 2);
+    const updateData: Record<string, unknown> = {
+      membership_plan:    downgradeTarget.name,
+      membership_billing: downgradeTarget.name === "Basic" ? null : reg?.membership_billing,
+    };
+    if (losingPremier) updateData.photos = null;
+    if (downgradeTarget.name === "Basic" && reg?.slug) {
+      updateData.premium_slug = reg.slug;
+      updateData.slug = "basic-" + userId.replace(/-/g, "").substring(0, 8);
+    }
+    const { error } = await supabase.from("service_registrations").update(updateData).eq("user_id", userId);
+    setConfirming(false);
+    setDowngradeTarget(null);
+    if (error) {
+      showToast("Failed to downgrade. Please try again.", "error");
+    } else {
+      showToast(`Downgraded to ${downgradeTarget.name}.`, "success");
+      setTimeout(() => window.location.reload(), 1200);
+    }
+  }
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div className={`fixed bottom-6 right-6 px-5 py-3 rounded-xl text-sm font-semibold text-white shadow-xl z-50 ${toast.type === "error" ? "bg-red-600" : toast.type === "success" ? "bg-green-600" : "bg-gma-navy"}`}>
+          {toast.msg}
+        </div>
+      )}
+
+      {downgradeTarget && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6"
+          onClick={e => { if (e.target === e.currentTarget) setDowngradeTarget(null); }}
+        >
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div className="flex items-start justify-between mb-1">
+              <div>
+                <p className="text-xs font-bold text-red-500 uppercase tracking-widest mb-1">Confirm Downgrade</p>
+                <h2 className="font-display text-xl font-bold text-gma-navy">Switch to {downgradeTarget.name}</h2>
+              </div>
+              <button onClick={() => setDowngradeTarget(null)} className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">✕</button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2 mb-5">
+              {downgradeTarget.monthlyPrice === null
+                ? "The Basic plan is free."
+                : `${downgradeTarget.name} is $${billing === "annual" ? downgradeTarget.annualPrice : downgradeTarget.monthlyPrice}/${billing === "annual" ? "yr" : "mo"}.`}
+              {" "}This change takes effect immediately.
+            </p>
+            {lostFeatures.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
+                <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-3">You will lose these features</p>
+                <ul className="space-y-2">
+                  {lostFeatures.map(f => (
+                    <li key={f.label} className="flex items-center gap-2.5 text-sm text-gray-700">
+                      <span className="text-red-500 font-bold shrink-0">✕</span>
+                      <span>{f.label}</span>
+                      <span className="ml-auto text-xs font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 shrink-0">
+                        {f.minPlan === "Premier" ? "PREMIER" : "PROFESSIONAL"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button onClick={() => setDowngradeTarget(null)} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold hover:bg-gray-200 transition-colors">Cancel</button>
+              <button onClick={confirmDowngrade} disabled={confirming} className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-60">
+                {confirming ? "Updating…" : "Confirm Downgrade"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Billing toggle */}
       <div className="flex items-center justify-center gap-3">
         <span className={`text-sm font-semibold ${billing === "monthly" ? "text-gray-900" : "text-gray-400"}`}>Monthly</span>
@@ -1176,11 +1351,11 @@ function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {PLANS.map((plan) => {
-          const isCurrent = plan.name === active;
-          const isPremier = plan.name === "Premier";
-          const price = billing === "annual" ? plan.annualPrice : plan.monthlyPrice;
-          const planIdx = PLAN_ORDER.indexOf(plan.name);
-          const ctaVerb = planIdx < activeIdx ? "Downgrade to" : "Upgrade to";
+          const isCurrent    = plan.name === active;
+          const isPremierPlan = plan.name === "Premier";
+          const price        = billing === "annual" ? plan.annualPrice : plan.monthlyPrice;
+          const planIdx      = PLAN_ORDER.indexOf(plan.name);
+          const isDowngrade  = !isCurrent && planIdx < activeIdx;
 
           return (
             <div
@@ -1188,14 +1363,14 @@ function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
               className={`flex flex-col rounded-2xl border-2 overflow-hidden transition-all ${
                 isCurrent
                   ? "border-gma-primary shadow-lg shadow-gma-primary/10"
-                  : isPremier
+                  : isPremierPlan
                   ? "border-amber-300"
                   : "border-gray-200"
               }`}
             >
               {isCurrent ? (
                 <div className="bg-gma-primary text-white text-xs font-bold text-center py-1.5 tracking-widest">✓ CURRENT PLAN</div>
-              ) : isPremier ? (
+              ) : isPremierPlan ? (
                 <div className="bg-amber-400 text-white text-xs font-bold text-center py-1.5 tracking-widest">⭐ RECOMMENDED</div>
               ) : (
                 <div className="py-1.5" />
@@ -1234,13 +1409,22 @@ function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
                   <div className="w-full py-2.5 rounded-xl bg-gma-surface text-gma-primary border border-gma-primary text-sm font-bold text-center">
                     Current Plan
                   </div>
-                ) : (
-                  <a
-                    href="mailto:info@globalmobilityadviser.com?subject=Plan Change Request"
-                    className="block w-full py-2.5 rounded-xl bg-gma-primary text-white text-sm font-bold text-center uppercase tracking-widest hover:bg-gma-navy transition-colors"
+                ) : isDowngrade ? (
+                  <button
+                    onClick={() => setDowngradeTarget(plan)}
+                    disabled={confirming}
+                    className="w-full py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-bold hover:bg-gray-100 transition-colors disabled:opacity-40"
                   >
-                    {ctaVerb} {plan.name}
-                  </a>
+                    Downgrade to {plan.name}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleUpgrade(plan)}
+                    disabled={confirming}
+                    className="w-full py-2.5 rounded-xl bg-gma-primary text-white text-sm font-bold uppercase tracking-widest hover:bg-gma-navy transition-colors disabled:opacity-40"
+                  >
+                    Upgrade to {plan.name}
+                  </button>
                 )}
               </div>
             </div>
@@ -1248,11 +1432,7 @@ function PlansPanel({ currentPlan }: { currentPlan: string | null }) {
         })}
       </div>
       <p className="text-xs text-gray-400 text-center">
-        * Preferred placement is a tiebreaker only — relevance always takes precedence.{" "}
-        To change your plan, email{" "}
-        <a href="mailto:info@globalmobilityadviser.com" className="text-gma-primary hover:underline">
-          info@globalmobilityadviser.com
-        </a>
+        * Preferred placement is a tiebreaker only — relevance always takes precedence.
       </p>
     </div>
   );
@@ -1447,12 +1627,11 @@ const NAV_ITEMS: { id: Panel; label: string; Icon: () => React.ReactElement }[] 
   { id: "profile",   label: "Company Profile",   Icon: ProfileIcon   },
   { id: "listing",   label: "My Listing",        Icon: ListingIcon   },
   { id: "plans",     label: "Membership Plans",  Icon: PlansIcon     },
-  { id: "reviews",   label: "Client Reviews",    Icon: ReviewsIcon   },
   { id: "settings",  label: "Settings",          Icon: SettingsIcon  },
 ];
 
 export default function DashboardClient({
-  user, reg, reviews, avgRating, completionFields, completionPct, initialPanel,
+  user, reg, initialPanel,
 }: Props) {
   const [active, setActive] = useState<Panel>(initialPanel);
   const router = useRouter();
@@ -1554,11 +1733,10 @@ export default function DashboardClient({
 
         {/* Panel */}
         <div className="flex-1 p-8">
-          {active === "overview"  && <OverviewPanel reg={reg} reviews={reviews} avgRating={avgRating} completionFields={completionFields} completionPct={completionPct} setActive={setActive} />}
+          {active === "overview"  && <OverviewPanel reg={reg} setActive={setActive} />}
           {active === "profile"   && <ProfilePanel reg={reg} setActive={setActive} />}
           {active === "listing"   && <ListingPanel reg={reg} setActive={setActive} />}
-          {active === "plans"     && <PlansPanel currentPlan={reg?.membership_plan ?? null} />}
-          {active === "reviews"   && <ReviewsPanel reviews={reviews} avgRating={avgRating} reg={reg} />}
+          {active === "plans"     && <PlansPanel currentPlan={reg?.membership_plan ?? null} userId={user.id} reg={reg} />}
           {active === "settings"  && <SettingsPanel email={user.email} signOut={signOut} />}
           {active === "edit"      && reg && <EditProfilePanel reg={reg} userId={user.id} setActive={setActive} onSaved={() => router.refresh()} />}
           {active === "edit"      && !reg && (

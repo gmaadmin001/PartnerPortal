@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 6 ✅ Phase 8 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details). Phase 9 (production email) also pending.
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 6 ✅ Phase 8 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details). Phase 9 (production email) also pending — note: completing email verification in Phase 9 is what sets `is_verified = true` on a supplier's record, which gates the VERIFIED badge on Premier listings.
 
 ---
 
@@ -509,40 +509,52 @@ in place. This is a dashboard-only configuration step.
 
 ## Feedback
 
-- [~] **Plan-gated profile fields:** Public listing now fully gated by plan tier (Basic/Pro/Premier).
-      Dashboard profile *editor* fields still need the grey-out + upgrade icon + hover tooltip
-      treatment described below — that part is not yet done.
-      - **Grey out** the field (disabled/muted styling) rather than showing the real data.
-      - Place an **upgrade icon** next to fields that *would* become available if the user
-        upgraded, signaling the upgrade path.
-      - On **mouse-over** of an upgrade icon, show an **advertisement** (tooltip/popover
-        promoting the plan that unlocks that field).
-      - Hide outright anything that isn't unlockable via upgrade (don't grey it — just omit).
+- [x] **Plan-gated profile fields:** Public listing gated by plan tier (Basic/Pro/Premier).
+      Dashboard profile editor also done: logo, bio (Pro), core services, photo gallery
+      (Premier) are greyed-out with disabled inputs, an ★ upgrade icon next to the label,
+      and a tooltip on hover. Nothing is hidden — all locked fields show the upgrade path.
 - [x] **Upgrade button is broken:** Fixed — plans page (`/dashboard/plans`) calls Supabase to
       update `membership_plan` on upgrade/downgrade; slug rotation logic also wired.
-- [ ] **Company logo → file upload:** Change the company logo field from a logo **link/URL**
-      input to a **file upload** (upload the logo image instead of pasting a URL).
+- [x] **Company logo → file upload:** Done — file upload to Supabase Storage (`logos` bucket,
+      RLS-scoped per userId). Thumbnail preview + remove button. URL stored in `logo_url`.
 - [x] **Profile Preview URL hardcodes "WORDPRESS":** Fixed — dashboard sidebar "Preview Page"
       link now derives URL from `reg.slug` via `${MAIN_APP}/services/${reg.slug}` and updates
       when the slug changes.
-- [ ] **Cloudflare URL → Relocentra:** `Relocentra` will be the URL/domain for the Cloudflare
-      deployment.
-- [ ] **Menu items → marketing site:** Adjust the menu items to point back to the
-      `globalmobilityadviser.com` marketing site.
-- [ ] **Recommended icon logic — verify:** Confirm whether the "recommended" icon logic is in
-      place (does it exist and work as intended?). Investigate and wire it up if missing.
+- [ ] **Domain setup — Relocentra + GMA redirect:** `relocentra.com` is the primary domain
+      for the Cloudflare deployment (Michael purchased it ~1 year ago; plan is to market it as
+      a standalone product powered by Global Mobility Adviser). `GlobalMobilityAdvisor.net`
+      should redirect to `relocentra.com`. Cloudflare handles both. Not touching yet — needs
+      domain DNS to be pointed at Cloudflare first.
+- [x] **Menu items → marketing site:** Done — all nav and footer links now point to
+      `globalmobilityadviser.com`. Logo image CDN stays on Hostinger until assets migrate.
+- [ ] **Verified + Recommended badge logic — two separate gates (not touching yet):**
+      - **VERIFIED (`is_verified`):** Set automatically when a user completes email verification
+        during account creation (Phase 9 email flow). When they verify their email, flip
+        `is_verified = true` on their `service_registrations` row. Badge shows for Premier
+        members who have verified.
+      - **RECOMMENDED (`is_recommended`):** Admin-controlled flag — admins toggle it per-supplier
+        via the admin dashboard. Add the column + toggle when building the admin dashboard.
 - [ ] **Discuss with Michael — searcher registration & gating:** Decide on registration for the
       searcher role. Put **search** behind a **Searcher Login**, and gate **Reviews** behind it
       as well.
 - [x] **Client Reviews → Release 2 (feature flag):** Done — removed from public listings and
       "Client Reviews" removed from the dashboard sidebar nav entirely. Deferred to R2.
-- [ ] **Updated supplier taxonomy (from Michael):** Michael to provide the updated supplier
-      taxonomy; apply it once received.
-- [ ] **Load suppliers:** Load the supplier data into the system.
-- [ ] **Administration Dashboard:** Build an admin/administration dashboard.
-- [ ] **Supplier search-appearance count:** Track and surface the number of times a supplier
-      came up in a search (search-impression count per supplier).
-- [ ] **Monthly metric summary (marketing services):** Provide a monthly metric summary to
-      suppliers as a marketing service. Two core metrics:
-      - **Search surfacing count** — how many times they surfaced in search results.
-      - **Page views** — how many times someone viewed their page.
+- [ ] **Updated supplier taxonomy (from Michael):** Michael to send updated taxonomy +
+      briefing documents. 11-category system confirmed. Apply once received.
+- [ ] **Load suppliers:** Michael providing ~420 supplier entries via spreadsheet. Mechanism:
+      spreadsheet upload where Claude handles inserts/updates without overwriting existing
+      records. Do NOT process until taxonomy is finalized and Michael sends the file.
+- [ ] **Administration Dashboard:** Paul building (possibly modeled on Navigator admin).
+      Must handle: account management, supplier verification (approve/reject), toggling
+      `is_recommended` per supplier, viewing metrics (search impressions + page views),
+      editing records, and admin notifications for new account signups.
+- [ ] **Metrics tracking — search impressions + page views:** Two metrics confirmed in meeting:
+      - **Search surfacing count** — increment a counter each time a supplier appears in search
+        results. Surfaced in admin dashboard and to suppliers as a sales/value tool.
+      - **Page views** — increment a counter each time someone views a supplier's listing page.
+      Both surfaced to suppliers as part of the monthly metric summary (marketing service) and
+      to admins for oversight. Used as upgrade sales tool: "You surfaced X times this month —
+      upgrade to Premier to stand out."
+- [x] **Upgrade ad banner in dashboard:** Done — amber banner for Basic, blue for Professional,
+      hidden for Premier. Shows locked feature chips, links to plans panel, dismissible
+      per-session via sessionStorage.
