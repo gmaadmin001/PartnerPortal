@@ -2,13 +2,16 @@
 
 @theme inline {
   --color-gma-navy: #1E2E61;
+  --color-gma-primary: #1C66AD;
   --color-gma-blue: #1C66AD;
   --color-gma-blue-mid: #157ABE;
+  --color-gma-blue-pale: #eff6ff;
   --color-gma-accent: #43B4E3;
   --color-gma-surface: #eef1f8;
   --color-gma-dark: #12213d;
   --color-gma-darkest: #0d1b36;
   --color-gma-border: #dde3ee;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
 }
 
 /* ── Base ── */
