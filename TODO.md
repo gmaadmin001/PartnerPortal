@@ -430,7 +430,7 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 >   Resend is the deliverability layer underneath it.
 >
 > **Two parts:** (A) **Task 22** — authenticate a sending domain in Resend so mail is deliverable
-> (interim fix; keeps Supabase's built-in mailer). (B) **Tasks E1–E7** — conform to the master
+> (interim fix; keeps Supabase's built-in mailer). (B) **Tasks E1–E8** — conform to the master
 > architecture by moving auth emails into an app-owned Send Email hook + branded EmailJS template
 > backed by Resend SMTP, per `architecture.md` → "Auth emails delegated to the app." The end
 > state runs (B); (A)'s domain authentication is reused by (B).
@@ -477,7 +477,7 @@ in place. This is a dashboard-only configuration step.
 > (built-in mailer) is an *interim* deliverability fix and is **superseded** by Task E4: once the
 > Send Email hook is active, Supabase delegates auth mail to our route instead of sending it.
 
-### Conform to architecture: app-owned auth emails (tasks E1–E7)
+### Conform to architecture: app-owned auth emails (tasks E1–E8)
 
 > Implements `architecture.md` → **"Email & messaging" → "Auth emails delegated to the app"**:
 > Supabase Auth fires a Send Email hook → an Edge route in our app verifies the signature, maps
@@ -511,6 +511,15 @@ in place. This is a dashboard-only configuration step.
       `resetPasswordForEmail` still triggers Supabase, which now fires the hook → our route.
       Confirm the recovery email comes from our branded template; keep the `clear_user_recovery`
       RPC that clears stale tokens first.
+- [ ] **Task E8 — Supabase custom SMTP + raise email rate limit (dashboard):**
+      Supabase Dashboard → **PartnerPortal** → **Authentication → SMTP Settings**: confirm
+      **Enable Custom SMTP** is on and pointed at Resend (host `smtp.resend.com`, port `465`,
+      username `resend`, password = Resend API key, sender = address on the Task 22 verified
+      domain). Then **Authentication → Rate Limits** → raise **"Rate limit for sending emails"**
+      (per hour) above the default — the built-in mailer is hard-capped at 2/hour and the limit
+      only becomes editable once custom SMTP is enabled; set it to a value sized for production
+      sign-up volume (e.g. 100+/hour). Note: this rate limit still applies when the E4 Send
+      Email hook is active, so it must be raised even though SMTP itself is superseded by the hook.
 - [ ] **Task E7 — QA:** Trigger `recovery` (signup is disabled via `email_confirm: true`, so it's
       lower priority); confirm the branded email arrives from the authenticated domain and lands in
       the inbox (check Spam/Promotions); confirm bad/replayed/expired signatures are rejected.
