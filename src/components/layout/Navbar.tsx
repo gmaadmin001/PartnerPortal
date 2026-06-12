@@ -1,241 +1,187 @@
 "use client";
 
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Session } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
-const navLinks = [
-  { label: "HOME",       href: "https://www.globalmobilityadviser.com/" },
-  { label: "SOLUTIONS",  href: "https://www.globalmobilityadviser.com/solutions/" },
-  { label: "COURSES",    href: "https://www.globalmobilityadviser.com/global-mobility-courses/" },
-  { label: "ABOUT US",   href: "https://www.globalmobilityadviser.com/about-us/" },
-  { label: "RESOURCES",  href: "https://www.globalmobilityadviser.com/resources/" },
-  { label: "CONTACT US", href: "https://www.globalmobilityadviser.com/contact-us/" },
+const GMA_SITE = "https://honeydew-capybara-608687.hostingersite.com";
+const MAIN_APP = process.env.NEXT_PUBLIC_MAIN_APP_URL || "";
+
+const NAV_LINKS = [
+  { label: "HOME", href: `${GMA_SITE}/` },
+  { label: "SOLUTIONS", href: `${GMA_SITE}/solutions/` },
+  { label: "COURSES", href: `${GMA_SITE}/global-mobility-courses/` },
+  { label: "ABOUT US", href: `${GMA_SITE}/about-us/` },
+  { label: "RESOURCES", href: `${GMA_SITE}/resources/` },
+  { label: "CONTACT US", href: `${GMA_SITE}/contact-us/` },
 ];
 
-const SIGN_IN_HREF = "/register";
-const LOGO_HREF    = "https://www.globalmobilityadviser.com/";
-
-function PersonIcon() {
-  return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
 export default function Navbar() {
-  const [mobileOpen, setMobileOpen]     = useState(false);
-  const [session, setSession]           = useState<Session | null | undefined>(undefined);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [listingSlug, setListingSlug]   = useState<string | null>(null);
-  const dropdownRef                     = useRef<HTMLDivElement>(null);
-  const router                          = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [listingSlug, setListingSlug] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [ddOpen, setDdOpen] = useState(false);
+  const ddRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        const { data } = await supabase
+          .from("service_registrations")
+          .select("slug")
+          .eq("user_id", u.id)
+          .maybeSingle();
+        setListingSlug(data?.slug ?? null);
+      }
+      setAuthReady(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+        if (!session) setListingSlug(null);
+      }
+    );
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!session) { setListingSlug(null); return; }
-    const supabase = createClient();
-    supabase
-      .from("service_registrations")
-      .select("slug")
-      .eq("user_id", session.user.id)
-      .maybeSingle()
-      .then(({ data }) => setListingSlug(data?.slug ?? null));
-  }, [session]);
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+    function handleClick(e: MouseEvent) {
+      if (ddRef.current && !ddRef.current.contains(e.target as Node)) {
+        setDdOpen(false);
       }
     }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
   }, []);
 
   async function handleSignOut() {
-    const supabase = createClient();
     await supabase.auth.signOut();
-    setDropdownOpen(false);
-    router.push("/register");
+    window.location.href = "/login";
   }
 
+  const listingHref = listingSlug ? `${MAIN_APP}/services/${listingSlug}` : "#";
+
   return (
-    <header className="sticky top-0 z-50">
-      <div className="h-1 bg-gma-navy" />
+    <header className="site-nav">
+      <div className="nav-accent" />
+      <div className="nav-bar">
+        <div className="nav-inner">
+          <a
+            href={GMA_SITE}
+            style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
+          >
+            <img
+              src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png"
+              alt="Global Mobility Adviser"
+              style={{ height: 28, width: "auto" }}
+            />
+          </a>
 
-      <div className="bg-white">
-        <div className="w-full px-6 lg:px-10">
-          <div className="flex items-center justify-between h-24">
+          <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+            <nav className="nav-links">
+              {NAV_LINKS.map((l) => (
+                <a key={l.label} className="nav-link-item" href={l.href}>
+                  {l.label}
+                </a>
+              ))}
+            </nav>
 
-            <a href={LOGO_HREF} className="shrink-0">
-              <Image
-                src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png"
-                alt="Global Mobility Adviser"
-                width={200}
-                height={32}
-                priority
-                className="h-7 w-auto"
-              />
-            </a>
-
-            {/* Desktop */}
-            <div className="hidden md:flex items-center gap-8">
-              <nav className="flex items-center gap-8">
-                {navLinks.map((link) => (
-                  <a key={link.label} href={link.href} className="nav-link text-sm font-bold text-black tracking-widest">
-                    {link.label}
-                  </a>
-                ))}
-              </nav>
-
-              {/* Auth button */}
-              {session === undefined ? (
-                <div className="w-32 h-12 rounded-full bg-gray-100 animate-pulse" />
-              ) : session ? (
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    onClick={() => setDropdownOpen((o) => !o)}
-                    className="flex items-center gap-2 px-6 py-4 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest transition-colors hover:bg-gma-primary"
+            {/* Auth area */}
+            <div
+              style={{
+                minWidth: 150,
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "center",
+              }}
+            >
+              {!authReady ? (
+                <div className="nav-auth-skel" />
+              ) : !user ? (
+                <Link href="/login" className="nav-btn">
+                  SIGN IN{" "}
+                  <svg
+                    width="15"
+                    height="15"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    ACCOUNT
-                    <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"
+                    />
+                  </svg>
+                </Link>
+              ) : (
+                <div className="nav-dd-wrap" ref={ddRef}>
+                  <button
+                    className="nav-btn"
+                    onClick={() => setDdOpen((o) => !o)}
+                  >
+                    ACCOUNT{" "}
+                    <svg
+                      className={`nav-chevron${ddOpen ? " open" : ""}`}
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </button>
-
-                  {dropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gma-surface hover:text-gma-primary transition-colors"
-                      >
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        Dashboard
-                      </Link>
-                      <Link
-                        href={listingSlug ? `/services/${listingSlug}` : "/dashboard?panel=listing"}
-                        target={listingSlug ? "_blank" : undefined}
-                        rel={listingSlug ? "noopener noreferrer" : undefined}
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gma-surface hover:text-gma-primary transition-colors"
-                      >
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        My Listing
-                      </Link>
-                      <Link
-                        href="/services"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gma-surface hover:text-gma-primary transition-colors"
-                      >
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        Find a Service
-                      </Link>
-                      <div className="my-1.5 h-px bg-gray-100 mx-2" />
-                      <button
-                        onClick={handleSignOut}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
+                  <div className={`nav-dropdown${ddOpen ? " open" : ""}`}>
+                    <Link className="nav-dd-item" href="/dashboard" onClick={() => setDdOpen(false)}>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      Dashboard
+                    </Link>
+                    <a
+                      className="nav-dd-item"
+                      href={listingHref}
+                      target={listingSlug ? "_blank" : undefined}
+                      rel={listingSlug ? "noopener noreferrer" : undefined}
+                      onClick={() => setDdOpen(false)}
+                    >
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      My Listing
+                    </a>
+                    <Link className="nav-dd-item" href="/services" onClick={() => setDdOpen(false)}>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      Find a Service
+                    </Link>
+                    <div className="nav-dd-divider" />
+                    <button className="nav-dd-item danger" onClick={handleSignOut}>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <a
-                  href={SIGN_IN_HREF}
-                  className="flex items-center gap-2 px-6 py-4 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest transition-colors hover:bg-gma-primary"
-                >
-                  SIGN IN
-                  <PersonIcon />
-                </a>
               )}
             </div>
-
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden p-2 rounded text-gma-navy"
-              onClick={() => setMobileOpen((o) => !o)}
-              aria-label="Toggle menu"
-              aria-expanded={mobileOpen}
-            >
-              {mobileOpen ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-2 pb-4 shadow-md">
-          <nav className="flex flex-col gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="py-2 text-sm font-bold text-black hover:text-gma-primary tracking-widest uppercase transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
-            {session ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="mt-3 flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest hover:bg-gma-primary transition-colors"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  ACCOUNT <PersonIcon />
-                </Link>
-                <button
-                  onClick={() => { setMobileOpen(false); handleSignOut(); }}
-                  className="mt-2 flex justify-center items-center gap-2 px-6 py-3 rounded-full border border-red-300 text-red-500 text-sm font-bold uppercase tracking-widest hover:bg-red-50 transition-colors"
-                >
-                  SIGN OUT
-                </button>
-              </>
-            ) : (
-              <a
-                href={SIGN_IN_HREF}
-                className="mt-3 flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gma-navy text-white text-sm font-bold uppercase tracking-widest hover:bg-gma-primary transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                SIGN IN <PersonIcon />
-              </a>
-            )}
-          </nav>
-        </div>
-      )}
     </header>
   );
 }

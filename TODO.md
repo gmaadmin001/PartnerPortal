@@ -610,3 +610,7 @@ Search for a registration (A vendor or a Realtor)
 Add the ability to edit their record (Not an automatic edit, force the admin to click edit)
 Set up three values first, create template, then connect EmailJS
 Configure Supabase
+
+
+Make it a standalone application and send it back to global mobility advisor
+All the content we brought over is going to get super simplified (IN THE FUTURE, BRANCED AS RELOCENTRA POWERED AS GMA)
