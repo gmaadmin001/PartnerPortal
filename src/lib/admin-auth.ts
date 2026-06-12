@@ -12,7 +12,7 @@ export interface AdminUser {
 export async function requireAdmin(): Promise<AdminUser> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
+  if (!user) redirect("/login");
 
   const service = createServiceClient();
   const { data: adminRow } = await service
@@ -21,7 +21,7 @@ export async function requireAdmin(): Promise<AdminUser> {
     .eq("email", user.email)
     .single();
 
-  if (!adminRow) redirect("/admin/login");
+  if (!adminRow) redirect("/login");
 
   return adminRow as AdminUser;
 }

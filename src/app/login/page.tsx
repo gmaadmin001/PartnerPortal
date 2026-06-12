@@ -40,7 +40,9 @@ export default function LoginPage() {
       setErr(error.message);
       setLoading(false);
     } else {
-      window.location.href = "/dashboard";
+      const res = await fetch("/api/admin/check").catch(() => null);
+      const { isAdmin } = res ? await res.json().catch(() => ({})) : {};
+      window.location.href = isAdmin ? "/admin" : "/dashboard";
     }
   }
 
