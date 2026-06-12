@@ -601,3 +601,12 @@ in place. This is a dashboard-only configuration step.
       dashboard (Paul) can read the same columns directly from the table.
       **Note:** Not wired to the Wireframe — the Wireframe has its own separate routes and
       dashboard. Wireframe is the prototype; metrics are intentionally main-app only.
+
+Admin Dashboard:
+Number of new registrations
+Total of new registrations, broken down by Realtor and Vendor
+New registrations would be the last week
+Search for a registration (A vendor or a Realtor)
+Add the ability to edit their record (Not an automatic edit, force the admin to click edit)
+Set up three values first, create template, then connect EmailJS
+Configure Supabase
