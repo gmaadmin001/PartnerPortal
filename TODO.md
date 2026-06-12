@@ -623,3 +623,253 @@ Configure Supabase
 
 Make it a standalone application and send it back to global mobility advisor
 All the content we brought over is going to get super simplified (IN THE FUTURE, BRANCED AS RELOCENTRA POWERED AS GMA)
+
+---
+
+## PHASE 9 — Email Setup: Manual Prerequisites (complete before E1–E8 code tasks)
+
+> EmailJS is the send layer (our app calls its API). Resend is the SMTP transport plugged into
+> EmailJS (never called directly from our code). The Resend API key lives only in the EmailJS
+> dashboard as the SMTP password — it does not appear anywhere in our codebase.
+>
+> **Flow:** Our app → EmailJS API → Resend SMTP → Inbox
+>
+> Env vars our code needs (4 total): `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`,
+> `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`.
+
+---
+
+### Task 22 (expanded): Resend — verify sending domain + create SMTP API key
+
+> **Why:** EmailJS sends through Resend's SMTP. Without domain verification, Resend will not
+> deliver to arbitrary inboxes (only to the Resend account owner's email). Verification adds
+> SPF/DKIM/DMARC records so emails land in inboxes instead of spam.
+
+#### Step 1a — Log into Resend and add domain
+
+- [ ] Go to [resend.com](https://resend.com) → sign in
+- [ ] Left sidebar → **Domains** → **+ Add Domain** (top right)
+- [ ] Enter domain: `globalmobilityadviser.com` (whichever domain has DNS in Cloudflare)
+- [ ] Click **Add** — leave this tab open, you'll need the DNS records it shows
+
+#### Step 1b — Add DNS records in Cloudflare
+
+- [ ] Open Cloudflare → your domain → **DNS** → **Records** → **+ Add record**
+- [ ] Add each record Resend shows (typically 2–3):
+  - **TXT** — DKIM record (`resend._domainkey` or similar name)
+  - **MX** — bounce handling record (recommended, not required)
+  - **TXT** — SPF record (if an SPF record already exists, add the Resend include value to it — do not create a duplicate SPF record)
+- [ ] Copy values exactly from Resend — do not retype
+
+#### Step 1c — Verify in Resend
+
+- [ ] Back in Resend → click **Verify Domain**
+- [ ] All checkmarks go green ✅ (usually 2–5 minutes on Cloudflare; can take up to 1 hour)
+- [ ] If not verifying: double-check record names/values match exactly, confirm no proxy (orange cloud) on DNS records in Cloudflare — should be DNS-only (grey cloud)
+
+#### Step 1d — Create SMTP API key
+
+- [ ] Resend left sidebar → **API Keys** → **Create API Key**
+- [ ] Name: `EmailJS SMTP`
+- [ ] Permission: **Sending access** (not full access)
+- [ ] Click **Add**
+- [ ] Copy the key immediately — starts with `re_`, shown only once
+- [ ] Store it securely — it goes into the EmailJS dashboard next, NOT into our codebase
+
+---
+
+### Task M1: EmailJS — create account and add Resend as email service
+
+> EmailJS is the template + API layer. We configure Resend SMTP inside EmailJS so it uses
+> Resend as the delivery transport. Our code only ever calls the EmailJS API.
+
+#### Step 2a — Create EmailJS account
+
+- [ ] Go to [emailjs.com](https://emailjs.com) → **Sign Up**
+- [ ] Free tier: 200 emails/month — sufficient for dev; upgrade when volume warrants
+
+#### Step 2b — Add Email Service (Resend as Custom SMTP)
+
+- [ ] Dashboard → **Email Services** → **Add New Service**
+- [ ] Select **Custom SMTP** (not Gmail, Outlook, etc.)
+- [ ] Fill in the following fields exactly:
+
+  | Field | Value |
+  |-------|-------|
+  | Service Name | `GMA Partner Portal` |
+  | SMTP Host | `smtp.resend.com` |
+  | SMTP Port | `465` |
+  | Username | `resend` |
+  | Password | *(the `re_...` API key from Step 1d — never goes in code)* |
+  | From Name | `Global Mobility Adviser` |
+  | From Email | `noreply@globalmobilityadviser.com` |
+
+  > **From Email** must be on the verified domain from Task 22. No mailbox needs to exist
+  > for `noreply@` — domain verification is sufficient for delivery.
+
+- [ ] Click **Connect Service** — EmailJS sends a test email to your EmailJS account email to confirm
+- [ ] Copy the **Service ID** (format: `service_xxxxxxx`) — this is `EMAILJS_SERVICE_ID`
+
+---
+
+### Task M2: EmailJS — create master template
+
+> One reusable template parameterized by `template_params`. All auth emails (verification,
+> password reset, magic link, invite, email change) use this single template with different
+> param values — no separate templates per email type.
+
+#### Step 3a — Create the template
+
+- [ ] Dashboard → **Email Templates** → **Create New Template**
+- [ ] Name: `GMA Master Template`
+- [ ] Switch editor to **HTML mode**
+
+#### Step 3b — Paste template HTML
+
+Paste the following into the HTML body. All `{{variable}}` placeholders are filled by our
+send helper at call time. Use `{{{message_html}}}` (triple braces) for the body so HTML
+renders instead of being escaped.
+
+```html
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f6f8fc;font-family:'Open Sans',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:32px 16px 0">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0c1428,#1E2E61);border-radius:12px 12px 0 0;padding:28px 40px">
+              <p style="margin:0;font-size:20px;font-weight:800;color:#ffffff;letter-spacing:0.03em">
+                Global Mobility Adviser
+              </p>
+              <p style="margin:4px 0 0;font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase">
+                Partner Portal
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body card -->
+          <tr>
+            <td style="background:#ffffff;padding:36px 40px">
+              <p style="margin:0 0 6px;font-size:15px;color:#374151">{{greeting}}</p>
+              <h1 style="margin:0 0 20px;font-size:26px;font-weight:800;color:#0a1628;line-height:1.2">{{headline}}</h1>
+              <div style="font-size:15px;color:#374151;line-height:1.75">
+                {{{message_html}}}
+              </div>
+
+              <!-- CTA button -->
+              <table cellpadding="0" cellspacing="0" style="margin:32px 0">
+                <tr>
+                  <td style="border-radius:10px;background:linear-gradient(135deg,#1E2E61,#1C66AD)">
+                    <a href="{{button_url}}"
+                       style="display:inline-block;padding:14px 36px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;border-radius:10px;letter-spacing:0.02em">
+                      {{button_label}}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:24px 0 0;padding-top:20px;border-top:1px solid #f3f4f6;font-size:12px;color:#9ca3af;line-height:1.6">
+                {{footnote}}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f6f8fc;border-radius:0 0 12px 12px;padding:20px 40px;text-align:center">
+              <p style="margin:0 0 4px;font-size:12px;color:#9ca3af">
+                © 2025 Global Mobility Adviser &nbsp;·&nbsp; Partner Portal
+              </p>
+              <p style="margin:0;font-size:12px">
+                <a href="https://globalmobilityadviser.com" style="color:#1C66AD;text-decoration:none">
+                  globalmobilityadviser.com
+                </a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+```
+
+#### Step 3c — Configure template fields
+
+- [ ] **Subject** field: `{{subject}}`
+- [ ] **To Email** field: `{{to_email}}`
+- [ ] **To Name** field: `{{to_name}}` (optional — used to personalize greeting)
+- [ ] Click **Save**
+
+#### Step 3d — Copy Template ID
+
+- [ ] Copy the **Template ID** shown after saving (format: `template_xxxxxxx`) — this is `EMAILJS_TEMPLATE_ID`
+
+#### Step 3e — Get API keys
+
+- [ ] Dashboard → **Account** → **General** → copy **Public Key** — this is `EMAILJS_PUBLIC_KEY`
+- [ ] Dashboard → **Account** → **Security** → generate if not present → copy **Private Key** — this is `EMAILJS_PRIVATE_KEY`
+  > The private key is used for server-side API calls only — never expose it in client-side code.
+
+#### Step 3f — Confirm all four values are in hand
+
+```
+EMAILJS_SERVICE_ID=service_...
+EMAILJS_TEMPLATE_ID=template_...
+EMAILJS_PUBLIC_KEY=...
+EMAILJS_PRIVATE_KEY=...
+```
+
+Paste these to Claude → they go into `.dev.vars` (local) and Cloudflare encrypted secrets (production).
+These are the only four values our code needs. The Resend API key stays in EmailJS only.
+
+---
+
+### Template parameter reference
+
+All emails are sent by passing these params to the single master template:
+
+| Param | Type | Example value |
+|-------|------|---------------|
+| `to_email` | string | `user@example.com` |
+| `to_name` | string | `Michael` |
+| `subject` | string | `Verify your email address` |
+| `greeting` | string | `Hi Michael,` |
+| `headline` | string | `Verify Your Email Address` |
+| `message_html` | HTML string | `<p>Click the button below to verify…</p>` |
+| `button_label` | string | `Verify Email` |
+| `button_url` | string | `https://…/auth/v1/verify?token=…` |
+| `footnote` | string | `If you didn't create an account, ignore this email.` |
+
+#### Email type → param mapping
+
+| Auth action | subject | headline | button_label | footnote |
+|-------------|---------|----------|--------------|---------|
+| `signup` | Verify your email address | Verify Your Email Address | Verify Email | If you didn't create an account, you can safely ignore this. |
+| `recovery` | Reset your password | Reset Your Password | Reset Password | If you didn't request a reset, you can safely ignore this. |
+| `magiclink` | Your sign-in link | Your Sign-In Link | Sign In | This link expires in 1 hour. If you didn't request it, ignore this. |
+| `email_change` | Confirm your new email | Confirm Email Change | Confirm New Email | If you didn't request this change, contact support immediately. |
+| `invite` | You've been invited | You've Been Invited to Partner Portal | Accept Invitation | This invitation expires in 7 days. |
+
+---
+
+### Code tasks (E1–E8) — run after manual prerequisites above are complete
+
+> These are the same tasks already listed in Phase 9 above. Repeated here for sequencing clarity.
+> Each runs its own Gate 1 before building.
+
+- [ ] **E1** — Shared EmailJS send helper (`src/lib/email.ts`)
+- [ ] **E2** — Auth-email webhook Edge route (`src/app/api/auth-email-hook/route.ts`)
+- [ ] **E3** — Action-type → param mapping (signup / recovery / magiclink / email_change / invite)
+- [ ] **E4** — Configure Supabase Send Email hook in dashboard (point to deployed E2 route)
+- [ ] **E5** — Env wiring: add all four `EMAILJS_*` vars + `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars` and Cloudflare
+- [ ] **E6** — Reconcile existing `/api/request-reset` + `resetPasswordForEmail` flow with new hook
+- [ ] **E8** — Supabase dashboard: confirm custom SMTP on, raise email rate limit above 2/hour
+- [ ] **E7** — QA: trigger recovery email, confirm branded email arrives from authenticated domain, confirm bad/replayed signatures are rejected
