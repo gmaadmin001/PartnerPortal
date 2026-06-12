@@ -162,7 +162,7 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/admin/login");
+    window.location.href = "/login";
   }
 
   const byTypeEntries = Object.entries(stats.byType).sort((a, b) => b[1] - a[1]);
