@@ -30,6 +30,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Mark admin routes so the root layout can strip Navbar/Footer
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    supabaseResponse.headers.set("x-admin-route", "1");
+  }
+
   return supabaseResponse;
 }
 

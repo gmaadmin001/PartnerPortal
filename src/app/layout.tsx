@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -8,11 +9,14 @@ export const metadata: Metadata = {
   description: "Manage your GMA partner listing, membership, and reviews.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const isAdmin = headersList.get("x-admin-route") === "1";
+
   return (
     <html lang="en">
       <head>
@@ -22,9 +26,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Navbar />
+        {!isAdmin && <Navbar />}
         {children}
-        <Footer />
+        {!isAdmin && <Footer />}
       </body>
     </html>
   );
