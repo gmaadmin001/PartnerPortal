@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/admin-auth";
 import AdminClaimsClient from "./AdminClaimsClient";
@@ -14,7 +15,8 @@ export interface Claim {
 }
 
 export default async function AdminClaimsPage() {
-  await requireAdmin();
+  const admin = await requireAdmin();
+  if (admin.role !== "admin") redirect("/admin");
 
   const service = createServiceClient();
 

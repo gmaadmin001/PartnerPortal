@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     .eq("email", user.email)
     .single();
   if (!adminRow) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (adminRow.role === "search") return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
 
   const body = await req.json();
   const { id, ...raw } = body;

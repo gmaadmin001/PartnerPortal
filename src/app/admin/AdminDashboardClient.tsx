@@ -184,7 +184,7 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
         <nav style={{ padding: "8px 12px", flex: 1 }}>
           {[
             { label: "Dashboard", href: "/admin", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
-            { label: "Pending Claims", href: "/admin/claims", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+            ...(admin.role === "admin" ? [{ label: "Pending Claims", href: "/admin/claims", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }] : []),
           ].map(item => (
             <a key={item.href} href={item.href}
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 9, textDecoration: "none", color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: 600, marginBottom: 2, transition: "background 0.15s" }}
@@ -274,7 +274,7 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f6f8fc" }}>
-                {["Company", "Type", "Plan", "Status", "Verified", "Registered", ""].map(h => (
+                {["Company", "Type", "Plan", "Status", "Verified", "Registered", ...(admin.role !== "search" ? [""] : [])].map(h => (
                   <th key={h} style={{ padding: "13px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 700, color: "#8a96a8", letterSpacing: "0.07em", textTransform: "uppercase" as const, borderBottom: "1px solid #e8edf5", whiteSpace: "nowrap" }}>
                     {h}
                   </th>
@@ -284,7 +284,7 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ padding: "48px 16px", textAlign: "center" as const, color: "#8a96a8", fontSize: 14 }}>
+                  <td colSpan={admin.role !== "search" ? 7 : 6} style={{ padding: "48px 16px", textAlign: "center" as const, color: "#8a96a8", fontSize: 14 }}>
                     No registrations match your filters.
                   </td>
                 </tr>
@@ -323,19 +323,21 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
                     <td style={{ padding: "14px 16px", fontSize: 12.5, color: "#6b7280", whiteSpace: "nowrap" }}>
                       {fmtDate(r.created_at)}
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      {editingId === r.id ? (
-                        <button onClick={cancelEdit}
-                          style={{ padding: "6px 14px", background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
-                          Cancel
-                        </button>
-                      ) : (
-                        <button onClick={() => startEdit(r)}
-                          style={{ padding: "6px 14px", background: "#1E2E61", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer" }}>
-                          Edit
-                        </button>
-                      )}
-                    </td>
+                    {admin.role !== "search" && (
+                      <td style={{ padding: "14px 16px" }}>
+                        {editingId === r.id ? (
+                          <button onClick={cancelEdit}
+                            style={{ padding: "6px 14px", background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+                            Cancel
+                          </button>
+                        ) : (
+                          <button onClick={() => startEdit(r)}
+                            style={{ padding: "6px 14px", background: "#1E2E61", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer" }}>
+                            Edit
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
 
                   {/* Inline edit panel */}
