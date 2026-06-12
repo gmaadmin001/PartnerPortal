@@ -342,8 +342,8 @@ export default async function ProviderProfilePage({
         {/* ── Sidebar ─────────────────────────────────────────────────────── */}
         <aside style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 112, alignSelf: "flex-start" }}>
 
-          {/* Contact Details */}
-          <SCard icon={<PhoneIcon />} label="Contact Details" color="#1C66AD" iconBg="#eff6ff">
+          {/* Contact Details — always show for Pro+; for Basic show only to owner */}
+          {(isPro || isOwner) && <SCard icon={<PhoneIcon />} label="Contact Details" color="#1C66AD" iconBg="#eff6ff">
             {isPro ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {provider.primary_contact_phone ? (
@@ -368,10 +368,10 @@ export default async function ProviderProfilePage({
                   <p style={{ fontSize: 13, color: "#9ca3af" }}>No contact info provided.</p>
                 )}
               </div>
-            ) : (
+            ) : isOwner ? (
               <LockedField plan="Professional" />
-            )}
-          </SCard>
+            ) : null}
+          </SCard>}
 
           {/* Quick Info */}
           <SCard icon={<InfoIcon />} label="Company Info" color="#7c3aed" iconBg="#f5f3ff">
@@ -429,8 +429,8 @@ export default async function ProviderProfilePage({
             </SCard>
           )}
 
-          {/* Upgrade prompt for Basic */}
-          {!isPro && (
+          {/* Upgrade prompt for Basic — owner only */}
+          {!isPro && isOwner && (
             <div style={{ background: "linear-gradient(135deg,#1E2E61,#1C66AD)", borderRadius: 16, padding: "22px 20px", boxShadow: "0 4px 16px rgba(28,102,173,0.25)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
