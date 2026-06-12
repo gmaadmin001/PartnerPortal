@@ -317,7 +317,7 @@ export default async function ProviderProfilePage({
                       <span style={{ fontSize: 14, fontWeight: 600, color: "#0a1628" }}>{svc}</span>
                     </div>
                     <Link
-                      href={`/services?subService=${encodeURIComponent(svc)}`}
+                      href={`/services?coreService=${encodeURIComponent(svc)}`}
                       style={{ display: "flex", alignItems: "center", gap: 6, background: "#1E2E61", color: "#fff", fontSize: 11.5, fontWeight: 700, padding: "6px 14px", borderRadius: 20, textDecoration: "none", flexShrink: 0, letterSpacing: "0.04em" }}
                     >
                       Find More <ArrowIcon />

@@ -30,6 +30,7 @@ export interface ServiceRegistration {
   claimed_by: string | null;
   claimed_at: string | null;
   claim_status: string | null;
+  core_services: string[] | null;
   premium_slug: string | null;
   created_at: string;
   updated_at: string;
