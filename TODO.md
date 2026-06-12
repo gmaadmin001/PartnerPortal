@@ -422,11 +422,18 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 > (`gmaadmin001@gmail.com`). All other recipients are blocked with a `550` error.
 > This must be resolved before the portal goes live with real users.
 >
-> **Two parts:** (A) **Task 22** — authenticate a sending domain so mail is deliverable
+> **Email stack (confirmed):**
+> - **EmailJS** — handles all email sending and template management. Email verification and
+>   password reset both go through EmailJS using a single reusable branded template.
+> - **Resend** — acts as the underlying SMTP server that EmailJS routes through. Resend provides
+>   domain authentication (SPF/DKIM/DMARC) and delivery. EmailJS is the app-facing layer;
+>   Resend is the deliverability layer underneath it.
+>
+> **Two parts:** (A) **Task 22** — authenticate a sending domain in Resend so mail is deliverable
 > (interim fix; keeps Supabase's built-in mailer). (B) **Tasks E1–E7** — conform to the master
-> architecture by moving auth emails into an app-owned Send Email hook + branded EmailJS template,
-> per `architecture.md` → "Auth emails delegated to the app." The end state runs (B); (A)'s
-> domain authentication is reused by (B).
+> architecture by moving auth emails into an app-owned Send Email hook + branded EmailJS template
+> backed by Resend SMTP, per `architecture.md` → "Auth emails delegated to the app." The end
+> state runs (B); (A)'s domain authentication is reused by (B).
 
 ### Task 22: Verify a custom domain in Resend and update Supabase sender address
 
@@ -482,8 +489,10 @@ in place. This is a dashboard-only configuration step.
       template (`https://api.emailjs.com/api/v1.0/email/send`) parameterized by `template_params`
       (subject, greeting, headline, `message_html`, button label/url, footnote). **Fails soft** —
       logs a warning and returns (never throws) if env vars are missing, so a misconfigured
-      environment never crashes a request. Point EmailJS's underlying SMTP at the domain
-      authenticated in Task 22 so SPF/DKIM/DMARC align.
+      environment never crashes a request. In the EmailJS dashboard, configure the email service
+      to use **Resend as the SMTP provider** (host: `smtp.resend.com`, port 465, API key as
+      password) pointing at the domain verified in Task 22 — this is what gives SPF/DKIM/DMARC
+      alignment. EmailJS is the template + send API layer; Resend is the SMTP/deliverability layer.
       Env: `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`.
 - [ ] **Task E2 — Auth-email webhook Edge route** (`src/app/api/auth-email-hook/route.ts`, Edge
       runtime): verify the Standard Webhooks signature before trusting the payload — HMAC-SHA256
@@ -527,6 +536,24 @@ in place. This is a dashboard-only configuration step.
       editing records, and admin notifications for new account signups.
 
 ### Design decisions needed
+
+- [ ] **Admin authentication — magic link via email/username:** Admins log in via magic link
+      rather than password. Flow: on the login screen, if the user submits only an email or
+      username (no password), check whether that identity is an admin. If yes, send a magic
+      link to their email and redirect them into the admin dashboard on click. If no, fall
+      through to the normal password login flow.
+      - Admin identity check: look up the email/username against a dedicated `admins` table.
+        The table has a `role` column — a single-value enum with three options:
+        - `list` — access to supplier/listing management
+        - `search` — access to search/directory data
+        - `admin` — full access
+        No UI exists yet for managing this table; rows will be inserted manually or via
+        a future admin management screen.
+      - Magic link: use Supabase Auth `signInWithOtp` (email OTP) so the link is
+        short-lived and revocable.
+      - On successful magic-link login, redirect to `/admin` (not `/dashboard`).
+      - Login screen UI change: password field becomes optional — submitting with only
+        email/username triggers the admin check + OTP flow.
 
 - [ ] **Verified + Recommended badge logic — two separate gates:**
       - **VERIFIED (`is_verified`):** Set automatically when a user completes email verification
