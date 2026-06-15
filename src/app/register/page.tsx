@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { COUNTRIES } from "@/data/countries";
 
 const MAIN_APP = process.env.NEXT_PUBLIC_MAIN_APP_URL || "";
 
@@ -14,37 +15,79 @@ const STEPS = [
 ];
 
 const CATEGORIES = [
-  "Moving & Relocation", "Real Estate", "Immigration & Visa",
-  "Language & Cultural Training", "Destination Services",
-  "Corporate Housing", "Financial & Tax Services",
-  "School Search", "Pet Relocation", "Technology & Software",
+  "Getting Established at the Destination",
+  "Health, Safety & Security",
+  "Housing & Accommodation",
+  "Immigration & Work Authorization",
+  "Moving Belongings",
+  "Program Management & Outsourcing",
+  "Strategy, Policy & Advisory",
+  "Supporting Employees & Families",
+  "Tax, Payroll & Compensation",
+  "Technology & Data",
 ];
 
 const SUBCATS: Record<string, string[]> = {
-  "Moving & Relocation": ["International Moving","Domestic Moving","Corporate Relocation","Household Goods","Vehicle Shipping","Fine Art & Valuables"],
-  "Real Estate": ["Home Finding","Rental Assistance","Residential Sales","Property Management","Short-Term Rentals","Commercial Real Estate"],
-  "Immigration & Visa": ["Work Permits","Residence Visas","Citizenship Applications","Immigration Advisory","Document Services","Compliance"],
-  "Language & Cultural Training": ["Language Courses","Cultural Orientation","Business Communication","Cross-Cultural Coaching","Translation Services"],
-  "Destination Services": ["Area Orientation","School Search","Settling-In Services","Departure Support","Spousal Assistance"],
-  "Corporate Housing": ["Short-Term Furnished","Extended Stay","Serviced Apartments","Temporary Accommodation"],
-  "Financial & Tax Services": ["Expat Taxation","Tax Equalization","Financial Planning","Banking Setup","Currency Services"],
-  "School Search": ["International Schools","Local Enrollment","University Admissions","Private Tutoring","Childcare"],
-  "Pet Relocation": ["International Shipping","Quarantine Services","Veterinary Referrals","Documentation"],
-  "Technology & Software": ["Mobility Platforms","HRIS Integration","Expense Management","Assignment Tracking"],
+  "Getting Established at the Destination": [
+    "Destination Services Providers (DSPs)",
+    "School Search & Education Consultants",
+  ],
+  "Health, Safety & Security": [
+    "International Health Insurance",
+    "Travel Health & Medical Services",
+    "Travel Risk & Security Services",
+  ],
+  "Housing & Accommodation": [
+    "Corporate Housing / Temporary Accommodations",
+    "Furniture & Appliance Rental",
+    "Home Sale Program Administrators",
+    "Property Management Services",
+    "Real Estate Brokers & Agents",
+    "Title, Appraisal & Closing Services",
+  ],
+  "Immigration & Work Authorization": [
+    "Corporate Immigration Service Providers",
+    "Document & Credential Services",
+    "Immigration Law Firms",
+  ],
+  "Moving Belongings": [
+    "Freight Forwarders",
+    "Household Goods Movers",
+    "Pet Relocation Specialists",
+    "Vehicle Transport Specialists",
+  ],
+  "Program Management & Outsourcing": [
+    "Lump Sum / Flex Program Administrators",
+    "Move Coordination Specialists",
+    "Relocation Management Companies (RMCs)",
+  ],
+  "Strategy, Policy & Advisory": [
+    "Benchmarking & Data Service",
+    "Mobility Consulting Firms",
+  ],
+  "Supporting Employees & Families": [
+    "Executive Coaching",
+    "Intercultural & Cross-Cultural Training",
+    "Language Training Providers",
+    "Mental Health & Wellbeing Services",
+    "Spouse & Partner Career Services",
+  ],
+  "Tax, Payroll & Compensation": [
+    "Compensation & Benefits Consulting",
+    "Employer of Record / PEO Services",
+    "Expatriate Tax Services",
+    "Global Payroll Providers",
+  ],
+  "Technology & Data": [
+    "Compliance & Tracking Tools",
+    "Cost of Living & Hardship Data",
+    "Expense Management Software",
+    "Immigration Technology",
+    "Mobility Management Platforms",
+    "Tax Technology Platforms",
+  ],
 };
 
-const COUNTRIES = [
-  "Afghanistan","Albania","Algeria","Argentina","Armenia","Australia","Austria","Azerbaijan",
-  "Bahrain","Bangladesh","Belgium","Bolivia","Brazil","Bulgaria","Canada","Chile","China",
-  "Colombia","Costa Rica","Croatia","Czech Republic","Denmark","Ecuador","Egypt","Estonia",
-  "Finland","France","Germany","Ghana","Greece","Guatemala","Hungary","India","Indonesia",
-  "Ireland","Israel","Italy","Japan","Jordan","Kazakhstan","Kenya","Kuwait","Latvia",
-  "Lebanon","Lithuania","Luxembourg","Malaysia","Mexico","Morocco","Netherlands","New Zealand",
-  "Nigeria","Norway","Oman","Pakistan","Panama","Peru","Philippines","Poland","Portugal",
-  "Qatar","Romania","Russia","Saudi Arabia","Serbia","Singapore","South Africa","South Korea",
-  "Spain","Sweden","Switzerland","Taiwan","Thailand","Turkey","Ukraine","United Arab Emirates",
-  "United Kingdom","United States","Vietnam",
-];
 
 const PW_RULES = [
   (pw: string) => pw.length >= 8,
@@ -86,7 +129,6 @@ export default function RegisterPage() {
   const [billing, setBilling] = useState<"monthly"|"annual">("monthly");
 
   // Step 4
-  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [pwMet, setPwMet] = useState<boolean[]>([false,false,false,false,false]);
@@ -140,7 +182,7 @@ export default function RegisterPage() {
 
   async function doSubmit() {
     const e: Record<string, string> = {};
-    if (!email || !/\S+@\S+\.\S+/.test(email)) e.email = "Enter a valid email address.";
+    if (!contactEmail || !/\S+@\S+\.\S+/.test(contactEmail)) e.email = "A valid contact email is required in step 2.";
     if (pwScore() < 5) e.pw = "Password must meet all 5 requirements.";
     if (pw !== pw2) e.pw2 = "Passwords do not match.";
     if (Object.keys(e).length) { setErrs(e); return; }
@@ -151,7 +193,7 @@ export default function RegisterPage() {
 
     try {
       const { data: authData, error: signUpErr } = await supabase.auth.signUp({
-        email, password: pw,
+        email: contactEmail, password: pw,
       });
       if (signUpErr && !signUpErr.message.includes("confirmation")) throw signUpErr;
 
@@ -380,7 +422,10 @@ export default function RegisterPage() {
               <div className="reg-g2" style={{ marginBottom: 14 }}>
                 <div>
                   <label className="reg-lbl">HQ Country</label>
-                  <input className="reg-inp" type="text" placeholder="United States" value={hqCountry} onChange={e => setHqCountry(e.target.value)} />
+                  <select className="reg-inp" value={hqCountry} onChange={e => setHqCountry(e.target.value)}>
+                    <option value="">Select country…</option>
+                    {COUNTRIES.map(c => <option key={c}>{c}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="reg-lbl">HQ City</label>
@@ -528,8 +573,9 @@ export default function RegisterPage() {
 
             <div style={{ maxWidth: 520, display: "flex", flexDirection: "column", gap: 16, marginBottom: 28 }}>
               <div>
-                <label className="reg-lbl">Email Address <span style={{ color: "#dc2626" }}>*</span></label>
-                <input className="reg-inp" type="email" placeholder="you@company.com" value={email} onChange={e => { setEmail(e.target.value); clearErr("email"); }} />
+                <label className="reg-lbl">Email Address</label>
+                <input className="reg-inp" type="email" value={contactEmail} readOnly style={{ background: "#f9fafb", color: "#6b7280", cursor: "not-allowed" }} />
+                <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Your login email from the Details step.</p>
                 {errs.email && <p style={{ fontSize: 11.5, color: "#dc2626", marginTop: 5 }}>{errs.email}</p>}
               </div>
               <div>
