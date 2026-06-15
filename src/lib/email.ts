@@ -1,5 +1,3 @@
-import "server-only";
-
 export interface EmailParams {
   to_email: string;
   to_name: string;

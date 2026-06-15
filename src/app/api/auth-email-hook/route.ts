@@ -83,64 +83,69 @@ async function verifyWebhook(
 }
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.SUPABASE_AUTH_HOOK_SECRET;
-  if (!secret) {
-    console.error("[auth-email-hook] SUPABASE_AUTH_HOOK_SECRET not set");
-    return NextResponse.json({ error: "Misconfigured" }, { status: 500 });
-  }
-
-  const webhookId = req.headers.get("webhook-id") ?? "";
-  const webhookTimestamp = req.headers.get("webhook-timestamp") ?? "";
-  const webhookSig = req.headers.get("webhook-signature") ?? "";
-  const body = await req.text();
-
-  const valid = await verifyWebhook(secret, webhookId, webhookTimestamp, body, webhookSig);
-  if (!valid) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-  }
-
-  type HookPayload = {
-    user?: { email?: string; user_metadata?: { name?: string } };
-    email_data?: {
-      token_hash?: string;
-      redirect_to?: string;
-      email_action_type?: string;
-    };
-  };
-
-  let payload: HookPayload;
   try {
-    payload = JSON.parse(body) as HookPayload;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+    const secret = process.env.SUPABASE_AUTH_HOOK_SECRET;
+    if (!secret) {
+      console.error("[auth-email-hook] SUPABASE_AUTH_HOOK_SECRET not set");
+      return NextResponse.json({ error: "Misconfigured" }, { status: 500 });
+    }
 
-  const email = payload.user?.email;
-  const name = payload.user?.user_metadata?.name ?? "";
-  const actionType = payload.email_data?.email_action_type ?? "";
-  const tokenHash = payload.email_data?.token_hash ?? "";
-  const redirectTo = payload.email_data?.redirect_to ?? "";
+    const webhookId = req.headers.get("webhook-id") ?? "";
+    const webhookTimestamp = req.headers.get("webhook-timestamp") ?? "";
+    const webhookSig = req.headers.get("webhook-signature") ?? "";
+    const body = await req.text();
 
-  if (!email || !actionType || !tokenHash) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-  }
+    const valid = await verifyWebhook(secret, webhookId, webhookTimestamp, body, webhookSig);
+    if (!valid) {
+      console.error("[auth-email-hook] Invalid signature — webhookId:", webhookId, "timestamp:", webhookTimestamp);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
 
-  const copy = EMAIL_COPY[actionType];
-  if (!copy) {
-    // Unknown action type — not an error, Supabase may add new types
+    type HookPayload = {
+      user?: { email?: string; user_metadata?: { name?: string } };
+      email_data?: {
+        token_hash?: string;
+        redirect_to?: string;
+        email_action_type?: string;
+      };
+    };
+
+    let payload: HookPayload;
+    try {
+      payload = JSON.parse(body) as HookPayload;
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
+    const email = payload.user?.email;
+    const name = payload.user?.user_metadata?.name ?? "";
+    const actionType = payload.email_data?.email_action_type ?? "";
+    const tokenHash = payload.email_data?.token_hash ?? "";
+    const redirectTo = payload.email_data?.redirect_to ?? "";
+
+    if (!email || !actionType || !tokenHash) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
+
+    const copy = EMAIL_COPY[actionType];
+    if (!copy) {
+      return NextResponse.json({ success: true });
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const buttonUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=${actionType}${redirectTo ? `&redirect_to=${encodeURIComponent(redirectTo)}` : ""}`;
+
+    await sendEmail({
+      to_email: email,
+      to_name: name || email,
+      greeting: name ? `Hi ${name},` : "Hi there,",
+      button_url: buttonUrl,
+      ...copy,
+    });
+
     return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[auth-email-hook] Unhandled error:", err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const buttonUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=${actionType}${redirectTo ? `&redirect_to=${encodeURIComponent(redirectTo)}` : ""}`;
-
-  await sendEmail({
-    to_email: email,
-    to_name: name || email,
-    greeting: name ? `Hi ${name},` : "Hi there,",
-    button_url: buttonUrl,
-    ...copy,
-  });
-
-  return NextResponse.json({ success: true });
 }
