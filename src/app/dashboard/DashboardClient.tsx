@@ -399,7 +399,7 @@ function OverviewPanel({ reg, setActive }: {
             <p className="text-sm text-amber-700 mb-4">
               You haven&apos;t created a service listing yet. Get listed to start receiving inquiries from global mobility professionals.
             </p>
-            <Link href="/add-service" className="bg-gma-navy text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gma-primary transition-colors">
+            <Link href="/register" className="bg-gma-navy text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gma-primary transition-colors">
               Create Your Listing →
             </Link>
           </div>
@@ -415,7 +415,7 @@ function ProfilePanel({ reg, setActive }: { reg: ServiceReg | null; setActive: (
   if (!reg) return (
     <div className="text-center py-20">
       <p className="text-gray-400 mb-4">No profile data found. Create your listing first.</p>
-      <Link href="/add-service" className="bg-gma-navy text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-gma-primary transition-colors">
+      <Link href="/register" className="bg-gma-navy text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-gma-primary transition-colors">
         Get Started
       </Link>
     </div>
@@ -487,7 +487,7 @@ function ListingPanel({ reg, setActive }: { reg: ServiceReg | null; setActive: (
   if (!reg) return (
     <div className="text-center py-20">
       <p className="text-gray-400 mb-4">No listing found.</p>
-      <Link href="/add-service" className="bg-gma-navy text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-gma-primary transition-colors">
+      <Link href="/register" className="bg-gma-navy text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-gma-primary transition-colors">
         Create Your Listing
       </Link>
     </div>

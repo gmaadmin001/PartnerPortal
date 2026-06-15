@@ -485,7 +485,7 @@ in place. This is a dashboard-only configuration step.
 > Supabase's built-in templated mailer for auth mail. The same helper later serves claim
 > notifications and the dashboard notification toggles. Each task runs its own Gate 1 before building.
 
-- [ ] **Task E1 — Shared EmailJS send helper:** One helper POSTs to a single reusable EmailJS
+- [x] **Task E1 — Shared EmailJS send helper:** One helper POSTs to a single reusable EmailJS
       template (`https://api.emailjs.com/api/v1.0/email/send`) parameterized by `template_params`
       (subject, greeting, headline, `message_html`, button label/url, footnote). **Fails soft** —
       logs a warning and returns (never throws) if env vars are missing, so a misconfigured
@@ -494,24 +494,24 @@ in place. This is a dashboard-only configuration step.
       password) pointing at the domain verified in Task 22 — this is what gives SPF/DKIM/DMARC
       alignment. EmailJS is the template + send API layer; Resend is the SMTP/deliverability layer.
       Env: `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`.
-- [ ] **Task E2 — Auth-email webhook Edge route** (`src/app/api/auth-email-hook/route.ts`, Edge
+- [x] **Task E2 — Auth-email webhook Edge route** (`src/app/api/auth-email-hook/route.ts`, Edge
       runtime): verify the Standard Webhooks signature before trusting the payload — HMAC-SHA256
       via Web Crypto (`crypto.subtle`), **constant-time** comparison, **±5-min** timestamp
       tolerance, **multi-signature** support (space-separated `v1,<sig>` for key rotation).
       Secret `SUPABASE_AUTH_HOOK_SECRET` (format `v1,whsec_<base64>`).
-- [ ] **Task E3 — Action-type → branded templates:** Map `email_action_type` (`signup`,
+- [x] **Task E3 — Action-type → branded templates:** Map `email_action_type` (`signup`,
       `recovery`, `magiclink`, `email_change`, `invite`) to branded copy; build the provider's
       `/auth/v1/verify?token=…&type=…&redirect_to=…` confirmation URL; send via the E1 helper.
-- [ ] **Task E4 — Configure the Supabase Send Email hook:** Dashboard → **Authentication → Hooks**
+- [x] **Task E4 — Configure the Supabase Send Email hook:** Dashboard → **Authentication → Hooks**
       → **Send Email Hook** → point to the deployed Edge route URL and set the signing secret.
       Once active, Supabase delegates these emails to our route instead of its built-in mailer.
-- [ ] **Task E5 — Env wiring:** Add `EMAILJS_*` and `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars`
+- [x] **Task E5 — Env wiring:** Add `EMAILJS_*` and `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars`
       and Cloudflare (build var vs. encrypted secret as appropriate — keys/secrets stay encrypted).
-- [ ] **Task E6 — Reconcile the existing recovery flow:** The current `/api/request-reset` +
+- [x] **Task E6 — Reconcile the existing recovery flow:** The current `/api/request-reset` +
       `resetPasswordForEmail` still triggers Supabase, which now fires the hook → our route.
       Confirm the recovery email comes from our branded template; keep the `clear_user_recovery`
       RPC that clears stale tokens first.
-- [ ] **Task E8 — Supabase custom SMTP + raise email rate limit (dashboard):**
+- [x] **Task E8 — Supabase custom SMTP + raise email rate limit (dashboard):**
       Supabase Dashboard → **PartnerPortal** → **Authentication → SMTP Settings**: confirm
       **Enable Custom SMTP** is on and pointed at Resend (host `smtp.resend.com`, port `465`,
       username `resend`, password = Resend API key, sender = address on the Task 22 verified
@@ -618,8 +618,8 @@ Admin Dashboard:
 - [x] Search for a registration (A vendor or a Realtor)
 - [x] Add the ability to edit their record (Not an automatic edit, force the admin to click edit)
 - [x] Role-based access (list / search / admin differentiation)
-- [ ] Set up three values first, create template, then connect EmailJS
-- [ ] Configure Supabase
+- [x] Set up three values first, create template, then connect EmailJS
+- [x] Configure Supabase
 
 
 Make it a standalone application and send it back to global mobility advisor
@@ -653,6 +653,7 @@ All the content we brought over is going to get super simplified (IN THE FUTURE,
 - [ ] Enter domain: `globalmobilityadviser.com` (whichever domain has DNS in Cloudflare)
 - [ ] Click **Add** — leave this tab open, you'll need the DNS records it shows
 
+
 #### Step 1b — Add DNS records in Cloudflare
 
 - [ ] Open Cloudflare → your domain → **DNS** → **Records** → **+ Add record**
@@ -670,12 +671,12 @@ All the content we brought over is going to get super simplified (IN THE FUTURE,
 
 #### Step 1d — Create SMTP API key
 
-- [ ] Resend left sidebar → **API Keys** → **Create API Key**
-- [ ] Name: `EmailJS SMTP`
-- [ ] Permission: **Sending access** (not full access)
-- [ ] Click **Add**
-- [ ] Copy the key immediately — starts with `re_`, shown only once
-- [ ] Store it securely — it goes into the EmailJS dashboard next, NOT into our codebase
+- [x] Resend left sidebar → **API Keys** → **Create API Key**
+- [x] Name: `EmailJS SMTP`
+- [x] Permission: **Sending access** (not full access)
+- [x] Click **Add**
+- [x] Copy the key immediately — starts with `re_`, shown only once
+- [x] Store it securely — it goes into the EmailJS dashboard next, NOT into our codebase
 
 ---
 
@@ -686,14 +687,14 @@ All the content we brought over is going to get super simplified (IN THE FUTURE,
 
 #### Step 2a — Create EmailJS account
 
-- [ ] Go to [emailjs.com](https://emailjs.com) → **Sign Up**
-- [ ] Free tier: 200 emails/month — sufficient for dev; upgrade when volume warrants
+- [x] Go to [emailjs.com](https://emailjs.com) → **Sign Up**
+- [x] Free tier: 200 emails/month — sufficient for dev; upgrade when volume warrants
 
 #### Step 2b — Add Email Service (Resend as Custom SMTP)
 
-- [ ] Dashboard → **Email Services** → **Add New Service**
-- [ ] Select **Custom SMTP** (not Gmail, Outlook, etc.)
-- [ ] Fill in the following fields exactly:
+- [x] Dashboard → **Email Services** → **Add New Service**
+- [x] Select **Custom SMTP** (not Gmail, Outlook, etc.)
+- [x] Fill in the following fields exactly:
 
   | Field | Value |
   |-------|-------|
@@ -708,8 +709,8 @@ All the content we brought over is going to get super simplified (IN THE FUTURE,
   > **From Email** must be on the verified domain from Task 22. No mailbox needs to exist
   > for `noreply@` — domain verification is sufficient for delivery.
 
-- [ ] Click **Connect Service** — EmailJS sends a test email to your EmailJS account email to confirm
-- [ ] Copy the **Service ID** (format: `service_xxxxxxx`) — this is `EMAILJS_SERVICE_ID`
+- [x] Click **Connect Service** — EmailJS sends a test email to your EmailJS account email to confirm
+- [x] Copy the **Service ID** (format: `service_xxxxxxx`) — this is `EMAILJS_SERVICE_ID`
 
 ---
 
@@ -721,9 +722,9 @@ All the content we brought over is going to get super simplified (IN THE FUTURE,
 
 #### Step 3a — Create the template
 
-- [ ] Dashboard → **Email Templates** → **Create New Template**
-- [ ] Name: `GMA Master Template`
-- [ ] Switch editor to **HTML mode**
+- [x] Dashboard → **Email Templates** → **Create New Template**
+- [x] Name: `GMA Master Template`
+- [x] Switch editor to **HTML mode**
 
 #### Step 3b — Paste template HTML
 
@@ -804,19 +805,19 @@ renders instead of being escaped.
 
 #### Step 3c — Configure template fields
 
-- [ ] **Subject** field: `{{subject}}`
-- [ ] **To Email** field: `{{to_email}}`
-- [ ] **To Name** field: `{{to_name}}` (optional — used to personalize greeting)
-- [ ] Click **Save**
+- [x] **Subject** field: `{{subject}}`
+- [x] **To Email** field: `{{to_email}}`
+- [x] **To Name** field: `{{to_name}}` (optional — used to personalize greeting)
+- [x] Click **Save**
 
 #### Step 3d — Copy Template ID
 
-- [ ] Copy the **Template ID** shown after saving (format: `template_xxxxxxx`) — this is `EMAILJS_TEMPLATE_ID`
+- [x] Copy the **Template ID** shown after saving (format: `template_xxxxxxx`) — this is `EMAILJS_TEMPLATE_ID`
 
 #### Step 3e — Get API keys
 
-- [ ] Dashboard → **Account** → **General** → copy **Public Key** — this is `EMAILJS_PUBLIC_KEY`
-- [ ] Dashboard → **Account** → **Security** → generate if not present → copy **Private Key** — this is `EMAILJS_PRIVATE_KEY`
+- [x] Dashboard → **Account** → **General** → copy **Public Key** — this is `EMAILJS_PUBLIC_KEY`
+- [x] Dashboard → **Account** → **Security** → generate if not present → copy **Private Key** — this is `EMAILJS_PRIVATE_KEY`
   > The private key is used for server-side API calls only — never expose it in client-side code.
 
 #### Step 3f — Confirm all four values are in hand
@@ -866,11 +867,11 @@ All emails are sent by passing these params to the single master template:
 > These are the same tasks already listed in Phase 9 above. Repeated here for sequencing clarity.
 > Each runs its own Gate 1 before building.
 
-- [ ] **E1** — Shared EmailJS send helper (`src/lib/email.ts`)
-- [ ] **E2** — Auth-email webhook Edge route (`src/app/api/auth-email-hook/route.ts`)
-- [ ] **E3** — Action-type → param mapping (signup / recovery / magiclink / email_change / invite)
-- [ ] **E4** — Configure Supabase Send Email hook in dashboard (point to deployed E2 route)
-- [ ] **E5** — Env wiring: add all four `EMAILJS_*` vars + `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars` and Cloudflare
-- [ ] **E6** — Reconcile existing `/api/request-reset` + `resetPasswordForEmail` flow with new hook
-- [ ] **E8** — Supabase dashboard: confirm custom SMTP on, raise email rate limit above 2/hour
+- [x] **E1** — Shared EmailJS send helper (`src/lib/email.ts`)
+- [x] **E2** — Auth-email webhook Edge route (`src/app/api/auth-email-hook/route.ts`)
+- [x] **E3** — Action-type → param mapping (signup / recovery / magiclink / email_change / invite)
+- [x] **E4** — Configure Supabase Send Email hook in dashboard (point to deployed E2 route)
+- [x] **E5** — Env wiring: add all four `EMAILJS_*` vars + `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars` and Cloudflare
+- [x] **E6** — Reconcile existing `/api/request-reset` + `resetPasswordForEmail` flow with new hook
+- [x] **E8** — Supabase dashboard: confirm custom SMTP on, raise email rate limit above 2/hour
 - [ ] **E7** — QA: trigger recovery email, confirm branded email arrives from authenticated domain, confirm bad/replayed signatures are rejected

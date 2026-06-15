@@ -188,7 +188,7 @@ export default function LoginForm() {
           OR
         </div>
         <a
-          href="/add-service"
+          href="/register"
           className="mt-2 flex w-full items-center justify-center py-3 rounded bg-gma-primary text-white text-base font-normal tracking-widest hover:bg-gma-blue-mid transition-colors"
         >
           Register
