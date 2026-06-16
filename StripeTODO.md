@@ -126,7 +126,7 @@ Totals: **3 products, 5 prices, 1 webhook endpoint, 2 API keys + 1 signing secre
 > email** (reuses the Phase 9 email infrastructure). Step 4 for paid plans becomes a "Review & Pay"
 > summary. **Basic (free)** is unchanged: account created directly at step 4 with a password, no Stripe.
 
-- [ ] **Task S2 — `pending_registrations` table + `src/app/api/stripe-checkout/route.ts`:**
+- [x] **Task S2 — `pending_registrations` table + `src/app/api/stripe-checkout/route.ts`:** ✅ done (commit `81ceb72`; migration `create_pending_registrations` applied). Validated via `next dev` — Basic→skip, paid→live `cs_test_*` Checkout URLs, 400s on bad input, pending rows verified.
   - Migration: `pending_registrations` (all `service_registrations` form fields + chosen
     tier/billing, a generated `id`, `created_at`; service-role/RLS-locked; short-lived). No password.
   - Route: **Basic** → `{ skip: true }` (client runs the current free signup at step 4).
