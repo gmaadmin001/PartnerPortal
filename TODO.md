@@ -228,11 +228,11 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 > wire UI → QA last. Task IDs (S0–S12) are stable identifiers; follow the numbered steps
 > below for execution order.
 
-1. [ ] **Task S0 — Finalize canonical price/tier table:** Reconcile the stale TODO
-   numbers (Standard $100 / Premium $200) against the built UI (Basic free /
-   Professional $25 / Premier $50). Lock tier names, monthly + annual amounts, and the
-   Verified Badge price. **Prerequisite for everything below** — Stripe products and
-   Price IDs depend on it.
+1. [x] **Task S0 — Finalize canonical price/tier table:** ✅ **Resolved — use the as-built
+   pricing and feature tiers** (Basic free / Professional $25/mo $250/yr / Premier $50/mo
+   $500/yr; Verified Badge $100 one-time, Professional only — included with Premier;
+   category/area limits 1 / 3 / unlimited). Canonical table lives in `StripeTODO.md`,
+   which now tracks the full Phase 5.5 execution plan.
 2. [ ] **Task S1 — Stripe env vars + create all Stripe objects:** Add env vars to
    Cloudflare (build + runtime) and `.dev.vars`. In one pass, create monthly + annual
    prices per tier, the one-time badge price, and register the webhook endpoint URL to
