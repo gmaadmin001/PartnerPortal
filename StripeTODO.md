@@ -147,9 +147,17 @@ Totals: **3 products, 5 prices, 1 webhook endpoint, 2 API keys + 1 signing secre
       customer/subscription IDs + status on the registration; handle
       `customer.subscription.updated` / `.deleted` and `invoice.payment_failed` → set
       `Suspended` on lapse/cancel; reactivate on recovery. **Before S7/S8, which key off it.**
-- [ ] **Task S7 — Plan entitlement / feature-gating:** Enforce per-tier category/area limits
-      (Basic = 1 category + HQ-only area; Professional = 3 categories + 3 areas;
-      Premier = unlimited) in dashboard + APIs, not just at checkout.
+- [ ] **Task S7 — Plan entitlement / feature-gating (full multi-category build):** Enforce per-tier
+      category/area limits (Basic = 1 category + HQ-only area; Professional = 3 categories + 3 areas;
+      Premier = unlimited) in dashboard + APIs, not just at checkout. Sequenced into sub-steps:
+  - [x] **S7a — DB foundation** ✅ (migration `add_categories_and_plan_limits`): added `categories text[]`
+        (backfilled from `primary_category`); `enforce_plan_limits()` trigger syncs `categories ↔ primary_category`
+        and enforces category + combined-area caps by effective tier (Suspended→Basic), growth-only on UPDATE
+        (registration INSERT unrestricted; existing over-cap rows not locked). Verified via rolled-back SQL at every tier.
+  - [ ] **S7b — Profile editor:** capped multi-select for categories + capped area tag-inputs with upgrade hints;
+        centralize the duplicated taxonomy into `src/data/taxonomy.ts`.
+  - [ ] **S7c — Search + listings:** filter on the `categories` array (`.overlaps`, primary_category fallback);
+        show multiple categories on `ProviderCard` + public profile.
 - [ ] **Task S8 — Field-level tier gating:** Wire the existing plan-gated profile fields
       (logo, bio, core services, photo gallery, etc.) to the **active subscription status**
       instead of the raw `membership_plan` column.
