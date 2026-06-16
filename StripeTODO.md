@@ -143,7 +143,7 @@ Totals: **3 products, 5 prices, 1 webhook endpoint, 2 API keys + 1 signing secre
     subscription IDs + status → send the Supabase set-password/invite email → delete the pending row.
   - Idempotent on Stripe event id (Stripe retries); webhook = source of truth, **not** the redirect.
   - Testable locally via `stripe listen` before the production endpoint exists.
-- [ ] **Task S11 — Subscription-status model + `Suspended` state:** Persist Stripe
+- [x] **Task S11 — Subscription-status model + `Suspended` state:** ✅ done (commit `5eddfea`). Webhook maps `customer.subscription.updated/.deleted` + `invoice.payment_failed` → `subscription_status` (active/past_due/Suspended), keyed by `stripe_subscription_id`; idempotent, no-op for untracked subs, reactivation on return to active. Verified every transition via signed events. Persist Stripe
       customer/subscription IDs + status on the registration; handle
       `customer.subscription.updated` / `.deleted` and `invoice.payment_failed` → set
       `Suspended` on lapse/cancel; reactivate on recovery. **Before S7/S8, which key off it.**
