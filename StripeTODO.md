@@ -135,7 +135,7 @@ Totals: **3 products, 5 prices, 1 webhook endpoint, 2 API keys + 1 signing secre
     from tier + billing interval, `metadata[pending_id]`. Return the hosted Checkout URL.
   - `success_url` → `/register?status=success&session_id={CHECKOUT_SESSION_ID}`;
     `cancel_url` → `/register?status=cancelled` (returns to the plan step).
-- [ ] **Task S3 — `src/app/api/stripe-webhook/route.ts`:** Handles `checkout.session.completed`.
+- [x] **Task S3 — `src/app/api/stripe-webhook/route.ts`:** ✅ done (commit `aaa3aae`; migration `add_stripe_columns_to_service_registrations` applied). Verified via signed synthetic events on `next dev`: valid→account+row created, bad sig/expired→400, replay→idempotent (no dup), unrelated type→200 ignore. Handles `checkout.session.completed`.
   - Verify `Stripe-Signature` (HMAC-SHA256 via `crypto.subtle`, constant-time compare,
     timestamp tolerance). Failure contract: missing config → warn + return; bad signature → 400.
   - Read `metadata.pending_id` → load the pending row → create the auth user (no password) +
