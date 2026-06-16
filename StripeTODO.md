@@ -108,20 +108,40 @@ Totals: **3 products, 5 prices, 1 webhook endpoint, 2 API keys + 1 signing secre
 
 ## Phase D — Code
 
-- [ ] **Task S2 — `src/app/api/stripe-checkout/route.ts`:** Creates Checkout Session, returns
-      redirect URL.
-  - Free plan → `{ skip: true }` → client proceeds straight to Finish (current behaviour).
-  - Paid plan → `fetch` `https://api.stripe.com/v1/checkout/sessions` (form-encoded,
-    `Authorization: Bearer $STRIPE_SECRET_KEY`), `mode=subscription`, price chosen from
-    tier + billing interval; all registration form data passed as session `metadata`.
-  - `success_url` → `/add-service?step=finish&session_id={CHECKOUT_SESSION_ID}`;
-    `cancel_url` → `/add-service?step=plans`.
+> **Flow reconciliation (2026-06-16):** the old `/add-service` multi-step flow + `MembershipStep`/
+> `FinishStep` components were **deleted** (commit `25d337c`) and replaced by a single 4-step
+> **`/register`** page (`src/app/register/page.tsx`): (1) Service Type + Category, (2) Company
+> Details, (3) Membership (plan + monthly/annual toggle), (4) Create Account. Same Basic/
+> Professional/Premier tiers and $25/$250/$50/$500 pricing.
+>
+> **Chosen model: PAY FIRST — the webhook creates the account.** For paid (Professional/Premier)
+> tiers the Supabase account does **not** exist until Stripe confirms payment. This conforms to
+> `architecture.md` → "session created ≠ paid; the webhook is the source of truth for fulfilment"
+> and avoids unpaid ghost accounts. Because the full registration (arrays of countries/categories,
+> etc.) can't ride safely in Stripe metadata, it is stashed server-side in a **`pending_registrations`**
+> table and referenced by a single `pending_id` in session metadata.
+>
+> **Password handling:** paid tiers do **not** collect a password at step 4 (no plaintext carried
+> across Checkout). The webhook creates the account and triggers a Supabase **set-password / invite
+> email** (reuses the Phase 9 email infrastructure). Step 4 for paid plans becomes a "Review & Pay"
+> summary. **Basic (free)** is unchanged: account created directly at step 4 with a password, no Stripe.
+
+- [ ] **Task S2 — `pending_registrations` table + `src/app/api/stripe-checkout/route.ts`:**
+  - Migration: `pending_registrations` (all `service_registrations` form fields + chosen
+    tier/billing, a generated `id`, `created_at`; service-role/RLS-locked; short-lived). No password.
+  - Route: **Basic** → `{ skip: true }` (client runs the current free signup at step 4).
+    **Paid** → insert the pending row, then `fetch` `https://api.stripe.com/v1/checkout/sessions`
+    (form-encoded, `Authorization: Bearer $STRIPE_SECRET_KEY`), `mode=subscription`, price chosen
+    from tier + billing interval, `metadata[pending_id]`. Return the hosted Checkout URL.
+  - `success_url` → `/register?status=success&session_id={CHECKOUT_SESSION_ID}`;
+    `cancel_url` → `/register?status=cancelled` (returns to the plan step).
 - [ ] **Task S3 — `src/app/api/stripe-webhook/route.ts`:** Handles `checkout.session.completed`.
   - Verify `Stripe-Signature` (HMAC-SHA256 via `crypto.subtle`, constant-time compare,
     timestamp tolerance). Failure contract: missing config → warn + return; bad signature → 400.
-  - Extract metadata → run the same account-creation logic as `/api/finish-registration`
-    (auth user + `service_registrations` row, rollback on failure).
-  - Webhook = source of truth for fulfilment, **not** the success redirect.
+  - Read `metadata.pending_id` → load the pending row → create the auth user (no password) +
+    `service_registrations` row (the finish-registration logic) → persist Stripe customer/
+    subscription IDs + status → send the Supabase set-password/invite email → delete the pending row.
+  - Idempotent on Stripe event id (Stripe retries); webhook = source of truth, **not** the redirect.
   - Testable locally via `stripe listen` before the production endpoint exists.
 - [ ] **Task S11 — Subscription-status model + `Suspended` state:** Persist Stripe
       customer/subscription IDs + status on the registration; handle
@@ -133,32 +153,39 @@ Totals: **3 products, 5 prices, 1 webhook endpoint, 2 API keys + 1 signing secre
 - [ ] **Task S8 — Field-level tier gating:** Wire the existing plan-gated profile fields
       (logo, bio, core services, photo gallery, etc.) to the **active subscription status**
       instead of the raw `membership_plan` column.
-- [ ] **Task S9 — Annual billing wiring:** Route the Monthly/Annual toggle to the annual
-      Price IDs ($250/yr, $500/yr).
+- [ ] **Task S9 — Annual billing wiring:** Route the existing `/register` step-3 Monthly/Annual
+      toggle (and `/dashboard/plans`) to the annual Price IDs ($250/yr, $500/yr).
 - [ ] **Task S10 — Verified Badge one-time fee:** $100 one-time Checkout line item (or separate
       session) + fulfilment (set badge flag on the listing via webhook). **Professional tier
       only** — Basic can't buy it; Premier gets it included (set the flag automatically on
       Premier activation). Note: the badge *flag* is separate from `is_verified`
       (email-verification, Phase 9) — both gate the public VERIFIED display.
-- [ ] **Task S4 — Wire `MembershipStep` + `add-service/page.tsx`:** Paid plan selection →
-      call `stripe-checkout` → redirect to hosted Checkout → return to Finish on success.
-- [ ] **Task S5 — Update `FinishStep`:** Paid plans show "Payment confirmed via Stripe" badge
-      (verify `session_id` server-side); Free flow unchanged.
+- [ ] **Task S4 — Wire `/register` step 4 (paid path):** Paid plan → call `stripe-checkout` →
+      redirect to hosted Checkout. Convert step 4 for paid tiers into a "Review & Pay" summary
+      (drop the password field); Basic keeps the current password + direct-signup path.
+- [ ] **Task S5 — `/register?status=success` confirmation:** Post-payment landing — "Payment
+      confirmed, check your email to set your password." Optionally verify `session_id`
+      server-side. (Cancelled returns to the plan step.)
 - [ ] **Task S12 — Claim-then-pay model:** Pre-loaded listings must convert to a paid
       subscription before the vendor can edit — claim → checkout → unlock-edit flow
       (distinct from new self-registration checkout; see `VENDOR_CLAIM.md`).
 
+> **Known pre-existing inconsistency to reconcile (not introduced by Stripe):** `/register`
+> currently calls `/api/finish-registration` with `userId` (client-side `supabase.auth.signUp`),
+> but `finish-registration/route.ts` still expects `email`+`password` and uses
+> `auth.admin.createUser`. The S2/S3 work will share/realign this account-creation logic.
+
 ## Phase E — QA
 
 - [ ] **Task S6 — End-to-end QA (test mode, card `4242 4242 4242 4242`):**
-  - [ ] Free plan bypasses Stripe entirely
-  - [ ] Professional monthly + annual checkout → account created via webhook
-  - [ ] Premier monthly + annual checkout → account created via webhook
+  - [ ] Basic (free) plan bypasses Stripe entirely — account created at step 4 with password
+  - [ ] Professional monthly + annual checkout → account created via webhook + set-password email
+  - [ ] Premier monthly + annual checkout → account created via webhook + set-password email
   - [ ] Verified Badge one-time purchase + fulfilment
-  - [ ] Failed/canceled payment → no account created; cancel_url returns to plans step
+  - [ ] Failed/cancelled payment → **no account created**, pending row left/expired; returns to plan step
   - [ ] Subscription cancel / payment failure → `Suspended`; gating kicks in (S7/S8)
   - [ ] Claim-then-pay flow unlocks editing only after payment
-  - [ ] Bad / replayed / expired webhook signatures rejected
+  - [ ] Bad / replayed / expired webhook signatures rejected; duplicate events idempotent
 
 ## Phase F — Go live
 
