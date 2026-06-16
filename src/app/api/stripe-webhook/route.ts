@@ -85,6 +85,38 @@ async function buildSlug(
   return `${base}-${n}`;
 }
 
+// Map a Stripe subscription status onto our app-level subscription_status.
+// Returns null for transient/unknown states so we never clobber a good value.
+function mapSubscriptionStatus(stripeStatus?: string): string | null {
+  switch (stripeStatus) {
+    case "active":
+    case "trialing":
+      return "active";
+    case "past_due":
+      return "past_due";
+    case "canceled":
+    case "unpaid":
+    case "incomplete_expired":
+    case "paused":
+      return "Suspended";
+    default:
+      return null; // incomplete / unknown → leave as-is
+  }
+}
+
+async function setStatusBySubscription(
+  supabase: ReturnType<typeof createServiceClient>,
+  subscriptionId: string | undefined,
+  status: string
+): Promise<void> {
+  if (!subscriptionId) return;
+  const { error } = await supabase
+    .from("service_registrations")
+    .update({ subscription_status: status })
+    .eq("stripe_subscription_id", subscriptionId);
+  if (error) console.error("[stripe-webhook] setStatusBySubscription failed:", error);
+}
+
 const INVITE_COPY = {
   subject: "Payment confirmed — set up your Partner Portal account",
   headline: "You're all set — finish your account",
@@ -118,8 +150,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Only checkout.session.completed creates accounts. Subscription lifecycle events (S11) are
-  // acknowledged here so Stripe stops retrying; their handling lands in S11.
+  // Subscription lifecycle (S11): map Stripe state onto subscription_status, keyed by the
+  // stripe_subscription_id persisted at fulfilment. Idempotent (set-to-value); no-op if untracked.
+  if (
+    event.type === "customer.subscription.updated" ||
+    event.type === "customer.subscription.deleted" ||
+    event.type === "invoice.payment_failed"
+  ) {
+    try {
+      const supabase = createServiceClient();
+      const obj = (event.data?.object ?? {}) as { id?: string; status?: string; subscription?: string };
+      if (event.type === "customer.subscription.deleted") {
+        await setStatusBySubscription(supabase, obj.id, "Suspended");
+      } else if (event.type === "customer.subscription.updated") {
+        const mapped = mapSubscriptionStatus(obj.status);
+        if (mapped) await setStatusBySubscription(supabase, obj.id, mapped);
+      } else {
+        // invoice.payment_failed — early "retrying" signal
+        await setStatusBySubscription(supabase, obj.subscription, "past_due");
+      }
+      return NextResponse.json({ received: true });
+    } catch (err) {
+      console.error("[stripe-webhook] subscription lifecycle error:", err);
+      return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    }
+  }
+
+  // Only checkout.session.completed creates accounts; any other event type is acked.
   if (event.type !== "checkout.session.completed") {
     return NextResponse.json({ received: true });
   }
