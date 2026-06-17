@@ -458,8 +458,14 @@ in place. This is a dashboard-only configuration step.
       a standalone product powered by Global Mobility Adviser). `GlobalMobilityAdvisor.net`
       should redirect to `relocentra.com`. Cloudflare handles both. Not touching yet — needs
       domain DNS to be pointed at Cloudflare first.
-- [ ] **Updated supplier taxonomy (from Michael):** Michael to send updated taxonomy +
-      briefing documents. 11-category system confirmed. Apply once received.
+- [x] **Updated supplier taxonomy (from Michael):** Taxonomy received (`Supplier_Taxonomy_Detailed_Summary.md`, 2026-06-17). 11-category / 41-subcategory structure confirmed. See task below.
+- [ ] **Apply taxonomy update across codebase:** Replace all hardcoded category/subcategory lists in 5 files with the new Relocentra canonical taxonomy. Approved Gate 1 plan:
+  - `src/app/register/page.tsx` — fix CATEGORIES + SUBCATS
+  - `src/app/dashboard/DashboardClient.tsx` — fix CATEGORY_MAP
+  - `src/components/services/FilterPanel.tsx` — fix SUBCATS
+  - `src/app/services/page.tsx` — replace wrong residential PRIMARY_CATEGORIES with correct 11
+  - `src/app/admin/AdminDashboardClient.tsx` — same replacement
+  - Changes: rename "Getting Established at the Destination" → "…at Destination"; "Benchmarking & Data Service" → "…Services"; "Title," → "Title /"; "Household Goods Movers" → "…(Domestic & International)"; add Storage Providers + Relocation Mortgage & Lending Services subcategories; add Category 11 Real Estate Professionals (Realtors)
 - [ ] **Load suppliers:** Michael providing ~420 supplier entries via spreadsheet. Mechanism:
       spreadsheet upload where Claude handles inserts/updates without overwriting existing
       records. Do NOT process until taxonomy is finalized and Michael sends the file.
