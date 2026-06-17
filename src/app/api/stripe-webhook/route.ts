@@ -249,16 +249,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // Verified Badge one-time purchase: flip listing status to Verified.
+    // Verified Badge one-time purchase: mark is_verified and notify admin.
     if (session.metadata?.type === "verified_badge") {
       const userId = session.metadata?.user_id;
       if (userId) {
         const supabase = createServiceClient();
         const { error } = await supabase
           .from("service_registrations")
-          .update({ status: "Verified" })
+          .update({ is_verified: true })
           .eq("user_id", userId);
-        if (error) console.error("[stripe-webhook] verified_badge status update failed:", error);
+        if (error) {
+          console.error("[stripe-webhook] verified_badge update failed:", error);
+        } else {
+          // Fetch company details for the admin notification email.
+          const { data: reg } = await supabase
+            .from("service_registrations")
+            .select("company_name, primary_contact_name, primary_contact_email")
+            .eq("user_id", userId)
+            .single();
+          const companyLabel = (reg?.company_name as string | null) ?? "A new partner";
+          const adminOrigin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
+          await sendEmail({
+            to_email: "sanchezfamilyclaude@gmail.com",
+            to_name: "GMA Admin",
+            subject: `Action required: Verified Badge purchase — ${companyLabel}`,
+            greeting: "Hi Admin,",
+            headline: "A partner purchased the Verified Badge",
+            message_html: `<p><strong>${companyLabel}</strong> has purchased the Verified Badge and is awaiting your approval in the admin dashboard. Please review and set their listing to <em>active</em> when ready.</p>`,
+            button_label: "Review in Admin Dashboard",
+            button_url: `${adminOrigin}/admin`,
+            footnote: "This is an automated notification from the GMA Partner Portal.",
+          });
+        }
       }
       return NextResponse.json({ received: true });
     }

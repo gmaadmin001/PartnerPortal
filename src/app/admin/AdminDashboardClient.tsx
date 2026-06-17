@@ -31,6 +31,7 @@ interface Stats {
   total: number;
   newThisWeek: number;
   pendingClaims: number;
+  pendingVerified: number;
   byType: Record<string, number>;
 }
 
@@ -224,6 +225,7 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
           <StatCard label="Total Registrations" value={stats.total} />
           <StatCard label="New This Week" value={stats.newThisWeek} sub="Last 7 days" color="#1C66AD" />
           <StatCard label="Pending Claims" value={stats.pendingClaims} color={stats.pendingClaims > 0 ? "#d97706" : "#0a1628"} />
+          <StatCard label="Badge Pending Review" value={stats.pendingVerified} sub="Verified Badge purchasers" color={stats.pendingVerified > 0 ? "#b45309" : "#0a1628"} />
           <div style={{ background: "#fff", borderRadius: 14, padding: "22px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", border: "1px solid #e8edf5", flex: 1, minWidth: 180 }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#8a96a8", marginBottom: 10 }}>By Type</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
@@ -289,14 +291,16 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
                   </td>
                 </tr>
               )}
-              {filtered.map(r => (
+              {filtered.map(r => {
+                const badgePending = r.is_verified && r.status === "pending";
+                return (
                 <>
                   <tr key={r.id}
-                    style={{ borderBottom: editingId === r.id ? "none" : "1px solid #f3f4f6", transition: "background 0.1s" }}
-                    onMouseOver={e => { if (editingId !== r.id) (e.currentTarget as HTMLTableRowElement).style.background = "#fafbfe"; }}
-                    onMouseOut={e => { (e.currentTarget as HTMLTableRowElement).style.background = ""; }}
+                    style={{ borderBottom: editingId === r.id ? "none" : "1px solid #f3f4f6", transition: "background 0.1s", borderLeft: badgePending ? "3px solid #f59e0b" : "3px solid transparent" }}
+                    onMouseOver={e => { if (editingId !== r.id) (e.currentTarget as HTMLTableRowElement).style.background = badgePending ? "#fffbeb" : "#fafbfe"; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLTableRowElement).style.background = badgePending ? "#fffef5" : ""; }}
                   >
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", background: badgePending ? "#fffef5" : undefined }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         {r.logo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -307,7 +311,14 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
                           </div>
                         )}
                         <div>
-                          <p style={{ fontSize: 13.5, fontWeight: 700, color: "#0a1628", margin: 0 }}>{r.company_name || "—"}</p>
+                          <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                            <p style={{ fontSize: 13.5, fontWeight: 700, color: "#0a1628", margin: 0 }}>{r.company_name || "—"}</p>
+                            {badgePending && (
+                              <span style={{ fontSize: 10.5, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 20, padding: "2px 8px", whiteSpace: "nowrap" }}>
+                                ⭐ Badge Paid
+                              </span>
+                            )}
+                          </div>
                           <p style={{ fontSize: 11.5, color: "#8a96a8", margin: 0 }}>{r.primary_contact_email || ""}</p>
                         </div>
                       </div>
@@ -444,7 +455,8 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
                     </tr>
                   )}
                 </>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
