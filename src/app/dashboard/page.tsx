@@ -107,6 +107,14 @@ export default function DashboardOverview() {
                 <span className="banner-tag">{registerAs}</span>
                 <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>·</span>
                 <span className="banner-tag">{reg.primary_category || "Uncategorized"}</span>
+                {reg.is_verified && (
+                  <>
+                    <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>·</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(135deg,#b45309,#d97706)", color: "#fff", fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 20, letterSpacing: "0.04em", boxShadow: "0 2px 8px rgba(180,83,9,0.4)" }}>
+                      ✦ GMA Verified
+                    </span>
+                  </>
+                )}
               </div>
               {listingHref && (
                 <a href={listingHref} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.22)", color: "#fff", padding: "7px 13px", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none", letterSpacing: "0.02em" }}>
@@ -162,15 +170,28 @@ export default function DashboardOverview() {
           </div>
           <p className="stat-value">{registerAs}</p>
         </div>
-        <div className="stat-card amber">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <p className="stat-label">Member Since</p>
-            <div style={{ width: 30, height: 30, background: "#fffbeb", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="14" height="14" fill="none" stroke="#d97706" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        {reg.is_verified ? (
+          <div className="stat-card" style={{ borderLeft: "3px solid #d97706", background: "linear-gradient(135deg,#fffbeb,#fff)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <p className="stat-label" style={{ color: "#92400e" }}>Verified Badge</p>
+              <div style={{ width: 30, height: 30, background: "linear-gradient(135deg,#b45309,#d97706)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(180,83,9,0.3)" }}>
+                <span style={{ color: "#fff", fontSize: 14 }}>✦</span>
+              </div>
             </div>
+            <p className="stat-value" style={{ fontSize: 15, color: "#92400e" }}>GMA Verified</p>
+            <p style={{ fontSize: 10.5, color: "#b45309", marginTop: 4, fontWeight: 600 }}>Badge Active</p>
           </div>
-          <p className="stat-value" style={{ fontSize: 13 }}>{reg.created_at ? fmtDate(reg.created_at) : "—"}</p>
-        </div>
+        ) : (
+          <div className="stat-card amber">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <p className="stat-label">Member Since</p>
+              <div style={{ width: 30, height: 30, background: "#fffbeb", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="14" height="14" fill="none" stroke="#d97706" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+            </div>
+            <p className="stat-value" style={{ fontSize: 13 }}>{reg.created_at ? fmtDate(reg.created_at) : "—"}</p>
+          </div>
+        )}
       </div>
 
       {/* Content cards */}

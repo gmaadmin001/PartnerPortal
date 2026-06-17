@@ -404,18 +404,26 @@ export default function PlansPage() {
               </ul>
 
               {"extra" in p && p.extra && (
-                <button
-                  onClick={e => { e.stopPropagation(); openBadgeCheckout(); }}
-                  disabled={badgeLoading}
-                  style={{ width: "100%", marginBottom: 12, background: badgeLoading ? "#f3f4f6" : "#f7f9ff", border: "1.5px solid #c7d7ff", borderRadius: 9, padding: "11px 14px", fontSize: 12, color: "#1C66AD", lineHeight: 1.5, cursor: badgeLoading ? "not-allowed" : "pointer", textAlign: "left", transition: "all 0.2s" }}
-                  onMouseEnter={e => { if (!badgeLoading) (e.currentTarget.style.background = "#eef3ff"); }}
-                  onMouseLeave={e => { (e.currentTarget.style.background = badgeLoading ? "#f3f4f6" : "#f7f9ff"); }}
-                >
-                  <span style={{ fontWeight: 700, color: "#0a1628" }}>
-                    {badgeLoading ? "Starting checkout…" : "✦ Get Verified Badge"}
-                  </span>
-                  {!badgeLoading && <span style={{ color: "#1C66AD", fontWeight: 700 }}> — $100 one-time →</span>}
-                </button>
+                reg?.is_verified ? (
+                  <div style={{ width: "100%", marginBottom: 12, background: "#fffbeb", border: "1.5px solid #fcd34d", borderRadius: 9, padding: "11px 14px", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 15 }}>✦</span>
+                    <span style={{ fontWeight: 700, color: "#92400e" }}>Verified Badge Active</span>
+                    <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 800, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 20, padding: "2px 8px" }}>OWNED</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={e => { e.stopPropagation(); openBadgeCheckout(); }}
+                    disabled={badgeLoading}
+                    style={{ width: "100%", marginBottom: 12, background: badgeLoading ? "#f3f4f6" : "#f7f9ff", border: "1.5px solid #c7d7ff", borderRadius: 9, padding: "11px 14px", fontSize: 12, color: "#1C66AD", lineHeight: 1.5, cursor: badgeLoading ? "not-allowed" : "pointer", textAlign: "left", transition: "all 0.2s" }}
+                    onMouseEnter={e => { if (!badgeLoading) (e.currentTarget.style.background = "#eef3ff"); }}
+                    onMouseLeave={e => { (e.currentTarget.style.background = badgeLoading ? "#f3f4f6" : "#f7f9ff"); }}
+                  >
+                    <span style={{ fontWeight: 700, color: "#0a1628" }}>
+                      {badgeLoading ? "Starting checkout…" : "✦ Get Verified Badge"}
+                    </span>
+                    {!badgeLoading && <span style={{ color: "#1C66AD", fontWeight: 700 }}> — $100 one-time →</span>}
+                  </button>
+                )
               )}
 
               <button
