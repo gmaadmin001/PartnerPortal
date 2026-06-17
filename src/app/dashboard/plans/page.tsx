@@ -70,12 +70,16 @@ export default function PlansPage() {
   const [toast, setToast] = useState<{ msg: string; type: "info" | "success" | "error" } | null>(null);
   const [downgradeTarget, setDowngradeTarget] = useState<typeof PLANS[0] | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [badgeLoading, setBadgeLoading] = useState(false);
 
-  // Detect ?upgraded=1 from Stripe Checkout redirect
+  // Detect ?upgraded=1 or ?badge=1 from Stripe Checkout redirects
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("upgraded") === "1") {
       showToast("Plan upgraded successfully!", "success");
+      window.history.replaceState({}, "", "/dashboard/plans");
+    } else if (params.get("badge") === "1") {
+      showToast("Verified Badge purchased! Our team will review and apply it shortly.", "success");
       window.history.replaceState({}, "", "/dashboard/plans");
     }
   }, []);
@@ -185,6 +189,23 @@ export default function PlansPage() {
       showToast("Unexpected error. Please try again.", "error");
     } finally {
       setConfirming(false);
+    }
+  }
+
+  async function openBadgeCheckout() {
+    setBadgeLoading(true);
+    try {
+      const res = await fetch("/api/stripe-badge", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        showToast(data.error ?? "Could not start checkout. Please try again.", "error");
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      showToast("Unexpected error. Please try again.", "error");
+    } finally {
+      setBadgeLoading(false);
     }
   }
 
@@ -383,9 +404,18 @@ export default function PlansPage() {
               </ul>
 
               {"extra" in p && p.extra && (
-                <div style={{ marginBottom: 20, background: "#f7f9ff", borderRadius: 9, padding: "11px 14px", fontSize: 12, color: "#4b5563", lineHeight: 1.5, border: "1px solid #e8edff" }}>
-                  <span style={{ fontWeight: 700, color: "#0a1628" }}>Verified Badge</span> available — <span style={{ color: "#1C66AD", fontWeight: 700 }}>$100 one-time</span>
-                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); openBadgeCheckout(); }}
+                  disabled={badgeLoading}
+                  style={{ width: "100%", marginBottom: 12, background: badgeLoading ? "#f3f4f6" : "#f7f9ff", border: "1.5px solid #c7d7ff", borderRadius: 9, padding: "11px 14px", fontSize: 12, color: "#1C66AD", lineHeight: 1.5, cursor: badgeLoading ? "not-allowed" : "pointer", textAlign: "left", transition: "all 0.2s" }}
+                  onMouseEnter={e => { if (!badgeLoading) (e.currentTarget.style.background = "#eef3ff"); }}
+                  onMouseLeave={e => { (e.currentTarget.style.background = badgeLoading ? "#f3f4f6" : "#f7f9ff"); }}
+                >
+                  <span style={{ fontWeight: 700, color: "#0a1628" }}>
+                    {badgeLoading ? "Starting checkout…" : "✦ Get Verified Badge"}
+                  </span>
+                  {!badgeLoading && <span style={{ color: "#1C66AD", fontWeight: 700 }}> — $100 one-time →</span>}
+                </button>
               )}
 
               <button

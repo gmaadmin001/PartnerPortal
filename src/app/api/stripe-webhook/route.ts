@@ -189,6 +189,7 @@ export async function POST(req: NextRequest) {
         user_id?: string;
         plan?: string;
         billing?: string;
+        type?: string;
       };
       customer?: string;
       subscription?: string;
@@ -245,6 +246,20 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      return NextResponse.json({ received: true });
+    }
+
+    // Verified Badge one-time purchase: flip listing status to Verified.
+    if (session.metadata?.type === "verified_badge") {
+      const userId = session.metadata?.user_id;
+      if (userId) {
+        const supabase = createServiceClient();
+        const { error } = await supabase
+          .from("service_registrations")
+          .update({ status: "Verified" })
+          .eq("user_id", userId);
+        if (error) console.error("[stripe-webhook] verified_badge status update failed:", error);
+      }
       return NextResponse.json({ received: true });
     }
 
