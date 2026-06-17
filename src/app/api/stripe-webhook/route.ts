@@ -183,7 +183,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const session = (event.data?.object ?? {}) as {
-      metadata?: { pending_id?: string };
+      metadata?: {
+        pending_id?: string;
+        mode?: string;
+        user_id?: string;
+        plan?: string;
+        billing?: string;
+      };
       customer?: string;
       subscription?: string;
       customer_email?: string;
@@ -191,6 +197,32 @@ export async function POST(req: NextRequest) {
     };
 
     const pendingId = session.metadata?.pending_id;
+    const mode = session.metadata?.mode;
+
+    // Dashboard upgrade: update the existing user's plan and stripe fields.
+    if (mode === "dashboard_upgrade") {
+      const userId = session.metadata?.user_id;
+      const plan = session.metadata?.plan;
+      const billing = session.metadata?.billing;
+
+      if (userId && plan) {
+        const supabase = createServiceClient();
+        const planFull = billing === "annual" ? `${plan} – Annual` : `${plan} – Monthly`;
+        const { error } = await supabase
+          .from("service_registrations")
+          .update({
+            membership_plan: planFull,
+            membership_billing: billing ?? "monthly",
+            stripe_customer_id: (session as { customer?: string }).customer ?? null,
+            stripe_subscription_id: (session as { subscription?: string }).subscription ?? null,
+            subscription_status: "active",
+          })
+          .eq("user_id", userId);
+        if (error) console.error("[stripe-webhook] dashboard_upgrade update failed:", error);
+      }
+      return NextResponse.json({ received: true });
+    }
+
     if (!pendingId) {
       // Not one of our registration checkouts.
       return NextResponse.json({ received: true });

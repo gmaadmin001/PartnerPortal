@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 // (plan, billing) → Stripe Price ID. Populated from server-only env vars.
 const PRICE_IDS: Record<string, Record<string, string | undefined>> = {
@@ -18,38 +19,186 @@ function appOrigin(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    return NextResponse.json({ error: "Payments are not configured." }, { status: 503 });
+  }
+
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  // ── Dashboard upgrade (existing logged-in users changing plans) ──────────────
+  if (body.mode === "dashboard_upgrade") {
+    try {
+      const supabaseAuth = await createClient();
+      const {
+        data: { user: authUser },
+      } = await supabaseAuth.auth.getUser();
+      if (!authUser) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const planName = body.plan as string;
+      const billing = (body.billing === "annual" ? "annual" : "monthly") as "monthly" | "annual";
+      const priceId = PRICE_IDS[planName]?.[billing];
+
+      if (!priceId) {
+        return NextResponse.json(
+          { error: `Unknown plan: ${planName} / ${billing}` },
+          { status: 400 },
+        );
+      }
+
+      const supabase = createServiceClient();
+      const { data: reg } = await supabase
+        .from("service_registrations")
+        .select("stripe_customer_id, stripe_subscription_id, primary_contact_email")
+        .eq("user_id", authUser.id)
+        .single();
+
+      // ── Case A: Existing subscription — update price in Stripe ────────────────
+      if (reg?.stripe_subscription_id) {
+        const subRes = await fetch(
+          `https://api.stripe.com/v1/subscriptions/${reg.stripe_subscription_id}`,
+          { headers: { Authorization: `Bearer ${secretKey}` } },
+        );
+        const sub = await subRes.json();
+        const itemId = (sub as { items?: { data?: Array<{ id: string }> } }).items?.data?.[0]?.id;
+
+        if (!itemId) {
+          return NextResponse.json(
+            { error: "Subscription item not found." },
+            { status: 500 },
+          );
+        }
+
+        const updateForm = new URLSearchParams({
+          "items[0][id]": itemId,
+          "items[0][price]": priceId,
+          proration_behavior: "create_prorations",
+        });
+        const updateRes = await fetch(
+          `https://api.stripe.com/v1/subscriptions/${reg.stripe_subscription_id}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${secretKey}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: updateForm.toString(),
+          },
+        );
+
+        if (!updateRes.ok) {
+          const err = (await updateRes.json()) as { error?: { message?: string } };
+          return NextResponse.json(
+            { error: err.error?.message ?? "Stripe error updating subscription." },
+            { status: 502 },
+          );
+        }
+
+        const planFull = billing === "annual" ? `${planName} – Annual` : `${planName} – Monthly`;
+        await supabase
+          .from("service_registrations")
+          .update({ membership_plan: planFull, membership_billing: billing })
+          .eq("user_id", authUser.id);
+
+        return NextResponse.json({ success: true });
+      }
+
+      // ── Case B: No subscription (upgrading from Basic) — new Checkout session ─
+      let customerId = reg?.stripe_customer_id as string | undefined;
+      const email =
+        authUser.email ?? ((reg?.primary_contact_email as string | undefined) ?? "");
+
+      if (!customerId) {
+        const custForm = new URLSearchParams({
+          email,
+          "metadata[user_id]": authUser.id,
+        });
+        const custRes = await fetch("https://api.stripe.com/v1/customers", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${secretKey}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: custForm.toString(),
+        });
+        const customer = (await custRes.json()) as { id?: string; error?: { message?: string } };
+        if (!custRes.ok) {
+          return NextResponse.json(
+            { error: customer.error?.message ?? "Failed to create Stripe customer." },
+            { status: 502 },
+          );
+        }
+        customerId = customer.id!;
+        await supabase
+          .from("service_registrations")
+          .update({ stripe_customer_id: customerId })
+          .eq("user_id", authUser.id);
+      }
+
+      const form = new URLSearchParams({
+        mode: "subscription",
+        customer: customerId,
+        "line_items[0][price]": priceId,
+        "line_items[0][quantity]": "1",
+        "metadata[mode]": "dashboard_upgrade",
+        "metadata[user_id]": authUser.id,
+        "metadata[plan]": planName,
+        "metadata[billing]": billing,
+        success_url: `${appOrigin(req)}/dashboard/plans?upgraded=1`,
+        cancel_url: `${appOrigin(req)}/dashboard/plans`,
+      });
+
+      const checkoutRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: form.toString(),
+      });
+      const session = (await checkoutRes.json()) as { url?: string; error?: { message?: string } };
+
+      if (!checkoutRes.ok) {
+        return NextResponse.json(
+          { error: session.error?.message ?? "Stripe checkout error." },
+          { status: 502 },
+        );
+      }
+
+      return NextResponse.json({ url: session.url });
+    } catch (err) {
+      console.error("[stripe-checkout] dashboard_upgrade error:", err);
+      return NextResponse.json({ error: "Unexpected error. Please try again." }, { status: 500 });
+    }
+  }
+
+  // ── New registration checkout ─────────────────────────────────────────────────
+  try {
     const { email, membershipPlan, membershipBilling, registration } = body;
 
-    // Free tier never touches Stripe — client runs the existing free signup at step 4.
     if (membershipPlan === "Basic") {
       return NextResponse.json({ skip: true });
     }
 
-    // Validate inputs.
     if (!email || typeof email !== "string") {
       return NextResponse.json({ error: "A login email is required." }, { status: 400 });
     }
     const billing = membershipBilling === "annual" ? "annual" : "monthly";
-    const priceId = PRICE_IDS[membershipPlan]?.[billing];
+    const priceId = PRICE_IDS[membershipPlan as string]?.[billing];
     if (!priceId) {
       return NextResponse.json(
-        { error: `Unknown plan/billing combination: ${membershipPlan} / ${billing}.` },
-        { status: 400 }
+        { error: `Unknown plan/billing: ${membershipPlan} / ${billing}.` },
+        { status: 400 },
       );
     }
 
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    if (!secretKey) {
-      console.warn("stripe-checkout: STRIPE_SECRET_KEY is not configured.");
-      return NextResponse.json(
-        { error: "Payments are not configured. Please try again later." },
-        { status: 503 }
-      );
-    }
-
-    // Stash the registration so the webhook can create the account *after* payment.
     const supabase = createServiceClient();
     const { data: pending, error: insertError } = await supabase
       .from("pending_registrations")
@@ -64,23 +213,25 @@ export async function POST(req: NextRequest) {
 
     if (insertError || !pending) {
       console.error("stripe-checkout: failed to stash pending registration:", insertError);
-      return NextResponse.json({ error: "Could not start checkout. Please try again." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Could not start checkout. Please try again." },
+        { status: 500 },
+      );
     }
 
     const origin = appOrigin(req);
 
-    // Create the Checkout Session via the Stripe REST API (no SDK — Edge/Workers-safe).
-    const form = new URLSearchParams();
-    form.set("mode", "subscription");
-    form.set("line_items[0][price]", priceId);
-    form.set("line_items[0][quantity]", "1");
-    form.set("customer_email", email);
-    form.set("client_reference_id", pending.id);
-    form.set("metadata[pending_id]", pending.id);
-    // Also tag the subscription itself so S11 lifecycle webhooks can correlate it.
-    form.set("subscription_data[metadata][pending_id]", pending.id);
-    form.set("success_url", `${origin}/register?status=success&session_id={CHECKOUT_SESSION_ID}`);
-    form.set("cancel_url", `${origin}/register?status=cancelled`);
+    const form = new URLSearchParams({
+      mode: "subscription",
+      "line_items[0][price]": priceId,
+      "line_items[0][quantity]": "1",
+      customer_email: email,
+      client_reference_id: pending.id as string,
+      "metadata[pending_id]": pending.id as string,
+      "subscription_data[metadata][pending_id]": pending.id as string,
+      success_url: `${origin}/register?status=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/register?status=cancelled`,
+    });
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
@@ -95,12 +246,13 @@ export async function POST(req: NextRequest) {
 
     if (!stripeRes.ok) {
       console.error("stripe-checkout: Stripe API error:", session?.error ?? session);
-      // Clean up the orphaned pending row so it isn't left dangling.
       await supabase.from("pending_registrations").delete().eq("id", pending.id);
-      return NextResponse.json({ error: "Could not start checkout. Please try again." }, { status: 502 });
+      return NextResponse.json(
+        { error: "Could not start checkout. Please try again." },
+        { status: 502 },
+      );
     }
 
-    // Record the session id on the pending row for reconciliation.
     await supabase
       .from("pending_registrations")
       .update({ stripe_session_id: session.id })

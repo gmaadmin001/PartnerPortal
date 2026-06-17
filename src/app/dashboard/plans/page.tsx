@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDashboard } from "../layout";
 import { createClient } from "@/lib/supabase/client";
-import { slugify } from "@/lib/utils";
 
 const PLAN_RANK: Record<string, number> = { Basic: 0, Professional: 1, Premier: 2 };
 
@@ -72,76 +71,134 @@ export default function PlansPage() {
   const [downgradeTarget, setDowngradeTarget] = useState<typeof PLANS[0] | null>(null);
   const [confirming, setConfirming] = useState(false);
 
+  // Detect ?upgraded=1 from Stripe Checkout redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgraded") === "1") {
+      showToast("Plan upgraded successfully!", "success");
+      window.history.replaceState({}, "", "/dashboard/plans");
+    }
+  }, []);
+
   function showToast(msg: string, type: "info" | "success" | "error" = "info") {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 4000);
+  }
+
+  // Upgrade: for existing subscription (paid→paid) the API updates Stripe in-place and returns { success: true }.
+  // For Basic→paid the API creates a Checkout session and returns { url }.
+  async function handleUpgrade(targetPlan: typeof PLANS[0]) {
+    if (!user) return;
+    setConfirming(true);
+    try {
+      const res = await fetch("/api/stripe-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "dashboard_upgrade", plan: targetPlan.id, billing }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? "Failed to upgrade. Please try again.", "error");
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      // Case A: direct Stripe subscription update — DB already updated by API
+      showToast(`Upgraded to ${targetPlan.id} successfully.`, "success");
+      setTimeout(() => window.location.reload(), 1400);
+    } catch {
+      showToast("Unexpected error. Please try again.", "error");
+    } finally {
+      setConfirming(false);
+    }
   }
 
   async function confirmDowngrade() {
     if (!downgradeTarget || !user) return;
     setConfirming(true);
-    const supabase = createClient();
 
-    const targetRankForUpdate = PLAN_RANK[downgradeTarget.id] ?? 0;
-    const losingPremier = currentRank >= PLAN_RANK["Premier"] && targetRankForUpdate < PLAN_RANK["Premier"];
+    try {
+      // Downgrade to Basic: cancel recurring subscription; update DB locally for slug + plan.
+      if (downgradeTarget.id === "Basic") {
+        // Stop the Stripe subscription
+        if (reg?.stripe_subscription_id) {
+          const cancelRes = await fetch("/api/stripe-cancel", { method: "POST" });
+          if (!cancelRes.ok) {
+            const d = await cancelRes.json();
+            showToast(d.error ?? "Failed to cancel subscription. Please try again.", "error");
+            setConfirming(false);
+            return;
+          }
+        }
 
-    const updateData: Record<string, unknown> = {
-      membership_plan: downgradeTarget.id,
-      membership_billing: downgradeTarget.id === "Basic" ? null : reg?.membership_billing,
-    };
+        // Update the local DB record immediately (plan change, slug housekeeping)
+        const supabase = createClient();
+        const updateData: Record<string, unknown> = {
+          membership_plan: "Basic",
+          membership_billing: null,
+          subscription_status: reg?.stripe_subscription_id ? "cancelled" : null,
+        };
+        if (reg?.slug) {
+          updateData.premium_slug = reg.slug;
+          updateData.slug = "basic-" + user.id.replace(/-/g, "").substring(0, 8);
+        }
+        const { error } = await supabase
+          .from("service_registrations")
+          .update(updateData)
+          .eq("user_id", user.id);
 
-    if (losingPremier) {
-      updateData.photos = null;
-    }
+        setConfirming(false);
+        if (error) {
+          showToast("Failed to update plan. Please try again.", "error");
+        } else {
+          showToast("Downgraded to Basic. Your subscription will not renew.", "success");
+          setDowngradeTarget(null);
+          setTimeout(() => window.location.reload(), 1400);
+        }
+        return;
+      }
 
-    if (downgradeTarget.id === "Basic" && reg?.slug) {
-      updateData.premium_slug = reg.slug;
-      updateData.slug = "basic-" + user.id.replace(/-/g, "").substring(0, 8);
-    }
+      // Downgrade to a lower paid plan (e.g. Premier → Professional): update Stripe subscription in-place.
+      const res = await fetch("/api/stripe-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "dashboard_upgrade", plan: downgradeTarget.id, billing }),
+      });
+      const data = await res.json();
 
-    const { error } = await supabase
-      .from("service_registrations")
-      .update(updateData)
-      .eq("user_id", user.id);
-
-    setConfirming(false);
-    if (error) {
-      showToast("Failed to update plan. Please try again.", "error");
-    } else {
+      if (!res.ok) {
+        showToast(data.error ?? "Failed to change plan. Please try again.", "error");
+        setConfirming(false);
+        return;
+      }
+      if (data.url) {
+        // Shouldn't happen for an existing subscriber downgrading, but handle gracefully
+        window.location.href = data.url;
+        return;
+      }
       showToast(`Downgraded to ${downgradeTarget.id} successfully.`, "success");
       setDowngradeTarget(null);
-      setTimeout(() => window.location.reload(), 1200);
+      setTimeout(() => window.location.reload(), 1400);
+    } catch {
+      showToast("Unexpected error. Please try again.", "error");
+    } finally {
+      setConfirming(false);
     }
   }
 
-  async function handleUpgrade(targetPlan: typeof PLANS[0]) {
-    if (!user) return;
-    setConfirming(true);
-    const supabase = createClient();
-
-    const updateData: Record<string, unknown> = {
-      membership_plan: targetPlan.id,
-      membership_billing: billing,
-    };
-
-    if (currentPlanName === "Basic") {
-      const restored = reg?.premium_slug
-        || (reg?.company_name ? slugify(reg.company_name) : "basic-" + user.id.replace(/-/g, "").substring(0, 8));
-      updateData.slug = restored;
-      updateData.premium_slug = null;
-    }
-
-    const { error } = await supabase
-      .from("service_registrations")
-      .update(updateData)
-      .eq("user_id", user.id);
-
-    setConfirming(false);
-    if (error) {
-      showToast("Failed to upgrade plan. Please try again.", "error");
-    } else {
-      showToast(`Upgraded to ${targetPlan.id} successfully.`, "success");
-      setTimeout(() => window.location.reload(), 1200);
+  async function openBillingPortal() {
+    try {
+      const res = await fetch("/api/stripe-portal", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        showToast(data.error ?? "Could not open billing portal.", "error");
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      showToast("Unexpected error. Please try again.", "error");
     }
   }
 
@@ -155,6 +212,7 @@ export default function PlansPage() {
 
   const currentPlanName = (reg?.membership_plan || "Basic").split(/\s*[–—]\s*/)[0].trim();
   const currentRank = PLAN_RANK[currentPlanName] ?? 0;
+  const hasPaidSubscription = !!(reg?.stripe_subscription_id);
   const lostFeatures = downgradeTarget ? getLostFeatures(currentPlanName, downgradeTarget.id) : [];
 
   return (
@@ -178,10 +236,9 @@ export default function PlansPage() {
               <button onClick={() => setDowngradeTarget(null)} style={{ background: "#f3f4f6", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
             </div>
             <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 24 }}>
-              {downgradeTarget.monthlyPrice === null
-                ? "The Basic plan is free."
-                : `${downgradeTarget.id} is $${billing === "annual" ? downgradeTarget.yearlyPrice + "/yr" : downgradeTarget.monthlyPrice + "/mo"}.`}
-              {" "}This change takes effect immediately.
+              {downgradeTarget.id === "Basic"
+                ? "Your subscription will be cancelled and won't renew. You'll keep access until the end of the current billing period."
+                : `${downgradeTarget.id} is $${billing === "annual" ? downgradeTarget.yearlyPrice + "/yr" : downgradeTarget.monthlyPrice + "/mo"}. A prorated credit will be applied immediately.`}
             </p>
 
             {lostFeatures.length > 0 && (
@@ -223,9 +280,19 @@ export default function PlansPage() {
       )}
 
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 className="dsp" style={{ fontSize: 22, fontWeight: 800, color: "#0a1628" }}>Membership Plans</h1>
-        <p style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>Your current plan and available upgrades</p>
+      <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1 className="dsp" style={{ fontSize: 22, fontWeight: 800, color: "#0a1628" }}>Membership Plans</h1>
+          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>Your current plan and available upgrades</p>
+        </div>
+        {hasPaidSubscription && (
+          <button
+            onClick={openBillingPortal}
+            style={{ padding: "8px 16px", background: "#f3f4f6", color: "#374151", border: "1.5px solid #e5e7eb", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+          >
+            Manage Billing →
+          </button>
+        )}
       </div>
 
       {/* Current plan banner */}
@@ -325,15 +392,15 @@ export default function PlansPage() {
                 disabled={isCurrent || confirming}
                 style={{
                   width: "100%", padding: 11, borderRadius: 9, fontSize: 13, fontWeight: 700,
-                  cursor: isCurrent ? "default" : "pointer",
+                  cursor: isCurrent ? "default" : confirming ? "not-allowed" : "pointer",
                   border: isDowngrade && !isCurrent ? "1.5px solid #e5e7eb" : "none",
                   transition: "all 0.2s",
                   background: btnBg,
                   color: btnColor,
-                  opacity: isCurrent ? 0.9 : 1,
+                  opacity: isCurrent ? 0.9 : confirming && !isCurrent ? 0.7 : 1,
                 }}
               >
-                {btnLabel}
+                {confirming && !isCurrent ? "Working…" : btnLabel}
               </button>
             </div>
           );

@@ -134,12 +134,25 @@ export default function RegisterPage() {
   const [pwMet, setPwMet] = useState<boolean[]>([false,false,false,false,false]);
   const [showRegPw, setShowRegPw] = useState(false);
 
-  // Errors
+  // Errors / status
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [submitErr, setSubmitErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [successDetail, setSuccessDetail] = useState("");
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Detect return from Stripe
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    if (status === "success") {
+      setPaymentSuccess(true);
+    } else if (status === "cancelled") {
+      setSubmitErr("Payment was cancelled. You can try again below.");
+      setStep(3);
+    }
+  }, []);
 
   function clearErr(k: string) { setErrs(e => { const n = {...e}; delete n[k]; return n; }); }
 
@@ -177,9 +190,57 @@ export default function RegisterPage() {
     goTo(n + 1);
   }
 
+  // For paid plans: redirect to Stripe at Step 3 without creating a password
+  async function handlePaidCheckout() {
+    if (!validate3()) return;
+    setSubmitErr("");
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${MAIN_APP}/api/stripe-checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: contactEmail,
+          membershipPlan: plan,
+          membershipBilling: billing,
+          registration: {
+            registerAs: regType,
+            primaryCategory: category,
+            subCategory: subCategory || null,
+            companyName,
+            websiteUrl: website || null,
+            shortDescription: description || null,
+            headquartersCountry: hqCountry || null,
+            headquartersCity: hqCity || null,
+            countriesServed: countries.length ? countries : null,
+            deliveryModel: delivery || null,
+            companySize: companySize || null,
+            certifications: certifications || null,
+            primaryContactName: contactName,
+            primaryContactEmail: contactEmail,
+            primaryContactPhone: contactPhone || null,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSubmitErr(data.error ?? "Payment setup failed. Please try again.");
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setSubmitErr("Payment setup failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   const membershipPlan = plan === "Basic" ? "Basic"
     : billing === "annual" ? `${plan} – Annual` : `${plan} – Monthly`;
 
+  // For Basic plan: send email+password to finish-registration, then sign in
   async function doSubmit() {
     const e: Record<string, string> = {};
     if (!contactEmail || !/\S+@\S+\.\S+/.test(contactEmail)) e.email = "A valid contact email is required in step 2.";
@@ -192,30 +253,41 @@ export default function RegisterPage() {
     setSubmitting(true);
 
     try {
-      const { data: authData, error: signUpErr } = await supabase.auth.signUp({
-        email: contactEmail, password: pw,
+      const res = await fetch(`${MAIN_APP}/api/finish-registration`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: contactEmail,
+          password: pw,
+          registerAs: regType,
+          primaryCategory: category,
+          subCategory: subCategory || null,
+          companyName,
+          websiteUrl: website || null,
+          shortDescription: description || null,
+          headquartersCountry: hqCountry || null,
+          headquartersCity: hqCity || null,
+          countriesServed: countries.length ? countries : null,
+          deliveryModel: delivery || null,
+          companySize: companySize || null,
+          certifications: certifications || null,
+          primaryContactName: contactName,
+          primaryContactEmail: contactEmail,
+          primaryContactPhone: contactPhone || null,
+          membershipPlan,
+          membershipBilling: null,
+        }),
       });
-      if (signUpErr && !signUpErr.message.includes("confirmation")) throw signUpErr;
 
-      const userId = authData?.user?.id;
-      if (userId) {
-        await fetch(`${MAIN_APP}/api/finish-registration`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId,
-            registerAs: regType, primaryCategory: category, subCategory: subCategory || null,
-            companyName, websiteUrl: website || null, shortDescription: description || null,
-            headquartersCountry: hqCountry || null, headquartersCity: hqCity || null,
-            countriesServed: countries.length ? countries : null,
-            deliveryModel: delivery || null, companySize: companySize || null,
-            certifications: certifications || null,
-            primaryContactName: contactName, primaryContactEmail: contactEmail,
-            primaryContactPhone: contactPhone || null,
-            membershipPlan, membershipBilling: plan === "Basic" ? null : billing,
-          }),
-        }).catch(() => {});
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSubmitErr(data.error ?? "Registration failed. Please try again.");
+        return;
       }
+
+      // Auto sign-in so they can go straight to the dashboard
+      await supabase.auth.signInWithPassword({ email: contactEmail, password: pw });
 
       setSuccessDetail(`${companyName} is registered on the ${membershipPlan} plan.`);
       setSuccess(true);
@@ -225,6 +297,27 @@ export default function RegisterPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Payment-success screen (paid plan returned from Stripe)
+  if (paymentSuccess) {
+    return (
+      <div className="reg-page" style={{ justifyContent: "center", alignItems: "center" }}>
+        <div style={{ textAlign: "center", maxWidth: 460, padding: "64px 20px" }}>
+          <div style={{ width: 76, height: 76, borderRadius: "50%", background: "linear-gradient(135deg,#1E2E61,#1C66AD)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 22px", boxShadow: "0 12px 32px rgba(28,102,173,0.35)" }}>
+            <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="dsp" style={{ fontSize: 28, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>Payment confirmed!</h2>
+          <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>Your GMA Partner listing is being set up.</p>
+          <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32, lineHeight: 1.5 }}>Check your inbox for an email with a link to set your password and access your dashboard.</p>
+          <Link href="/">
+            <span style={{ fontSize: 13, color: "#1C66AD", cursor: "pointer" }}>Return to main site →</span>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   if (success) {
@@ -498,6 +591,7 @@ export default function RegisterPage() {
               {billing === "annual" && <span style={{ fontSize: 10.5, fontWeight: 800, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 20, padding: "3px 10px" }}>2 MONTHS FREE</span>}
             </div>
             {errs.plan && <p style={{ fontSize: 11.5, color: "#dc2626", marginBottom: 14 }}>{errs.plan}</p>}
+            {submitErr && <div style={{ padding: "12px 16px", borderRadius: 10, fontSize: 13, marginBottom: 16, background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>{submitErr}</div>}
 
             <div className="plan-grid">
               {[
@@ -549,11 +643,27 @@ export default function RegisterPage() {
 
             <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
               <button className="reg-btn reg-btn-ghost" onClick={() => goTo(2)}>← Back</button>
-              <button className="reg-btn reg-btn-primary" onClick={() => next(3)}>Continue →</button>
+              {plan === "Basic" ? (
+                <button className="reg-btn reg-btn-primary" onClick={() => next(3)}>Continue →</button>
+              ) : (
+                <button
+                  className="reg-btn reg-btn-primary"
+                  disabled={submitting}
+                  onClick={handlePaidCheckout}
+                  style={{ opacity: submitting ? 0.7 : 1 }}
+                >
+                  {submitting ? "Starting checkout…" : "Pay & Register →"}
+                </button>
+              )}
             </div>
+            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 10 }}>
+              {plan && plan !== "Basic"
+                ? "You'll set your password after payment via a link in your confirmation email."
+                : ""}
+            </p>
           </div>
 
-          {/* Step 4: Account */}
+          {/* Step 4: Account (Basic plan only) */}
           <div className={`step-panel${step === 4 ? " active" : ""}`}>
             <p className="dsp" style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 26, fontWeight: 800, color: "#0a1628", lineHeight: 1.15, marginBottom: 5 }}>Create Your Account</p>
             <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 32, lineHeight: 1.5 }}>Almost done — set your login credentials</p>
