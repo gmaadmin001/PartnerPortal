@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 6 ✅ Phase 8 ✅ complete. Next up: Phase 5.5 — Stripe payment integration (blocked: waiting on Stripe account details). Phase 9 (production email) also pending — note: completing email verification in Phase 9 is what sets `is_verified = true` on a supplier's record, which gates the VERIFIED badge on Premier listings.
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 5.5 ✅ Phase 6 ✅ Phase 8 ✅ Phase 9 (email) ✅ complete. Remaining: Phase 5.5 tasks S6 (end-to-end QA), S7 (entitlement gating), S8 (field-level gating), S12 (claim-then-pay); Phase 9 task E7 (email QA); live Stripe key swap.
 
 ---
 
@@ -233,96 +233,23 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
    $500/yr; Verified Badge $100 one-time, Professional only — included with Premier;
    category/area limits 1 / 3 / unlimited). Canonical table lives in `StripeTODO.md`,
    which now tracks the full Phase 5.5 execution plan.
-2. [ ] **Task S1 — Stripe env vars + create all Stripe objects:** Add env vars to
-   Cloudflare (build + runtime) and `.dev.vars`. In one pass, create monthly + annual
-   prices per tier, the one-time badge price, and register the webhook endpoint URL to
-   obtain `whsec_*` (the URL is known up front, so this works before S3's code exists).
+2. [x] **Task S1 — Stripe env vars + create all Stripe objects:** ✅ All price IDs created in Stripe test mode; all env vars added to `.dev.vars` and Cloudflare Worker secrets. Webhook endpoint registered at `/api/stripe-webhook`; `checkout.session.completed`, `customer.subscription.*`, and `invoice.payment_failed` events subscribed.
+3. [x] **Task S2 — `src/app/api/stripe-checkout/route.ts`:** ✅ Creates Checkout Session for new paid registrations (`pending_registrations` table) and `dashboard_upgrade` mode (in-place Stripe subscription update for existing subscribers, new Checkout session for Basic→paid).
+4. [x] **Task S3 — `src/app/api/stripe-webhook/route.ts`:** ✅ HMAC-SHA256 signature verification (Web Crypto, ±5 min tolerance). Handles `checkout.session.completed` (new registration fulfilment + `dashboard_upgrade` + `verified_badge`), `customer.subscription.updated/deleted`, `invoice.payment_failed`. Orphaned subscription cleanup on upgrade. Sends invite/recovery link email via EmailJS on new registration. Sends admin notification emails (to all rows in `admins` table) on badge purchase.
+5. [x] **Task S11 — `Suspended` subscription state:** ✅ `subscription_status` column mapped from Stripe lifecycle events. `customer.subscription.deleted` → `Suspended`; `updated` → mapped status; `invoice.payment_failed` → `past_due`.
+6. [ ] **Task S7 — Plan entitlement / feature-gating logic:** Enforce per-tier service-count limits in dashboard + APIs.
+7. [ ] **Task S8 — Field-level tier gating:** Gate profile fields per tier. Wire to active subscription.
+8. [x] **Task S9 — Annual billing wiring:** ✅ Monthly/Annual toggle routes to correct annual Price IDs. `isCurrent` checks both plan name AND billing cycle. Same-plan billing switches (monthly↔annual) go through Case A (Stripe in-place update with proration).
+9. [x] **Task S10 — Verified Badge one-time fee:** ✅ `src/app/api/stripe-badge/route.ts` — one-time Stripe Checkout session using `STRIPE_VERIFIED_BADGE_PRICE_ID`. Webhook sets `is_verified = true` and emails all admins. Plans page shows "Verified Badge Active / OWNED" chip when already purchased (blocks re-purchase). Dashboard shows gold "✦ GMA Verified" pill in banner and gold stat card.
+10. [x] **Task S4 — Wire `register/page.tsx` to Stripe:** ✅ Paid plan → POSTs to `/api/stripe-checkout` (pending_registrations flow). Basic → POSTs to `/api/finish-registration` directly. Password set after payment via invite email link to `/auth/reset-password`.
+11. [x] **Task S5 — `/auth/reset-password` page:** ✅ Full UI redesign (dark navy gradient, branded card). Session bootstrap via `useEffect` — exchanges `#access_token`+`#refresh_token` hash tokens from invite/recovery links into a live Supabase session before form is usable. Loading spinner while exchange runs. Fixes "Auth session missing!" error for new users completing account setup.
+12. [ ] **Task S12 — Claim-then-pay model:** Pre-loaded listings must convert to paid subscription before vendor can edit.
+13. [ ] **Task S6 — Final end-to-end QA:** Test Free (bypass), each paid tier monthly + annual (Stripe test card), badge purchase, suspension, and claim-then-pay. Then swap to live Stripe keys.
 
-   **Credentials to gather first** — Price IDs only after **S0** finalizes the price table;
-   gather every ID in one pass to avoid repeat dashboard trips:
-   - [ ] Stripe **Publishable Key** (`pk_live_*` or `pk_test_*`)
-   - [ ] Stripe **Secret Key** (`sk_live_*` or `sk_test_*`)
-   - [ ] **Monthly** recurring Price ID for each paid tier (`price_*`)
-   - [ ] **Annual** recurring Price ID for each paid tier (`price_*`) — feeds the Annual toggle (S9)
-   - [ ] **One-time** Price ID for the Verified Badge (`price_*`) — feeds S10
-   - [ ] Stripe **Webhook Signing Secret** (`whsec_*`) — from registering the endpoint URL
-
-   **Where to find each key in the Stripe Dashboard:**
-   1. **Publishable + Secret Key** — Log in to [dashboard.stripe.com](https://dashboard.stripe.com)
-      → **Developers → API keys**. Copy **Publishable key** (`pk_live_*`) and **Secret key**
-      (`sk_live_*`). ⚠️ Use **test mode** keys (`pk_test_*` / `sk_test_*`) first — toggle top-left.
-   2. **Price IDs** — **Product catalog** (left sidebar). For each paid tier, create/open the
-      product and copy the **Price ID** (`price_*`) for **both** its monthly and annual prices;
-      also create the **one-time Verified Badge** price. Tier names + amounts come from **S0**
-      (don't use the old $100/$200). New product: **+ Add product** → add a **Recurring / Monthly**
-      and a **Recurring / Yearly** price per tier; badge = **One-time**.
-   3. **Webhook Signing Secret** — **Developers → Webhooks** → **+ Add endpoint**. URL:
-      `https://partnerportal.gmaadmin001.workers.dev/api/stripe-webhook`; events:
-      `checkout.session.completed` (+ `customer.subscription.*` for S11). After saving, **Reveal**
-      the signing secret → copy `whsec_*`. Local dev: `stripe listen --forward-to
-      localhost:3000/api/stripe-webhook` prints its own local `whsec_*`.
-
-   **Add to `.dev.vars` (local development):**
-   ```
-   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-   STRIPE_SECRET_KEY=sk_test_...
-   STRIPE_WEBHOOK_SECRET=whsec_...
-   # One monthly + one annual price ID per paid tier, plus the badge — final names follow S0:
-   STRIPE_<TIER>_MONTHLY_PRICE_ID=price_...
-   STRIPE_<TIER>_ANNUAL_PRICE_ID=price_...
-   STRIPE_VERIFIED_BADGE_PRICE_ID=price_...
-   ```
-
-   **Add to Cloudflare Dashboard (production):** Workers & Pages → `partnerportal` → Settings →
-   Variables and Secrets.
-
-   | Variable | Type | Value |
-   |---|---|---|
-   | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **Plain text build variable** | `pk_live_*` |
-   | `STRIPE_SECRET_KEY` | **Encrypted secret** | `sk_live_*` |
-   | `STRIPE_WEBHOOK_SECRET` | **Encrypted secret** | `whsec_*` |
-   | `STRIPE_<TIER>_MONTHLY_PRICE_ID` (per tier) | **Encrypted secret** | `price_*` |
-   | `STRIPE_<TIER>_ANNUAL_PRICE_ID` (per tier) | **Encrypted secret** | `price_*` |
-   | `STRIPE_VERIFIED_BADGE_PRICE_ID` | **Encrypted secret** | `price_*` |
-
-   > ⚠️ `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` **must** be a build variable (not a runtime secret) —
-   > it is inlined into the browser bundle at build time.
-
-3. [ ] **Task S2 — `src/app/api/stripe-checkout/route.ts`:** Creates Checkout Session,
-   returns redirect URL.
-   - Free plan: returns `{ skip: true }` → client proceeds to Finish
-   - Paid plan: `fetch` to `https://api.stripe.com/v1/checkout/sessions` (plain fetch, no SDK)
-   - `success_url` → `/add-service?step=finish&session_id={CHECKOUT_SESSION_ID}`
-   - `cancel_url` → `/add-service?step=plans`
-4. [ ] **Task S3 — `src/app/api/stripe-webhook/route.ts`:** Receives `checkout.session.completed`.
-   - Verify Stripe-Signature header (HMAC-SHA256, Web Crypto)
-   - Extract metadata (all form data passed as Checkout Session metadata)
-   - Call same account-creation logic as current `/api/finish-registration`
-   - Build/test locally via `stripe listen` before the production endpoint (S1) is live —
-     the handler code and the dashboard registration are independent.
-5. [ ] **Task S11 — `Suspended` subscription state:** Add the subscription-status model
-   (incl. `Suspended` for lapsed/canceled) and the lifecycle webhooks that drive it
-   (`customer.subscription.*`, not just `checkout.session.completed`). **Before** the
-   gating tasks, which key off this status.
-6. [ ] **Task S7 — Plan entitlement / feature-gating logic:** Enforce per-tier
-   service-count limits (Basic = 1, Professional = 3, Premier = unlimited; spec said
-   Premium = 10) in the dashboard + APIs, not just at checkout.
-7. [ ] **Task S8 — Field-level tier gating:** Gate which profile fields are
-   editable/visible per tier (Logo, Company Statement, Reviews, Media Gallery = top tier;
-   Contact, Certifications, Countries Served = mid tier). Wire to the active subscription.
-8. [ ] **Task S9 — Annual billing wiring:** Route the existing Monthly/Annual toggle
-   ($250/yr, $500/yr "2 months free") to the annual Price IDs created in S1.
-9. [ ] **Task S10 — Verified Badge one-time fee:** Add the "$100 one-time Verified Badge"
-   as a one-time Checkout line item (or separate session) + fulfilment.
-10. [ ] **Task S4 — Wire `MembershipStep` + `add-service/page.tsx`:** Route paid plans
-    through Stripe Checkout before advancing to Finish.
-11. [ ] **Task S5 — Update `FinishStep`:** For paid plans, show "Payment confirmed via
-    Stripe" badge; for Free, current flow unchanged.
-12. [ ] **Task S12 — Claim-then-pay model:** Pre-loaded/pre-populated listings must
-    convert to a paid subscription before the vendor can edit. Plan the claim → checkout
-    → unlock-edit flow (distinct from new self-registration checkout).
-13. [ ] **Task S6 — Final end-to-end QA:** Test Free (bypass), each paid tier monthly +
-    annual (Stripe test card), badge purchase, suspension, and claim-then-pay.
+**Also completed (admin dashboard — today):**
+- [x] Admin dashboard (`/admin`) — full registration table with inline edit, stat cards, search/filter, role-based access
+- [x] Badge purchase queue: `pendingVerified` stat card (amber); verified-badge-pending rows sorted first, amber left border + "⭐ Badge Paid" pill
+- [x] Admin notification email on badge purchase — fans out to every email in `admins` table
 
 ---
 
