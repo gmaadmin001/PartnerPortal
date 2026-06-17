@@ -212,6 +212,7 @@ export default function PlansPage() {
 
   const currentPlanName = (reg?.membership_plan || "Basic").split(/\s*[–—]\s*/)[0].trim();
   const currentRank = PLAN_RANK[currentPlanName] ?? 0;
+  const currentBilling = (reg?.membership_billing ?? "monthly") as "monthly" | "annual";
   const hasPaidSubscription = !!(reg?.stripe_subscription_id);
   const lostFeatures = downgradeTarget ? getLostFeatures(currentPlanName, downgradeTarget.id) : [];
 
@@ -325,25 +326,32 @@ export default function PlansPage() {
       {/* Plan cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22 }}>
         {PLANS.map(p => {
-          const isCurrent = p.id === currentPlanName;
+          const isSamePlan = p.id === currentPlanName;
           const targetRank = PLAN_RANK[p.id] ?? 0;
-          const isDowngrade = !isCurrent && targetRank < currentRank;
+          // "Current" only when plan name AND billing cycle both match
+          const isCurrent = isSamePlan && (p.monthlyPrice === null || billing === currentBilling);
+          // Downgrade = lower-rank plan (not same plan; billing switches go through handleUpgrade)
+          const isDowngrade = !isCurrent && !isSamePlan && targetRank < currentRank;
           const price = p.monthlyPrice === null ? "Free" : billing === "annual" ? `$${p.yearlyPrice}` : `$${p.monthlyPrice}`;
           const priceSuffix = p.monthlyPrice === null ? "" : billing === "annual" ? "/yr" : "/mo";
           const saving = billing === "annual" && p.monthlyPrice ? `Save $${p.monthlyPrice * 12 - (p.yearlyPrice ?? 0)} vs monthly` : null;
 
           let btnLabel: string;
           if (isCurrent) btnLabel = "Current Plan";
+          else if (isSamePlan && billing === "annual") btnLabel = "Switch to Annual";
+          else if (isSamePlan && billing === "monthly") btnLabel = "Switch to Monthly";
           else if (isDowngrade) btnLabel = `Downgrade to ${p.id}`;
           else btnLabel = `Upgrade to ${p.id}`;
 
+          const isBillingSwitch = isSamePlan && !isCurrent;
           let btnBg: string;
           if (isCurrent) btnBg = "#1E2E61";
           else if (isDowngrade) btnBg = "#f3f4f6";
+          else if (isBillingSwitch && billing === "monthly") btnBg = "#f3f4f6";
           else if (p.id === "Professional") btnBg = "#1C66AD";
           else btnBg = "#1E2E61";
 
-          const btnColor = isCurrent ? "#fff" : isDowngrade ? "#374151" : "#fff";
+          const btnColor = isCurrent || (!isDowngrade && !isBillingSwitch) || (isBillingSwitch && billing === "annual") ? "#fff" : "#374151";
 
           return (
             <div key={p.id} className="crd" style={{
@@ -386,6 +394,7 @@ export default function PlansPage() {
                   if (isDowngrade) {
                     setDowngradeTarget(p);
                   } else {
+                    // Upgrade OR same-plan billing switch — both go through stripe-checkout Case A
                     handleUpgrade(p);
                   }
                 }}
