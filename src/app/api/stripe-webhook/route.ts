@@ -204,6 +204,8 @@ export async function POST(req: NextRequest) {
       const userId = session.metadata?.user_id;
       const plan = session.metadata?.plan;
       const billing = session.metadata?.billing;
+      const newSubId = session.subscription;
+      const customerId = session.customer;
 
       if (userId && plan) {
         const supabase = createServiceClient();
@@ -213,13 +215,36 @@ export async function POST(req: NextRequest) {
           .update({
             membership_plan: planFull,
             membership_billing: billing ?? "monthly",
-            stripe_customer_id: (session as { customer?: string }).customer ?? null,
-            stripe_subscription_id: (session as { subscription?: string }).subscription ?? null,
+            stripe_customer_id: customerId ?? null,
+            stripe_subscription_id: newSubId ?? null,
             subscription_status: "active",
           })
           .eq("user_id", userId);
         if (error) console.error("[stripe-webhook] dashboard_upgrade update failed:", error);
       }
+
+      // Cancel any other active subscriptions for this customer so they aren't double-billed.
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (stripeKey && customerId && newSubId) {
+        try {
+          const listRes = await fetch(
+            `https://api.stripe.com/v1/subscriptions?customer=${customerId}&status=active&limit=100`,
+            { headers: { Authorization: `Bearer ${stripeKey}` } },
+          );
+          const list = (await listRes.json()) as { data?: Array<{ id: string }> };
+          for (const sub of list.data ?? []) {
+            if (sub.id !== newSubId) {
+              await fetch(`https://api.stripe.com/v1/subscriptions/${sub.id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${stripeKey}` },
+              });
+            }
+          }
+        } catch (err) {
+          console.error("[stripe-webhook] failed to cancel old subscriptions:", err);
+        }
+      }
+
       return NextResponse.json({ received: true });
     }
 
