@@ -220,31 +220,17 @@ export default function ProfilePage() {
   async function saveProfile() {
     if (!user) return;
     setSaving(true);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("service_registrations")
-      .update({
-        company_name: form.company_name,
-        website_url: form.website_url,
-        short_description: form.short_description,
-        company_bio: form.company_bio,
-        company_size: form.company_size,
-        delivery_model: form.delivery_model,
-        certifications: form.certifications,
-        primary_contact_name: form.primary_contact_name,
-        primary_contact_email: form.primary_contact_email,
-        primary_contact_phone: form.primary_contact_phone,
-        primary_category: form.primary_category,
-        sub_category: form.sub_category,
-        headquarters_country: form.headquarters_country,
-        headquarters_city: form.headquarters_city,
-        countries_served: form.countries_served,
-        states_served: form.states_served,
-        logo_url: form.logo_url,
-      })
-      .eq("user_id", user.id);
+    const res = await fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
     setSaving(false);
-    if (error) { showToast("Save failed: " + error.message, "error"); return; }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      showToast(body.error ?? "Save failed", "error");
+      return;
+    }
     showToast("Profile saved!", "success");
     setEditing(false);
     setTimeout(() => window.location.reload(), 800);
