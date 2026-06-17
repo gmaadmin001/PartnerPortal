@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -14,6 +14,43 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  // Exchange the access_token + refresh_token from the invite/recovery link hash
+  // into a real Supabase session before the user can set their password.
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    if (accessToken && refreshToken) {
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (error) {
+            setError("Your invite link has expired or is invalid. Please contact support to request a new one.");
+          }
+          // Clear the tokens from the URL bar without triggering a navigation
+          window.history.replaceState(null, "", window.location.pathname);
+          setSessionReady(true);
+        });
+    } else {
+      // No hash tokens — check if there's already a valid session (e.g. direct nav)
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setSessionReady(true);
+        } else {
+          setError("No active session found. Please use the link from your invitation email.");
+          setSessionReady(true);
+        }
+      });
+    }
+  }, []);
 
   const criteria = {
     length:    password.length >= 8,
@@ -25,7 +62,7 @@ export default function ResetPasswordPage() {
   const metCount = Object.values(criteria).filter(Boolean).length;
   const allMet = metCount === 5;
   const passwordsMatch = password === confirmPassword;
-  const canSubmit = allMet && passwordsMatch && !loading;
+  const canSubmit = allMet && passwordsMatch && !loading && sessionReady;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,6 +101,18 @@ export default function ResetPasswordPage() {
           >
             Go to Sign In →
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sessionReady) {
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a1628 0%,#1E2E61 50%,#1C66AD 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 44, height: 44, border: "3px solid rgba(255,255,255,0.2)", borderTopColor: "#43B4E3", borderRadius: "50%", margin: "0 auto 16px", animation: "spin 0.8s linear infinite" }} />
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>Setting up your session…</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );
