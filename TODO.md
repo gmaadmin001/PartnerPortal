@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 5.5 ✅ Phase 6 ✅ Phase 8 ✅ Phase 9 ✅ complete. S7 ✅ S8 ✅ S12 ✅ Taxonomy ✅ Suppliers loaded ✅. **Active today:** Admin magic-link auth. Rebrand (Relocentra) pending post-meeting. S6 + Domain moved to GOLIVETODO.md.
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 5.5 ✅ Phase 6 ✅ Phase 8 ✅ Phase 9 ✅ complete. S7 ✅ S8 ✅ S12 ✅ Taxonomy ✅ Suppliers loaded ✅. **Admin magic-link auth ✅.** Rebrand (Relocentra) pending post-meeting. S6 + Domain moved to GOLIVETODO.md.
 
 ---
 
@@ -470,7 +470,7 @@ in place. This is a dashboard-only configuration step.
 
 ### Design decisions needed
 
-- [ ] **Admin authentication — magic link via email/username:** *(active — doing today)* Admins log in via magic link
+- [x] **Admin authentication — magic link via email/username:** Admins log in via magic link
       rather than password. Flow: on the login screen, if the user submits only an email or
       username (no password), check whether that identity is an admin. If yes, send a magic
       link to their email and redirect them into the admin dashboard on click. If no, fall

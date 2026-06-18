@@ -249,14 +249,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // Verified Badge one-time purchase: mark is_verified and notify admin.
+    // Verified Badge one-time purchase: mark badge_purchased (admin reviews before is_verified is set).
     if (session.metadata?.type === "verified_badge") {
       const userId = session.metadata?.user_id;
       if (userId) {
         const supabase = createServiceClient();
         const { error } = await supabase
           .from("service_registrations")
-          .update({ is_verified: true })
+          .update({ badge_purchased: true })
           .eq("user_id", userId);
         if (error) {
           console.error("[stripe-webhook] verified_badge update failed:", error);
