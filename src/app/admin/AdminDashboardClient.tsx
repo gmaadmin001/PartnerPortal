@@ -42,9 +42,17 @@ interface Props {
 }
 
 const PRIMARY_CATEGORIES = [
-  "Mortgage & Finance","Title & Escrow","Home Inspection","Insurance","Real Estate Law",
-  "Property Management","Home Warranty","Moving & Relocation","Home Renovation","Landscaping",
-  "Interior Design","Photography","Staging","Cleaning","Pest Control","Health, Safety & Security","Other",
+  "Getting Established at Destination",
+  "Health, Safety & Security",
+  "Housing & Accommodation",
+  "Immigration & Work Authorization",
+  "Moving Belongings",
+  "Program Management & Outsourcing",
+  "Real Estate Professionals (Realtors)",
+  "Strategy, Policy & Advisory",
+  "Supporting Employees & Families",
+  "Tax, Payroll & Compensation",
+  "Technology & Data",
 ];
 
 const TYPE_COLOR: Record<string, string> = {

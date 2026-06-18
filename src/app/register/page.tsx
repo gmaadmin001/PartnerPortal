@@ -15,12 +15,13 @@ const STEPS = [
 ];
 
 const CATEGORIES = [
-  "Getting Established at the Destination",
+  "Getting Established at Destination",
   "Health, Safety & Security",
   "Housing & Accommodation",
   "Immigration & Work Authorization",
   "Moving Belongings",
   "Program Management & Outsourcing",
+  "Real Estate Professionals (Realtors)",
   "Strategy, Policy & Advisory",
   "Supporting Employees & Families",
   "Tax, Payroll & Compensation",
@@ -28,7 +29,7 @@ const CATEGORIES = [
 ];
 
 const SUBCATS: Record<string, string[]> = {
-  "Getting Established at the Destination": [
+  "Getting Established at Destination": [
     "Destination Services Providers (DSPs)",
     "School Search & Education Consultants",
   ],
@@ -43,7 +44,8 @@ const SUBCATS: Record<string, string[]> = {
     "Home Sale Program Administrators",
     "Property Management Services",
     "Real Estate Brokers & Agents",
-    "Title, Appraisal & Closing Services",
+    "Relocation Mortgage & Lending Services",
+    "Title / Appraisal & Closing Services",
   ],
   "Immigration & Work Authorization": [
     "Corporate Immigration Service Providers",
@@ -52,8 +54,9 @@ const SUBCATS: Record<string, string[]> = {
   ],
   "Moving Belongings": [
     "Freight Forwarders",
-    "Household Goods Movers",
+    "Household Goods Movers (Domestic & International)",
     "Pet Relocation Specialists",
+    "Storage Providers",
     "Vehicle Transport Specialists",
   ],
   "Program Management & Outsourcing": [
@@ -61,8 +64,11 @@ const SUBCATS: Record<string, string[]> = {
     "Move Coordination Specialists",
     "Relocation Management Companies (RMCs)",
   ],
+  "Real Estate Professionals (Realtors)": [
+    "Realtors Serving the Mobility Market",
+  ],
   "Strategy, Policy & Advisory": [
-    "Benchmarking & Data Service",
+    "Benchmarking & Data Services",
     "Mobility Consulting Firms",
   ],
   "Supporting Employees & Families": [
