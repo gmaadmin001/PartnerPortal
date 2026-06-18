@@ -7,18 +7,69 @@ import Link from "next/link";
 
 const PLANS = [
   {
+    name: "Basic",
+    monthly: 0,
+    annual: 0,
+    features: [
+      "Public directory listing",
+      "Contact info visible",
+      "Basic profile",
+    ],
+    note: "No custom URL — listing assigned a random link",
+  },
+  {
     name: "Professional",
     monthly: 25,
     annual: 250,
-    features: ["Full profile editing", "Logo & contact details", "Up to 3 service categories", "Up to 3 service areas"],
+    features: [
+      "Custom profile URL",
+      "Full profile editing",
+      "Logo & contact details",
+      "Up to 3 service categories",
+      "Up to 3 service areas",
+    ],
+    note: null,
   },
   {
     name: "Premier",
     monthly: 50,
     annual: 500,
-    features: ["Everything in Professional", "Unlimited categories & areas", "Photo gallery", "Preferred search placement"],
+    features: [
+      "Custom profile URL",
+      "Everything in Professional",
+      "Unlimited categories & areas",
+      "Photo gallery",
+      "Preferred search placement",
+    ],
+    note: null,
   },
 ];
+
+function passwordScore(pw: string): number {
+  if (!pw) return 0;
+  let s = 0;
+  if (pw.length >= 8)  s++;
+  if (pw.length >= 12) s++;
+  if (/[A-Z]/.test(pw)) s++;
+  if (/[0-9]/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return s;
+}
+
+function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null;
+  const score = passwordScore(password);
+  const label = score <= 1 ? "Weak" : score <= 3 ? "Fair" : "Strong";
+  const color = score <= 1 ? "#dc2626" : score <= 3 ? "#f59e0b" : "#16a34a";
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ height: 4, background: "#e5e7eb", borderRadius: 99, overflow: "hidden" }}>
+        <div style={{ height: 4, width: `${(score / 5) * 100}%`, background: color, borderRadius: 99, transition: "width 0.2s, background 0.2s" }} />
+      </div>
+      <p style={{ fontSize: 11, color, marginTop: 4, fontWeight: 600 }}>{label}</p>
+    </div>
+  );
+}
 
 export default function ClaimPage() {
   const params = useParams();
@@ -69,6 +120,21 @@ export default function ClaimPage() {
     setSubmitting(true);
     setSubmitErr(null);
 
+    // Basic — no Stripe, create account directly
+    if (plan === "Basic") {
+      const res = await fetch("/api/claim-basic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password, slug }),
+      });
+      const json = await res.json() as { success?: boolean; error?: string };
+      setSubmitting(false);
+      if (!res.ok || !json.success) { setSubmitErr(json.error ?? "Could not claim listing. Please try again."); return; }
+      window.location.href = `/claim/${slug}?status=success&email=${encodeURIComponent(email.trim())}`;
+      return;
+    }
+
+    // Paid plans — Stripe checkout
     const res = await fetch("/api/stripe-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -88,6 +154,7 @@ export default function ClaimPage() {
     window.location.href = json.url;
   }
 
+  // ── Success screen ─────────────────────────────────────────────────────────
   if (paid) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f3f6fb" }}>
@@ -97,7 +164,7 @@ export default function ClaimPage() {
           </div>
           <h2 className="dsp" style={{ fontSize: 28, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>You&apos;re all set!</h2>
           <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>
-            Payment confirmed. Your listing has been claimed and your account is ready.
+            Your listing has been claimed and your account is ready.
           </p>
           <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32, lineHeight: 1.5 }}>
             {paidEmail
@@ -138,10 +205,11 @@ export default function ClaimPage() {
   }
 
   const selectedPlan = PLANS.find(p => p.name === plan)!;
+  const isPaid = plan !== "Basic";
 
   return (
     <div style={{ minHeight: "100vh", background: "#f3f6fb", padding: "40px 24px" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+      <div style={{ maxWidth: 700, margin: "0 auto" }}>
         {/* Back link */}
         <Link href={`/services/${slug}`} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#6b7280", textDecoration: "none", marginBottom: 28 }}>
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -170,44 +238,23 @@ export default function ClaimPage() {
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>
                 Your Name
               </label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Jane Smith"
-                required
-                className="reg-inp"
-              />
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Jane Smith" required className="reg-inp" />
             </div>
 
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>
                 Business Email
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                className="reg-inp"
-              />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required className="reg-inp" />
             </div>
 
             <div>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>
                 Password
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                minLength={8}
-                required
-                className="reg-inp"
-              />
-              <p style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 6 }}>You&apos;ll use this to sign in to your dashboard after payment.</p>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" minLength={8} required className="reg-inp" />
+              <PasswordStrength password={password} />
+              <p style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 6 }}>You&apos;ll use this to sign in to your dashboard.</p>
             </div>
           </div>
 
@@ -215,45 +262,44 @@ export default function ClaimPage() {
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #dde3ee", padding: "24px", marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Select Plan</span>
-              <div style={{ display: "flex", background: "#f3f6fb", borderRadius: 10, padding: 3 }}>
-                {(["monthly", "annual"] as const).map(b => (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => setBilling(b)}
-                    style={{ padding: "5px 14px", borderRadius: 8, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", background: billing === b ? "#fff" : "transparent", color: billing === b ? "#0a1628" : "#9ca3af", boxShadow: billing === b ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.15s" }}
-                  >
-                    {b === "annual" ? "Annual (save 17%)" : "Monthly"}
-                  </button>
-                ))}
-              </div>
+              {isPaid && (
+                <div style={{ display: "flex", background: "#f3f6fb", borderRadius: 10, padding: 3 }}>
+                  {(["monthly", "annual"] as const).map(b => (
+                    <button key={b} type="button" onClick={() => setBilling(b)}
+                      style={{ padding: "5px 14px", borderRadius: 8, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", background: billing === b ? "#fff" : "transparent", color: billing === b ? "#0a1628" : "#9ca3af", boxShadow: billing === b ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.15s" }}>
+                      {b === "annual" ? "Annual (save 17%)" : "Monthly"}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               {PLANS.map(p => {
                 const selected = plan === p.name;
+                const price = p.monthly === 0 ? "Free" : billing === "annual" ? `$${(p.annual / 12).toFixed(2)}` : `$${p.monthly}`;
                 return (
-                  <button
-                    key={p.name}
-                    type="button"
-                    onClick={() => setPlan(p.name)}
-                    style={{ textAlign: "left", padding: "18px 20px", borderRadius: 12, border: selected ? "2px solid #1C66AD" : "1.5px solid #e5e7eb", background: selected ? "#eff6ff" : "#fff", cursor: "pointer", transition: "all 0.15s" }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                      <span style={{ fontWeight: 800, fontSize: 15, color: "#0a1628" }}>{p.name}</span>
-                      {selected && <svg width="16" height="16" fill="#1C66AD" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
+                  <button key={p.name} type="button" onClick={() => setPlan(p.name)}
+                    style={{ textAlign: "left", padding: "16px", borderRadius: 12, border: selected ? "2px solid #1C66AD" : "1.5px solid #e5e7eb", background: selected ? "#eff6ff" : "#fff", cursor: "pointer", transition: "all 0.15s" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontWeight: 800, fontSize: 13.5, color: "#0a1628" }}>{p.name}</span>
+                      {selected && <svg width="14" height="14" fill="#1C66AD" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#1C66AD", marginBottom: 10 }}>
-                      ${billing === "annual" ? (p.annual / 12).toFixed(2) : p.monthly}
-                      <span style={{ fontSize: 12, fontWeight: 500, color: "#9ca3af" }}>/mo</span>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: p.monthly === 0 ? "#16a34a" : "#1C66AD", marginBottom: 8 }}>
+                      {price}
+                      {p.monthly > 0 && <span style={{ fontSize: 11, fontWeight: 500, color: "#9ca3af" }}>/mo</span>}
                     </div>
                     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {p.features.map(f => (
-                        <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 11.5, color: "#374151", marginBottom: 4 }}>
-                          <svg width="11" height="11" fill="none" stroke="#16a34a" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 2 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                        <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 5, fontSize: 11, color: "#374151", marginBottom: 3 }}>
+                          <svg width="10" height="10" fill="none" stroke={p.name === "Basic" ? "#9ca3af" : "#16a34a"} viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1.5 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                           {f}
                         </li>
                       ))}
                     </ul>
+                    {p.note && (
+                      <p style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600, marginTop: 8, lineHeight: 1.4 }}>⚠ {p.note}</p>
+                    )}
                   </button>
                 );
               })}
@@ -264,16 +310,17 @@ export default function ClaimPage() {
             <p style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, marginBottom: 12, textAlign: "center" }}>{submitErr}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            style={{ width: "100%", padding: "14px", background: submitting ? "#93c5fd" : "linear-gradient(135deg,#1E2E61,#1C66AD)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-          >
+          <button type="submit" disabled={submitting}
+            style={{ width: "100%", padding: "14px", background: submitting ? "#93c5fd" : "linear-gradient(135deg,#1E2E61,#1C66AD)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             {submitting
-              ? "Redirecting to payment…"
-              : `Subscribe & Claim — $${billing === "annual" ? selectedPlan.annual + "/yr" : selectedPlan.monthly + "/mo"}`}
+              ? (plan === "Basic" ? "Creating account…" : "Redirecting to payment…")
+              : plan === "Basic"
+                ? "Claim Listing — Free"
+                : `Subscribe & Claim — $${billing === "annual" ? selectedPlan.annual + "/yr" : selectedPlan.monthly + "/mo"}`}
           </button>
-          <p style={{ textAlign: "center", fontSize: 11.5, color: "#9ca3af", marginTop: 10 }}>Secure checkout via Stripe. Cancel anytime.</p>
+          <p style={{ textAlign: "center", fontSize: 11.5, color: "#9ca3af", marginTop: 10 }}>
+            {plan === "Basic" ? "Free forever. Upgrade anytime from your dashboard." : "Secure checkout via Stripe. Cancel anytime."}
+          </p>
         </form>
       </div>
     </div>
