@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { label: "COURSES", href: `${GMA_SITE}/global-mobility-courses/` },
   { label: "ABOUT US", href: `${GMA_SITE}/about-us/` },
   { label: "RESOURCES", href: `${GMA_SITE}/resources/` },
+  { label: "DIRECTORY", href: "/services" },
   { label: "CONTACT US", href: `${GMA_SITE}/contact-us/` },
 ];
 

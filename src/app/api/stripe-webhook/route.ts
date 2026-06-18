@@ -314,34 +314,36 @@ export async function POST(req: NextRequest) {
         const email = pending.email as string;
         const plan = pending.membership_plan as string;
         const billingCycle = pending.membership_billing as string;
-        const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
+        const reg = (pending.registration ?? {}) as Record<string, unknown>;
+        const claimName = (reg.name as string) ?? "";
+        const claimPassword = (reg.password as string) ?? "";
 
         let userId: string | null = null;
-        let actionLink = "";
         let createdUser = false;
 
-        const invite = await supabase.auth.admin.generateLink({
-          type: "invite",
+        // Attempt to create a new user with the password they chose at checkout.
+        const { data: createData, error: createError } = await supabase.auth.admin.createUser({
           email,
-          options: { redirectTo: `${origin}/auth/reset-password` },
+          password: claimPassword,
+          email_confirm: true,
+          user_metadata: { full_name: claimName },
         });
 
-        if (invite.error) {
+        if (!createError && createData?.user) {
+          userId = createData.user.id;
+          createdUser = true;
+        } else {
+          // Email already exists — link the listing to the existing account.
           const recovery = await supabase.auth.admin.generateLink({
             type: "recovery",
             email,
-            options: { redirectTo: `${origin}/auth/reset-password` },
+            options: { redirectTo: `${process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin}/dashboard` },
           });
           if (recovery.error || !recovery.data?.user) {
-            console.error("[stripe-webhook] claim: could not generate auth link:", invite.error, recovery.error);
+            console.error("[stripe-webhook] claim: could not resolve user:", createError, recovery.error);
             return NextResponse.json({ error: "Account creation failed" }, { status: 500 });
           }
           userId = recovery.data.user.id;
-          actionLink = recovery.data.properties?.action_link ?? "";
-        } else {
-          userId = invite.data.user?.id ?? null;
-          actionLink = invite.data.properties?.action_link ?? "";
-          createdUser = true;
         }
 
         if (!userId) {
@@ -370,19 +372,22 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: "Claim update failed" }, { status: 500 });
         }
 
-        if (actionLink) {
-          await sendEmail({
-            to_email: email,
-            to_name: email,
-            greeting: "Hi there,",
-            button_url: actionLink,
-            subject: "Your claim is confirmed — set up your Partner Portal account",
-            headline: "You're all set — finish your account",
-            message_html: `<p>Your payment was received and your listing on <strong>${claimSlug}</strong> has been linked to your account. Click below to set your password and access your dashboard.</p>`,
-            button_label: "Set Your Password",
-            footnote: "If you didn't claim this listing, you can safely ignore this email.",
-          });
-        }
+        const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
+        await sendEmail({
+          to_email: email,
+          to_name: claimName || email,
+          greeting: claimName ? `Hi ${claimName},` : "Hi there,",
+          button_url: `${origin}/login`,
+          subject: createdUser
+            ? "Your listing is claimed — sign in to your dashboard"
+            : "Your listing has been linked to your account",
+          headline: "Welcome to the GMA Partner Portal",
+          message_html: createdUser
+            ? `<p>Your payment was received and <strong>${claimSlug}</strong> is now your listing. Sign in with your email and the password you chose at checkout.</p>`
+            : `<p>Your payment was received and <strong>${claimSlug}</strong> has been linked to your existing Partner Portal account. Sign in to manage your listing.</p>`,
+          button_label: "Sign In to Dashboard",
+          footnote: "If you didn't claim this listing, please contact us immediately.",
+        });
 
         await supabase
           .from("pending_registrations")

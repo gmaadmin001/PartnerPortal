@@ -34,12 +34,15 @@ export async function POST(req: NextRequest) {
   // ── Claim checkout (vendor claiming a pre-loaded listing) ───────────────────
   if (body.mode === "claim") {
     try {
-      const { email, slug, membershipPlan, membershipBilling } = body as {
-        email: string; slug: string; membershipPlan: string; membershipBilling: string;
+      const { name, email, password, slug, membershipPlan, membershipBilling } = body as {
+        name: string; email: string; password: string; slug: string; membershipPlan: string; membershipBilling: string;
       };
 
       if (!email || !slug) {
         return NextResponse.json({ error: "Email and listing slug are required." }, { status: 400 });
+      }
+      if (!password || password.length < 8) {
+        return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
       }
 
       const billing = membershipBilling === "annual" ? "annual" : "monthly";
@@ -55,7 +58,7 @@ export async function POST(req: NextRequest) {
           email,
           membership_plan: membershipPlan,
           membership_billing: billing,
-          registration: { claimSlug: slug },
+          registration: { claimSlug: slug, name: name?.trim() ?? "", password },
         })
         .select("id")
         .single();
@@ -75,7 +78,7 @@ export async function POST(req: NextRequest) {
         "metadata[mode]": "claim",
         "metadata[pending_id]": pending.id as string,
         "metadata[slug]": slug,
-        success_url: `${origin}/claim/${slug}?status=success`,
+        success_url: `${origin}/claim/${slug}?status=success&email=${encodeURIComponent(email)}`,
         cancel_url: `${origin}/claim/${slug}`,
       });
 

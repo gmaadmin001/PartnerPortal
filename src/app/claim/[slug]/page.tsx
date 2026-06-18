@@ -28,17 +28,24 @@ export default function ClaimPage() {
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [plan, setPlan] = useState("Professional");
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
 
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
+  const [paidEmail, setPaidEmail] = useState("");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("status") === "success") { setPaid(true); return; }
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.get("status") === "success") {
+      setPaidEmail(qs.get("email") ?? "");
+      setPaid(true);
+      return;
+    }
 
     const supabase = createClient();
     supabase
@@ -56,14 +63,24 @@ export default function ClaimPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!name.trim()) { setSubmitErr("Please enter your name."); return; }
     if (!email.trim()) { setSubmitErr("Please enter your email address."); return; }
+    if (password.length < 8) { setSubmitErr("Password must be at least 8 characters."); return; }
     setSubmitting(true);
     setSubmitErr(null);
 
     const res = await fetch("/api/stripe-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "claim", slug, email: email.trim(), membershipPlan: plan, membershipBilling: billing }),
+      body: JSON.stringify({
+        mode: "claim",
+        slug,
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        membershipPlan: plan,
+        membershipBilling: billing,
+      }),
     });
     const json = await res.json() as { url?: string; error?: string };
     setSubmitting(false);
@@ -74,14 +91,27 @@ export default function ClaimPage() {
   if (paid) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f3f6fb" }}>
-        <div style={{ textAlign: "center", maxWidth: 460, padding: "64px 24px" }}>
+        <div style={{ textAlign: "center", maxWidth: 480, padding: "64px 24px" }}>
           <div style={{ width: 76, height: 76, borderRadius: "50%", background: "linear-gradient(135deg,#1E2E61,#1C66AD)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 22px", boxShadow: "0 12px 32px rgba(28,102,173,0.35)" }}>
             <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h2 className="dsp" style={{ fontSize: 28, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>Payment confirmed!</h2>
-          <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>Your claim is being processed.</p>
-          <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32, lineHeight: 1.5 }}>Check your inbox for an email with a link to set your password and access your dashboard.</p>
-          <Link href="/" style={{ fontSize: 13, color: "#1C66AD" }}>Return to main site →</Link>
+          <h2 className="dsp" style={{ fontSize: 28, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>You&apos;re all set!</h2>
+          <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>
+            Payment confirmed. Your listing has been claimed and your account is ready.
+          </p>
+          <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32, lineHeight: 1.5 }}>
+            {paidEmail
+              ? <>Sign in with <strong style={{ color: "#374151" }}>{paidEmail}</strong> and the password you just created.</>
+              : "Sign in with your email and the password you just created."}
+          </p>
+          <Link
+            href="/login"
+            style={{ display: "inline-block", background: "linear-gradient(135deg,#1E2E61,#1C66AD)", color: "#fff", fontWeight: 800, fontSize: 14, padding: "13px 32px", borderRadius: 12, textDecoration: "none", marginBottom: 16 }}
+          >
+            Sign In to Your Dashboard →
+          </Link>
+          <br />
+          <Link href="/" style={{ fontSize: 13, color: "#9ca3af" }}>Return to main site</Link>
         </div>
       </div>
     );
@@ -108,8 +138,6 @@ export default function ClaimPage() {
   }
 
   const selectedPlan = PLANS.find(p => p.name === plan)!;
-  const price = billing === "annual" ? selectedPlan.annual : selectedPlan.monthly * 12;
-  const monthly = billing === "annual" ? (selectedPlan.annual / 12).toFixed(2) : selectedPlan.monthly;
 
   return (
     <div style={{ minHeight: "100vh", background: "#f3f6fb", padding: "40px 24px" }}>
@@ -132,20 +160,55 @@ export default function ClaimPage() {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Email */}
+          {/* Account details */}
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #dde3ee", padding: "24px", marginBottom: 20 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>
-              Your Business Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              required
-              className="reg-inp"
-            />
-            <p style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 6 }}>You'll receive a password setup link at this address.</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 16 }}>
+              Create Your Account
+            </p>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>
+                Your Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Jane Smith"
+                required
+                className="reg-inp"
+              />
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>
+                Business Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                required
+                className="reg-inp"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                minLength={8}
+                required
+                className="reg-inp"
+              />
+              <p style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 6 }}>You&apos;ll use this to sign in to your dashboard after payment.</p>
+            </div>
           </div>
 
           {/* Plan selection */}
@@ -206,7 +269,9 @@ export default function ClaimPage() {
             disabled={submitting}
             style={{ width: "100%", padding: "14px", background: submitting ? "#93c5fd" : "linear-gradient(135deg,#1E2E61,#1C66AD)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
           >
-            {submitting ? "Redirecting to payment…" : `Subscribe & Claim — $${billing === "annual" ? price + "/yr" : (selectedPlan.monthly) + "/mo"}`}
+            {submitting
+              ? "Redirecting to payment…"
+              : `Subscribe & Claim — $${billing === "annual" ? selectedPlan.annual + "/yr" : selectedPlan.monthly + "/mo"}`}
           </button>
           <p style={{ textAlign: "center", fontSize: 11.5, color: "#9ca3af", marginTop: 10 }}>Secure checkout via Stripe. Cancel anytime.</p>
         </form>

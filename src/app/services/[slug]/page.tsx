@@ -78,11 +78,6 @@ export default async function ProviderProfilePage({
   }
 
   const hasOwner = !!provider.user_id;
-  const userClaimStatus = !hasOwner && user
-    ? provider.claimed_by === user.id
-      ? (provider.claim_status as "pending" | "rejected" | null) ?? "none"
-      : "none"
-    : "none";
 
   const photos = Array.isArray(provider.photos) ? (provider.photos as string[]) : [];
   const certs = (provider.certifications ?? "").split(",").map((c: string) => c.trim()).filter(Boolean);
@@ -330,12 +325,7 @@ export default async function ProviderProfilePage({
 
           {/* Claim Section */}
           {!hasOwner && !isOwner && (
-            <ClaimSection
-              providerId={provider.id}
-              slug={provider.slug ?? slug}
-              isLoggedIn={!!user}
-              claimStatus={userClaimStatus as "none" | "pending" | "rejected"}
-            />
+            <ClaimSection slug={provider.slug ?? slug} />
           )}
         </div>
 
