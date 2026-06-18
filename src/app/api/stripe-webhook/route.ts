@@ -351,17 +351,23 @@ export async function POST(req: NextRequest) {
         }
 
         const planFull = billingCycle === "annual" ? `${plan} – Annual` : `${plan} – Monthly`;
+        const claimAffiliation = (reg.affiliation as string | undefined) ?? null;
 
+        // Set pending claim — do NOT set user_id yet (admin approves first)
         const { error: updateErr } = await supabase
           .from("service_registrations")
           .update({
-            user_id: userId,
-            membership_plan: planFull,
-            membership_billing: billingCycle,
+            claimed_by: userId,
+            claimed_at: new Date().toISOString(),
+            claim_status: "pending",
+            claim_name: claimName || null,
+            claim_email: email,
+            claim_affiliation: claimAffiliation,
+            claim_plan: planFull,
+            claim_billing: billingCycle,
+            // Store Stripe fields now so they're ready to activate on approval
             stripe_customer_id: session.customer ?? null,
             stripe_subscription_id: session.subscription ?? null,
-            subscription_status: "active",
-            status: "pending",
           })
           .eq("slug", claimSlug)
           .is("user_id", null);
@@ -377,16 +383,12 @@ export async function POST(req: NextRequest) {
           to_email: email,
           to_name: claimName || email,
           greeting: claimName ? `Hi ${claimName},` : "Hi there,",
-          button_url: `${origin}/login`,
-          subject: createdUser
-            ? "Your listing is claimed — sign in to your dashboard"
-            : "Your listing has been linked to your account",
-          headline: "Welcome to the GMA Partner Portal",
-          message_html: createdUser
-            ? `<p>Your payment was received and <strong>${claimSlug}</strong> is now your listing. Sign in with your email and the password you chose at checkout.</p>`
-            : `<p>Your payment was received and <strong>${claimSlug}</strong> has been linked to your existing Partner Portal account. Sign in to manage your listing.</p>`,
-          button_label: "Sign In to Dashboard",
-          footnote: "If you didn't claim this listing, please contact us immediately.",
+          button_url: `${origin}/dashboard`,
+          subject: "Claim submitted — under review",
+          headline: "Your Claim is Under Review",
+          message_html: `<p>Your payment was received and your claim for <strong>${claimSlug}</strong> has been submitted for review. Our team will verify your ownership and activate your listing within 1–2 business days.</p><p>You can sign in at any time to check your claim status.</p>`,
+          button_label: "Check Claim Status",
+          footnote: "If you didn't submit this claim, please contact us immediately.",
         });
 
         await supabase

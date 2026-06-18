@@ -1,36 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
-function randomHex(bytes = 6): string {
-  const arr = new Uint8Array(bytes);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { name?: string; email?: string; password?: string; slug?: string };
-    const { name, email, password, slug } = body;
+    const body = await req.json() as {
+      name?: string; email?: string; password?: string;
+      slug?: string; affiliation?: string;
+    };
+    const { name, email, password, slug, affiliation } = body;
 
-    if (!name?.trim())        return NextResponse.json({ error: "Name is required." }, { status: 400 });
-    if (!email?.trim())       return NextResponse.json({ error: "Email is required." }, { status: 400 });
-    if (!slug)                return NextResponse.json({ error: "Listing slug is required." }, { status: 400 });
+    if (!name?.trim())  return NextResponse.json({ error: "Name is required." }, { status: 400 });
+    if (!email?.trim()) return NextResponse.json({ error: "Email is required." }, { status: 400 });
+    if (!slug)          return NextResponse.json({ error: "Listing slug is required." }, { status: 400 });
     if (!password || password.length < 8)
       return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
 
     const supabase = createServiceClient();
 
-    // Verify listing exists and is unclaimed
+    // Verify listing exists, is unclaimed, and has no pending claim
     const { data: listing } = await supabase
       .from("service_registrations")
-      .select("id, user_id")
+      .select("id, user_id, claim_status")
       .eq("slug", slug)
       .maybeSingle();
 
-    if (!listing)       return NextResponse.json({ error: "Listing not found." }, { status: 404 });
+    if (!listing) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
     if (listing.user_id) return NextResponse.json({ error: "This listing has already been claimed." }, { status: 409 });
+    if (listing.claim_status === "pending") return NextResponse.json({ error: "This listing already has a pending claim under review." }, { status: 409 });
 
-    // Create the user
+    // Create the user account upfront so they can sign in and check status
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email: email.trim(),
       password,
@@ -41,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (createErr) {
       if (createErr.message?.toLowerCase().includes("already")) {
         return NextResponse.json({
-          error: "An account with this email already exists. Please sign in at /login to claim your listing.",
+          error: "An account with this email already exists. Please sign in at /login.",
         }, { status: 409 });
       }
       console.error("[claim-basic] createUser error:", createErr);
@@ -50,33 +48,26 @@ export async function POST(req: NextRequest) {
 
     const userId = created.user.id;
 
-    // Generate unique random hex slug — Basic plan has no custom URL
-    let newSlug = randomHex(6);
-    const { data: collision } = await supabase
-      .from("service_registrations")
-      .select("id")
-      .eq("slug", newSlug)
-      .maybeSingle();
-    if (collision) newSlug = randomHex(6);
-
-    // Link listing to user, randomize slug, set Basic
+    // Set pending claim — do NOT set user_id or change slug yet (admin approves first)
     const { error: updateErr } = await supabase
       .from("service_registrations")
       .update({
-        user_id: userId,
-        slug: newSlug,
-        membership_plan: "Basic",
-        membership_billing: null,
-        status: "active",
+        claimed_by: userId,
+        claimed_at: new Date().toISOString(),
+        claim_status: "pending",
+        claim_name: name.trim(),
+        claim_email: email.trim(),
+        claim_affiliation: affiliation?.trim() ?? null,
+        claim_plan: "Basic",
+        claim_billing: null,
       })
       .eq("id", listing.id)
       .is("user_id", null);
 
     if (updateErr) {
-      console.error("[claim-basic] update error:", updateErr);
-      // Clean up orphaned account
+      console.error("[claim-basic] pending update error:", updateErr);
       await supabase.auth.admin.deleteUser(userId);
-      return NextResponse.json({ error: "Could not link listing. Please try again." }, { status: 500 });
+      return NextResponse.json({ error: "Could not submit claim. Please try again." }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

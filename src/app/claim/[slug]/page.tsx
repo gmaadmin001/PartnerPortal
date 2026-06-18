@@ -82,6 +82,7 @@ export default function ClaimPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [affiliation, setAffiliation] = useState("");
   const [plan, setPlan] = useState("Professional");
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
 
@@ -125,7 +126,7 @@ export default function ClaimPage() {
       const res = await fetch("/api/claim-basic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), password, slug }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password, slug, affiliation: affiliation.trim() }),
       });
       const json = await res.json() as { success?: boolean; error?: string };
       setSubmitting(false);
@@ -144,6 +145,7 @@ export default function ClaimPage() {
         name: name.trim(),
         email: email.trim(),
         password,
+        affiliation: affiliation.trim(),
         membershipPlan: plan,
         membershipBilling: billing,
       }),
@@ -162,20 +164,20 @@ export default function ClaimPage() {
           <div style={{ width: 76, height: 76, borderRadius: "50%", background: "linear-gradient(135deg,#1E2E61,#1C66AD)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 22px", boxShadow: "0 12px 32px rgba(28,102,173,0.35)" }}>
             <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h2 className="dsp" style={{ fontSize: 28, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>You&apos;re all set!</h2>
+          <h2 className="dsp" style={{ fontSize: 28, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>Claim Submitted!</h2>
           <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>
-            Your listing has been claimed and your account is ready.
+            Your claim is now under review. Our team will verify ownership and activate your listing within 1–2 business days.
           </p>
           <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32, lineHeight: 1.5 }}>
             {paidEmail
-              ? <>Sign in with <strong style={{ color: "#374151" }}>{paidEmail}</strong> and the password you just created.</>
-              : "Sign in with your email and the password you just created."}
+              ? <>You can sign in with <strong style={{ color: "#374151" }}>{paidEmail}</strong> to check your claim status.</>
+              : "You can sign in to check your claim status at any time."}
           </p>
           <Link
             href="/login"
             style={{ display: "inline-block", background: "linear-gradient(135deg,#1E2E61,#1C66AD)", color: "#fff", fontWeight: 800, fontSize: 14, padding: "13px 32px", borderRadius: 12, textDecoration: "none", marginBottom: 16 }}
           >
-            Sign In to Your Dashboard →
+            Check Claim Status →
           </Link>
           <br />
           <Link href="/" style={{ fontSize: 13, color: "#9ca3af" }}>Return to main site</Link>
@@ -246,6 +248,14 @@ export default function ClaimPage() {
                 Business Email
               </label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required className="reg-inp" />
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5b6a7e", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>
+                Your Role / Affiliation <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+              </label>
+              <input type="text" value={affiliation} onChange={e => setAffiliation(e.target.value)} placeholder="e.g. CEO, Operations Manager, Owner" className="reg-inp" />
+              <p style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 6 }}>Helps our team verify your connection to this listing.</p>
             </div>
 
             <div>

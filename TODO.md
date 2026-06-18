@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 5.5 ✅ Phase 6 ✅ Phase 8 ✅ Phase 9 ✅ complete. Email fully live: Resend DNS (SPF/DKIM/DMARC), SMTP via EmailJS, branded template, password reset, invite-link account creation all working. Remaining: S6 (end-to-end Stripe QA + live key swap), S7 (plan entitlement gating), S8 (field-level tier gating), S12 (claim-then-pay).
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 5.5 ✅ Phase 6 ✅ Phase 8 ✅ Phase 9 ✅ complete. Email fully live: Resend DNS (SPF/DKIM/DMARC), SMTP via EmailJS, branded template, password reset, invite-link account creation all working. S7 (plan entitlement gating) ✅ S8 (field-level tier gating) ✅ S12 (claim-then-pay) ✅. Remaining: S6 (end-to-end Stripe QA + live key swap).
 
 ---
 
@@ -237,13 +237,13 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 3. [x] **Task S2 — `src/app/api/stripe-checkout/route.ts`:** ✅ Creates Checkout Session for new paid registrations (`pending_registrations` table) and `dashboard_upgrade` mode (in-place Stripe subscription update for existing subscribers, new Checkout session for Basic→paid).
 4. [x] **Task S3 — `src/app/api/stripe-webhook/route.ts`:** ✅ HMAC-SHA256 signature verification (Web Crypto, ±5 min tolerance). Handles `checkout.session.completed` (new registration fulfilment + `dashboard_upgrade` + `verified_badge`), `customer.subscription.updated/deleted`, `invoice.payment_failed`. Orphaned subscription cleanup on upgrade. Sends invite/recovery link email via EmailJS on new registration. Sends admin notification emails (to all rows in `admins` table) on badge purchase.
 5. [x] **Task S11 — `Suspended` subscription state:** ✅ `subscription_status` column mapped from Stripe lifecycle events. `customer.subscription.deleted` → `Suspended`; `updated` → mapped status; `invoice.payment_failed` → `past_due`.
-6. [ ] **Task S7 — Plan entitlement / feature-gating logic:** Enforce per-tier service-count limits in dashboard + APIs.
-7. [ ] **Task S8 — Field-level tier gating:** Gate profile fields per tier. Wire to active subscription.
+6. [x] **Task S7 — Plan entitlement / feature-gating logic:** Enforce per-tier service-count limits in dashboard + APIs.
+7. [x] **Task S8 — Field-level tier gating:** Gate profile fields per tier. Wire to active subscription.
 8. [x] **Task S9 — Annual billing wiring:** ✅ Monthly/Annual toggle routes to correct annual Price IDs. `isCurrent` checks both plan name AND billing cycle. Same-plan billing switches (monthly↔annual) go through Case A (Stripe in-place update with proration).
 9. [x] **Task S10 — Verified Badge one-time fee:** ✅ `src/app/api/stripe-badge/route.ts` — one-time Stripe Checkout session using `STRIPE_VERIFIED_BADGE_PRICE_ID`. Webhook sets `is_verified = true` and emails all admins. Plans page shows "Verified Badge Active / OWNED" chip when already purchased (blocks re-purchase). Dashboard shows gold "✦ GMA Verified" pill in banner and gold stat card.
 10. [x] **Task S4 — Wire `register/page.tsx` to Stripe:** ✅ Paid plan → POSTs to `/api/stripe-checkout` (pending_registrations flow). Basic → POSTs to `/api/finish-registration` directly. Password set after payment via invite email link to `/auth/reset-password`.
 11. [x] **Task S5 — `/auth/reset-password` page:** ✅ Full UI redesign (dark navy gradient, branded card). Session bootstrap via `useEffect` — exchanges `#access_token`+`#refresh_token` hash tokens from invite/recovery links into a live Supabase session before form is usable. Loading spinner while exchange runs. Fixes "Auth session missing!" error for new users completing account setup.
-12. [ ] **Task S12 — Claim-then-pay model:** Pre-loaded listings must convert to paid subscription before vendor can edit.
+12. [x] **Task S12 — Claim-then-pay model:** Pre-loaded listings must convert to paid subscription before vendor can edit.
 13. [ ] **Task S6 — Final end-to-end QA:** Test Free (bypass), each paid tier monthly + annual (Stripe test card), badge purchase, suspension, and claim-then-pay. Then swap to live Stripe keys.
 
 **Also completed (admin dashboard — today):**

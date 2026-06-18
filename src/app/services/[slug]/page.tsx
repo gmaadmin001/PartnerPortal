@@ -78,6 +78,7 @@ export default async function ProviderProfilePage({
   }
 
   const hasOwner = !!provider.user_id;
+  const claimPending = !hasOwner && provider.claim_status === "pending";
 
   const photos = Array.isArray(provider.photos) ? (provider.photos as string[]) : [];
   const certs = (provider.certifications ?? "").split(",").map((c: string) => c.trim()).filter(Boolean);
@@ -324,8 +325,19 @@ export default async function ProviderProfilePage({
           )}
 
           {/* Claim Section */}
-          {!hasOwner && !isOwner && (
+          {!hasOwner && !isOwner && !claimPending && (
             <ClaimSection slug={provider.slug ?? slug} />
+          )}
+          {claimPending && (
+            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderLeft: "4px solid #f59e0b", borderRadius: 16, padding: "18px 22px", display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#d97706,#f59e0b)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="18" height="18" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#92400e", margin: "0 0 2px" }}>Claim Pending Review</p>
+                <p style={{ fontSize: 12, color: "#b45309", margin: 0 }}>This listing has a claim under review. Check back soon.</p>
+              </div>
+            </div>
           )}
         </div>
 

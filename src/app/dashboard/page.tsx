@@ -40,7 +40,7 @@ function SkeletonBlock({ h = 76, radius = 12 }: { h?: number; radius?: number })
 }
 
 export default function DashboardOverview() {
-  const { reg, loading, noListing } = useDashboard();
+  const { reg, loading, noListing, pendingClaim } = useDashboard();
 
   if (loading) {
     return (
@@ -52,6 +52,23 @@ export default function DashboardOverview() {
         <div className="grid-2">
           <SkeletonBlock h={260} radius={14} />
           <SkeletonBlock h={260} radius={14} />
+        </div>
+      </div>
+    );
+  }
+
+  if (pendingClaim) {
+    return (
+      <div className="dash-content">
+        <div className="empty-state">
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg,#d97706,#f59e0b)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <svg width="26" height="26" fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <h3 className="dsp" style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Claim Under Review</h3>
+          <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 8, maxWidth: 400, margin: "0 auto 16px" }}>
+            Your claim has been submitted and is pending verification by our team. We&apos;ll email you once it&apos;s approved.
+          </p>
+          <p style={{ fontSize: 13, color: "#9ca3af" }}>This usually takes 1–2 business days.</p>
         </div>
       </div>
     );

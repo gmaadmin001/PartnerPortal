@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
   // ── Claim checkout (vendor claiming a pre-loaded listing) ───────────────────
   if (body.mode === "claim") {
     try {
-      const { name, email, password, slug, membershipPlan, membershipBilling } = body as {
-        name: string; email: string; password: string; slug: string; membershipPlan: string; membershipBilling: string;
+      const { name, email, password, slug, affiliation, membershipPlan, membershipBilling } = body as {
+        name: string; email: string; password: string; slug: string; affiliation?: string; membershipPlan: string; membershipBilling: string;
       };
 
       if (!email || !slug) {
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
           email,
           membership_plan: membershipPlan,
           membership_billing: billing,
-          registration: { claimSlug: slug, name: name?.trim() ?? "", password },
+          registration: { claimSlug: slug, name: name?.trim() ?? "", password, affiliation: affiliation?.trim() ?? "" },
         })
         .select("id")
         .single();

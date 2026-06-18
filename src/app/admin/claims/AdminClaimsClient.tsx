@@ -31,7 +31,7 @@ export default function AdminClaimsClient({ claims: initial }: { claims: Claim[]
       showToast(j.error ?? "Something went wrong.", "error");
     } else {
       setClaims(c => c.filter(r => r.id !== id));
-      showToast(action === "approve" ? "Claim approved" : "Claim rejected", "success");
+      showToast(action === "approve" ? "Claim approved — listing activated" : "Claim rejected — user account removed", "success");
       router.refresh();
     }
   }
@@ -54,10 +54,7 @@ export default function AdminClaimsClient({ claims: initial }: { claims: Claim[]
             { label: "Pending Claims", href: "/admin/claims", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", active: true },
           ].map(item => (
             <a key={item.href} href={item.href}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 9, textDecoration: "none", color: item.active ? "#fff" : "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: 600, marginBottom: 2, background: item.active ? "rgba(255,255,255,0.12)" : "transparent" }}
-              onMouseOver={e => { if (!item.active) (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.08)"; }}
-              onMouseOut={e => { if (!item.active) (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
-            >
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 9, textDecoration: "none", color: item.active ? "#fff" : "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: 600, marginBottom: 2, background: item.active ? "rgba(255,255,255,0.12)" : "transparent" }}>
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
               </svg>
@@ -77,10 +74,7 @@ export default function AdminClaimsClient({ claims: initial }: { claims: Claim[]
             </p>
           </div>
           <a href="/admin"
-            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#fff", border: "1.5px solid #dde3ee", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", textDecoration: "none" }}
-            onMouseOver={e => (e.currentTarget.style.borderColor = "#1C66AD")}
-            onMouseOut={e => (e.currentTarget.style.borderColor = "#dde3ee")}
-          >
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#fff", border: "1.5px solid #dde3ee", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", textDecoration: "none" }}>
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -101,53 +95,92 @@ export default function AdminClaimsClient({ claims: initial }: { claims: Claim[]
             <p style={{ fontSize: 14, color: "#8a96a8" }}>All caught up.</p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {claims.map(claim => (
-              <div key={claim.id} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e8edf5", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <p style={{ fontSize: 15, fontWeight: 800, color: "#0a1628", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {claim.company_name ?? "(Unnamed listing)"}
-                  </p>
-                  <p style={{ fontSize: 12.5, color: "#6b7280", margin: "0 0 6px" }}>
-                    Claimed by{" "}
-                    <span style={{ fontWeight: 700, color: "#374151" }}>{claim.claimant_email ?? claim.claimed_by}</span>
-                    {claim.claimed_at && (
-                      <> · {new Date(claim.claimed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</>
-                    )}
-                  </p>
-                  {claim.slug && (
-                    <a href={`/services/${claim.slug}`} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 12, color: "#1C66AD", fontWeight: 600, textDecoration: "none" }}
-                      onMouseOver={e => (e.currentTarget.style.textDecoration = "underline")}
-                      onMouseOut={e => (e.currentTarget.style.textDecoration = "none")}
-                    >
-                      View listing ↗
-                    </a>
-                  )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {claims.map(claim => {
+              const domainSignal = claim.domain_match === true
+                ? { label: "✅ Email domain matches website", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" }
+                : claim.domain_match === false
+                  ? { label: "⚠️ Email domain mismatch — verify manually", color: "#b45309", bg: "#fffbeb", border: "#fde68a" }
+                  : { label: "— Domain could not be determined", color: "#9ca3af", bg: "#f9fafb", border: "#e5e7eb" };
+
+              return (
+                <div key={claim.id} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e8edf5", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", padding: "22px 24px" }}>
+                  {/* Header row */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 16, fontWeight: 800, color: "#0a1628", margin: "0 0 4px" }}>
+                        {claim.company_name ?? "(Unnamed listing)"}
+                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        {claim.slug && (
+                          <a href={`/services/${claim.slug}`} target="_blank" rel="noopener noreferrer"
+                            style={{ fontSize: 12, color: "#1C66AD", fontWeight: 600, textDecoration: "none" }}>
+                            View listing ↗
+                          </a>
+                        )}
+                        {claim.website_url && (
+                          <>
+                            <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
+                            <a href={claim.website_url} target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize: 12, color: "#6b7280", textDecoration: "none" }}>
+                              {claim.website_url.replace(/^https?:\/\//, "")}
+                            </a>
+                          </>
+                        )}
+                        {claim.claimed_at && (
+                          <>
+                            <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
+                            <span style={{ fontSize: 12, color: "#9ca3af" }}>
+                              Submitted {new Date(claim.claimed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      <button onClick={() => act(claim.id, "approve")} disabled={busy === claim.id}
+                        style={{ padding: "9px 20px", background: busy === claim.id ? "#86efac" : "#16a34a", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: busy === claim.id ? "not-allowed" : "pointer" }}>
+                        {busy === claim.id ? "…" : "Approve"}
+                      </button>
+                      <button onClick={() => act(claim.id, "reject")} disabled={busy === claim.id}
+                        style={{ padding: "9px 20px", background: busy === claim.id ? "#fca5a5" : "#dc2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: busy === claim.id ? "not-allowed" : "pointer" }}>
+                        {busy === claim.id ? "…" : "Reject"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Detail grid */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10 }}>
+                    <div style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 14px" }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Claimant</p>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: "#0a1628", margin: "0 0 2px" }}>{claim.claim_name ?? "—"}</p>
+                      <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>{claim.claim_email ?? "—"}</p>
+                    </div>
+
+                    <div style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 14px" }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Role / Affiliation</p>
+                      <p style={{ fontSize: 13, color: "#374151", margin: 0 }}>
+                        {claim.claim_affiliation || <span style={{ color: "#9ca3af", fontStyle: "italic" }}>Not provided</span>}
+                      </p>
+                    </div>
+
+                    <div style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 14px" }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Plan Selected</p>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: "#1C66AD", margin: 0 }}>{claim.claim_plan ?? "Basic"}</p>
+                    </div>
+
+                    <div style={{ background: domainSignal.bg, border: `1px solid ${domainSignal.border}`, borderRadius: 10, padding: "12px 14px" }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Ownership Signal</p>
+                      <p style={{ fontSize: 12.5, fontWeight: 700, color: domainSignal.color, margin: 0 }}>{domainSignal.label}</p>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button
-                    onClick={() => act(claim.id, "approve")}
-                    disabled={busy === claim.id}
-                    style={{ padding: "9px 20px", background: busy === claim.id ? "#86efac" : "#16a34a", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: busy === claim.id ? "not-allowed" : "pointer", transition: "background 0.15s" }}
-                  >
-                    {busy === claim.id ? "…" : "Approve"}
-                  </button>
-                  <button
-                    onClick={() => act(claim.id, "reject")}
-                    disabled={busy === claim.id}
-                    style={{ padding: "9px 20px", background: busy === claim.id ? "#fca5a5" : "#dc2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: busy === claim.id ? "not-allowed" : "pointer", transition: "background 0.15s" }}
-                  >
-                    {busy === claim.id ? "…" : "Reject"}
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
 
-      {/* Toast */}
       {toast && (
         <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 9999, background: toast.type === "success" ? "#16a34a" : "#dc2626", color: "#fff", padding: "13px 22px", borderRadius: 12, fontSize: 14, fontWeight: 600, boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>
           {toast.msg}

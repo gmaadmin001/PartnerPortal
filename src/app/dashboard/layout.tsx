@@ -19,9 +19,10 @@ interface DashboardCtx {
   reg: ServiceRegistration | null;
   loading: boolean;
   noListing: boolean;
+  pendingClaim: boolean;
 }
 const DashboardContext = createContext<DashboardCtx>({
-  user: null, reg: null, loading: true, noListing: false,
+  user: null, reg: null, loading: true, noListing: false, pendingClaim: false,
 });
 export function useDashboard() { return useContext(DashboardContext); }
 
@@ -52,6 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [reg, setReg] = useState<ServiceRegistration | null>(null);
   const [loading, setLoading] = useState(true);
   const [noListing, setNoListing] = useState(false);
+  const [pendingClaim, setPendingClaim] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -65,9 +67,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .eq("user_id", session.user.id)
         .maybeSingle();
 
+      if (!error && data) {
+        setLoading(false);
+        setReg(data as ServiceRegistration);
+        return;
+      }
+
+      // Fallback: check if this user has a pending claim (claimed_by but no user_id yet)
+      const { data: pendingRow } = await supabase
+        .from("service_registrations")
+        .select("id")
+        .eq("claimed_by", session.user.id)
+        .eq("claim_status", "pending")
+        .maybeSingle();
+
       setLoading(false);
-      if (error || !data) { setNoListing(true); return; }
-      setReg(data as ServiceRegistration);
+      if (pendingRow) {
+        setPendingClaim(true);
+      } else {
+        setNoListing(true);
+      }
     }
     init();
   }, []);
@@ -81,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const listingHref = reg?.slug ? `${MAIN_APP}/services/${reg.slug}` : null;
 
   return (
-    <DashboardContext.Provider value={{ user, reg, loading, noListing }}>
+    <DashboardContext.Provider value={{ user, reg, loading, noListing, pendingClaim }}>
       <div className="page-wrapper">
         {/* Sidebar */}
         <aside className="sidebar">
