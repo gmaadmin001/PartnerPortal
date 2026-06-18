@@ -31,6 +31,13 @@ involved). Dashboard-only steps still get walked through click-by-click.
 > ⚠️ **Every "production URL" item below depends on 1.4.** Lock the canonical origin first, then
 > propagate it everywhere.
 
+## 1b. Stripe — End-to-end QA + live key swap (S6)
+
+- [ ] **S6.1 — Test-card QA:** Basic bypass, Professional monthly, Professional annual, Premier
+      monthly, Premier annual, Verified Badge one-time, subscription suspension, claim-then-pay
+      (Basic and paid). Use Stripe test card `4242 4242 4242 4242`.
+- [ ] **S6.2 — Swap to live Stripe keys** per §2 above once QA passes.
+
 ## 2. Stripe — Live mode (StripeTODO.md → Phase F)
 
 > Test mode and live mode share **nothing** — new keys, products, prices, webhook, settings.

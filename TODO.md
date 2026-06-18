@@ -6,7 +6,7 @@ Priority order: /register → /add-service → /services-page.
 Each task below is ONE gate cycle: plan → approval → build → test → commit+push approval.
 Do NOT start the next task until the previous Gate 2 is approved and committed.
 
-**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 5.5 ✅ Phase 6 ✅ Phase 8 ✅ Phase 9 ✅ complete. Email fully live: Resend DNS (SPF/DKIM/DMARC), SMTP via EmailJS, branded template, password reset, invite-link account creation all working. S7 (plan entitlement gating) ✅ S8 (field-level tier gating) ✅ S12 (claim-then-pay) ✅. Remaining: S6 (end-to-end Stripe QA + live key swap).
+**Current status:** Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 3.5 ✅ Phase 4 ✅ Phase 5 ✅ Phase 5.5 ✅ Phase 6 ✅ Phase 8 ✅ Phase 9 ✅ complete. S7 ✅ S8 ✅ S12 ✅ Taxonomy ✅ Suppliers loaded ✅. **Active today:** Admin magic-link auth. Rebrand (Relocentra) pending post-meeting. S6 + Domain moved to GOLIVETODO.md.
 
 ---
 
@@ -244,7 +244,7 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 10. [x] **Task S4 — Wire `register/page.tsx` to Stripe:** ✅ Paid plan → POSTs to `/api/stripe-checkout` (pending_registrations flow). Basic → POSTs to `/api/finish-registration` directly. Password set after payment via invite email link to `/auth/reset-password`.
 11. [x] **Task S5 — `/auth/reset-password` page:** ✅ Full UI redesign (dark navy gradient, branded card). Session bootstrap via `useEffect` — exchanges `#access_token`+`#refresh_token` hash tokens from invite/recovery links into a live Supabase session before form is usable. Loading spinner while exchange runs. Fixes "Auth session missing!" error for new users completing account setup.
 12. [x] **Task S12 — Claim-then-pay model:** Pre-loaded listings must convert to paid subscription before vendor can edit.
-13. [ ] **Task S6 — Final end-to-end QA:** Test Free (bypass), each paid tier monthly + annual (Stripe test card), badge purchase, suspension, and claim-then-pay. Then swap to live Stripe keys.
+13. [ ] **Task S6 — Final end-to-end QA:** *(moved to GOLIVETODO.md → §1b)* Test Free (bypass), each paid tier monthly + annual (Stripe test card), badge purchase, suspension, and claim-then-pay. Then swap to live Stripe keys.
 
 **Also completed (admin dashboard — today):**
 - [x] Admin dashboard (`/admin`) — full registration table with inline edit, stat cards, search/filter, role-based access
@@ -453,22 +453,16 @@ in place. This is a dashboard-only configuration step.
 
 ### Blocked
 
-- [ ] **Domain setup — Relocentra + GMA redirect:** `relocentra.com` is the primary domain
-      for the Cloudflare deployment (Michael purchased it ~1 year ago; plan is to market it as
-      a standalone product powered by Global Mobility Adviser). `GlobalMobilityAdvisor.net`
-      should redirect to `relocentra.com`. Cloudflare handles both. Not touching yet — needs
-      domain DNS to be pointed at Cloudflare first.
+- [ ] **Domain setup — Relocentra + GMA redirect:** *(moved to GOLIVETODO.md → §1)* `relocentra.com` primary domain; `GlobalMobilityAdvisor.net` redirects to it. Needs DNS pointed at Cloudflare first.
 - [x] **Updated supplier taxonomy (from Michael):** Taxonomy received (`Supplier_Taxonomy_Detailed_Summary.md`, 2026-06-17). 11-category / 41-subcategory structure confirmed. See task below.
-- [ ] **Apply taxonomy update across codebase:** Replace all hardcoded category/subcategory lists in 5 files with the new Relocentra canonical taxonomy. Approved Gate 1 plan:
+- [x] **Apply taxonomy update across codebase:** Verified all 5 files against `Supplier_Taxonomy_Detailed_Summary.md` (2026-06-17) — all 11 categories and 41 subcategories correctly applied across:
   - `src/app/register/page.tsx` — fix CATEGORIES + SUBCATS
   - `src/app/dashboard/DashboardClient.tsx` — fix CATEGORY_MAP
   - `src/components/services/FilterPanel.tsx` — fix SUBCATS
   - `src/app/services/page.tsx` — replace wrong residential PRIMARY_CATEGORIES with correct 11
   - `src/app/admin/AdminDashboardClient.tsx` — same replacement
   - Changes: rename "Getting Established at the Destination" → "…at Destination"; "Benchmarking & Data Service" → "…Services"; "Title," → "Title /"; "Household Goods Movers" → "…(Domestic & International)"; add Storage Providers + Relocation Mortgage & Lending Services subcategories; add Category 11 Real Estate Professionals (Realtors)
-- [ ] **Load suppliers:** Michael providing ~420 supplier entries via spreadsheet. Mechanism:
-      spreadsheet upload where Claude handles inserts/updates without overwriting existing
-      records. Do NOT process until taxonomy is finalized and Michael sends the file.
+- [x] **Load suppliers:** ~420 supplier entries loaded from Michael's spreadsheet.
 - [ ] **Administration Dashboard:** Paul building (possibly modeled on Navigator admin).
       Must handle: account management, supplier verification (approve/reject), toggling
       `is_recommended` per supplier, viewing metrics (search impressions + page views),
@@ -476,7 +470,7 @@ in place. This is a dashboard-only configuration step.
 
 ### Design decisions needed
 
-- [ ] **Admin authentication — magic link via email/username:** Admins log in via magic link
+- [ ] **Admin authentication — magic link via email/username:** *(active — doing today)* Admins log in via magic link
       rather than password. Flow: on the login screen, if the user submits only an email or
       username (no password), check whether that identity is an admin. If yes, send a magic
       link to their email and redirect them into the admin dashboard on click. If no, fall
@@ -502,9 +496,14 @@ in place. This is a dashboard-only configuration step.
       - **RECOMMENDED (`is_recommended`):** Admin-controlled flag — admins toggle it per-supplier
         via the admin dashboard. Add the column + toggle when building the admin dashboard.
         Blocked on admin dashboard (Paul).
-- [ ] **Discuss with Michael — searcher registration & gating:** Decide on registration for the
-      searcher role. Put **search** behind a **Searcher Login**, and gate **Reviews** behind it
-      as well.
+- [ ] **Searcher registration & gating:** *(V2 — deferred)* Put search behind a Searcher Login and gate Reviews behind it.
+
+- [ ] **Rebrand navbar + footer → Relocentra powered by Global Mobility Adviser:** *(pending post-meeting 2026-06-19)*
+      - New color scheme (TBD from meeting)
+      - New logo — wait for asset from marketing team
+      - Navbar links: existing portal links + Legal + link back to globalmobilityadviser.com
+      - Footer: new Relocentra marketing copy, updated information
+      - Wait for meeting outcome before starting Gate 1
 
 ### Completed
 
