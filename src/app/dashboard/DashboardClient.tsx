@@ -162,17 +162,23 @@ function StatCard({ label, value, sub, icon, color }: {
 
 // ── Upgrade Banner ────────────────────────────────────────────────────────────
 
-const BANNER_KEY = "upgrade_banner_dismissed";
+const BANNER_KEY = "upgrade_banner_v2";
+const BANNER_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function UpgradeBanner({ plan, onUpgrade }: { plan: string; onUpgrade: () => void }) {
   const [dismissed, setDismissed] = useState(() => {
-    try { return sessionStorage.getItem(BANNER_KEY) === plan; } catch { return false; }
+    try {
+      const raw = localStorage.getItem(BANNER_KEY);
+      if (!raw) return false;
+      const { p, at } = JSON.parse(raw) as { p: string; at: number };
+      return p === plan && Date.now() - at < BANNER_TTL;
+    } catch { return false; }
   });
 
   if (plan === "Premier" || dismissed) return null;
 
   function dismiss() {
-    try { sessionStorage.setItem(BANNER_KEY, plan); } catch { /* ignore */ }
+    try { localStorage.setItem(BANNER_KEY, JSON.stringify({ p: plan, at: Date.now() })); } catch { /* ignore */ }
     setDismissed(true);
   }
 
