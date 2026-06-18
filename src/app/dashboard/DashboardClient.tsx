@@ -949,48 +949,90 @@ function EditProfilePanel({ reg, userId, setActive, onSaved }: {
   async function handleSave() {
     setSaving(true);
     setSaveError(null);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("service_registrations")
-      .update({
-        company_name:          form.company_name          || null,
-        website_url:           form.website_url           || null,
-        short_description:     form.short_description     || null,
-        company_bio:           form.company_bio           || null,
-        logo_url:              form.logo_url              || null,
-        primary_contact_name:  form.primary_contact_name  || null,
-        primary_contact_email: form.primary_contact_email || null,
-        primary_contact_phone: form.primary_contact_phone || null,
-        company_address:       form.company_address       || null,
-        headquarters_city:     form.headquarters_city     || null,
-        headquarters_country:  form.headquarters_country  || null,
+
+    const res = await fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        company_name:          form.company_name,
+        website_url:           form.website_url,
+        short_description:     form.short_description,
+        company_bio:           form.company_bio,
+        logo_url:              form.logo_url,
+        primary_contact_name:  form.primary_contact_name,
+        primary_contact_email: form.primary_contact_email,
+        primary_contact_phone: form.primary_contact_phone,
+        company_address:       form.company_address,
+        headquarters_city:     form.headquarters_city,
+        headquarters_country:  form.headquarters_country,
         countries_served:      splitTrim(form.countries_served),
         states_served:         splitTrim(form.states_served),
-        primary_category:      form.primary_category      || null,
-        sub_category:          form.sub_category          || null,
-        industry_focus:        form.industry_focus        || null,
-        service_scope:         form.service_scope         || null,
-        delivery_model:        form.delivery_model        || null,
-        company_size:          form.company_size          || null,
-        certifications:        form.certifications        || null,
+        primary_category:      form.primary_category,
+        sub_category:          form.sub_category,
+        industry_focus:        form.industry_focus,
+        service_scope:         form.service_scope,
+        delivery_model:        form.delivery_model,
+        company_size:          form.company_size,
+        certifications:        form.certifications,
         diversity_flags:       splitTrim(form.diversity_flags),
         core_services:         splitTrim(form.core_services),
-        photos,
-        social_profiles: {
-          ...(form.social_linkedin ? { linkedin: form.social_linkedin } : {}),
-          ...(form.social_discord  ? { discord:  form.social_discord  } : {}),
-        },
-      })
-      .eq("user_id", userId);
+        social_linkedin:       form.social_linkedin,
+        social_discord:        form.social_discord,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      setSaveError(body.error ?? "Save failed");
+      setSaving(false);
+      return;
+    }
+
+    const isPremier = reg.membership_plan?.startsWith("Premier") ?? false;
+    if (isPremier && photos.length > 0) {
+      const galleryRes = await fetch("/api/profile/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photos }),
+      });
+      if (!galleryRes.ok) {
+        const body = await galleryRes.json().catch(() => ({})) as { error?: string };
+        setSaveError(body.error ?? "Failed to save photos");
+        setSaving(false);
+        return;
+      }
+    }
 
     setSaving(false);
-    if (error) {
-      setSaveError(error.message);
-    } else {
-      setSaved(true);
-      onSaved();
-      setTimeout(() => setActive("profile"), 800);
-    }
+    setSaved(true);
+    onSaved();
+    setTimeout(() => setActive("profile"), 800);
+  }
+
+  const isPlanBasic = !reg.membership_plan || reg.membership_plan.startsWith("Basic");
+
+  if (isPlanBasic) {
+    return (
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h2 className="text-2xl font-extrabold text-gma-navy">Edit Profile</h2>
+          <p className="text-sm text-gray-500 mt-1">Manage your directory listing</p>
+        </div>
+        <div style={{ background: "#f9fafb", border: "1.5px solid #e5e7eb", borderRadius: 16, padding: "40px 32px", textAlign: "center" }}>
+          <svg width="40" height="40" fill="none" stroke="#9ca3af" viewBox="0 0 24 24" style={{ margin: "0 auto 16px", display: "block" }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Profile editing requires Professional or Premier</h3>
+          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>Upgrade your plan to edit your company profile, add a logo, contact details, and more.</p>
+          <button
+            onClick={() => setActive("plans")}
+            className="bg-gma-navy text-white text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-gma-primary transition-colors"
+          >
+            View Plans →
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

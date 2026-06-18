@@ -262,11 +262,20 @@ export default function ProfilePage() {
   async function saveGallery() {
     if (!user) return;
     setGallerySaving(true);
-    const supabase = createClient();
-    const { error } = await supabase.from("service_registrations").update({ photos: galleryPhotos }).eq("user_id", user.id);
+    const res = await fetch("/api/profile/gallery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ photos: galleryPhotos }),
+    });
     setGallerySaving(false);
-    if (!error) { setGallerySaved(true); showToast("Photos saved!", "success"); setTimeout(() => setGallerySaved(false), 2500); }
-    else showToast("Failed to save photos.", "error");
+    if (res.ok) {
+      setGallerySaved(true);
+      showToast("Photos saved!", "success");
+      setTimeout(() => setGallerySaved(false), 2500);
+    } else {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      showToast(body.error ?? "Failed to save photos.", "error");
+    }
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -283,7 +292,8 @@ export default function ProfilePage() {
     </div>
   );
 
-  const isPremier = (reg.membership_plan || "").includes("Premier");
+  const isPremier = (reg.membership_plan || "").startsWith("Premier");
+  const isBasic = !reg.membership_plan || reg.membership_plan.startsWith("Basic");
 
   return (
     <div className="dash-content">
@@ -319,6 +329,14 @@ export default function ProfilePage() {
                 {saving ? "Saving…" : "Save Changes"}
               </button>
             </>
+          ) : isBasic ? (
+            <a
+              href="/dashboard/plans"
+              style={{ padding: "9px 20px", background: "linear-gradient(135deg,#374151,#6b7280)", color: "#fff", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7, textDecoration: "none" }}
+            >
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              Upgrade to Edit
+            </a>
           ) : (
             <button
               onClick={startEdit}
