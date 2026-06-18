@@ -31,6 +31,75 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
+  // ── Claim checkout (vendor claiming a pre-loaded listing) ───────────────────
+  if (body.mode === "claim") {
+    try {
+      const { email, slug, membershipPlan, membershipBilling } = body as {
+        email: string; slug: string; membershipPlan: string; membershipBilling: string;
+      };
+
+      if (!email || !slug) {
+        return NextResponse.json({ error: "Email and listing slug are required." }, { status: 400 });
+      }
+
+      const billing = membershipBilling === "annual" ? "annual" : "monthly";
+      const priceId = PRICE_IDS[membershipPlan]?.[billing];
+      if (!priceId) {
+        return NextResponse.json({ error: `Unknown plan: ${membershipPlan} / ${billing}` }, { status: 400 });
+      }
+
+      const supabase = createServiceClient();
+      const { data: pending, error: insertErr } = await supabase
+        .from("pending_registrations")
+        .insert({
+          email,
+          membership_plan: membershipPlan,
+          membership_billing: billing,
+          registration: { claimSlug: slug },
+        })
+        .select("id")
+        .single();
+
+      if (insertErr || !pending) {
+        console.error("[stripe-checkout] claim: failed to stash pending:", insertErr);
+        return NextResponse.json({ error: "Could not start checkout. Please try again." }, { status: 500 });
+      }
+
+      const origin = appOrigin(req);
+      const form = new URLSearchParams({
+        mode: "subscription",
+        "line_items[0][price]": priceId,
+        "line_items[0][quantity]": "1",
+        customer_email: email,
+        client_reference_id: pending.id as string,
+        "metadata[mode]": "claim",
+        "metadata[pending_id]": pending.id as string,
+        "metadata[slug]": slug,
+        success_url: `${origin}/claim/${slug}?status=success`,
+        cancel_url: `${origin}/claim/${slug}`,
+      });
+
+      const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: form.toString(),
+      });
+      const session = await stripeRes.json() as { url?: string; id?: string; error?: { message?: string } };
+
+      if (!stripeRes.ok) {
+        console.error("[stripe-checkout] claim Stripe error:", session.error);
+        await supabase.from("pending_registrations").delete().eq("id", pending.id);
+        return NextResponse.json({ error: session.error?.message ?? "Could not start checkout." }, { status: 502 });
+      }
+
+      await supabase.from("pending_registrations").update({ stripe_session_id: session.id }).eq("id", pending.id);
+      return NextResponse.json({ url: session.url });
+    } catch (err) {
+      console.error("[stripe-checkout] claim error:", err);
+      return NextResponse.json({ error: "Unexpected error. Please try again." }, { status: 500 });
+    }
+  }
+
   // ── Dashboard upgrade (existing logged-in users changing plans) ──────────────
   if (body.mode === "dashboard_upgrade") {
     try {

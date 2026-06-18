@@ -294,6 +294,104 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // Claim checkout: link an existing unclaimed listing to a new auth user.
+    if (session.metadata?.mode === "claim") {
+      const claimSlug = session.metadata?.slug;
+      const claimPendingId = session.metadata?.pending_id;
+      if (claimSlug && claimPendingId) {
+        const supabase = createServiceClient();
+
+        const { data: pending, error: pendingErr } = await supabase
+          .from("pending_registrations")
+          .select("*")
+          .eq("id", claimPendingId)
+          .maybeSingle();
+
+        if (pendingErr || !pending || pending.consumed_at) {
+          return NextResponse.json({ received: true });
+        }
+
+        const email = pending.email as string;
+        const plan = pending.membership_plan as string;
+        const billingCycle = pending.membership_billing as string;
+        const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
+
+        let userId: string | null = null;
+        let actionLink = "";
+        let createdUser = false;
+
+        const invite = await supabase.auth.admin.generateLink({
+          type: "invite",
+          email,
+          options: { redirectTo: `${origin}/auth/reset-password` },
+        });
+
+        if (invite.error) {
+          const recovery = await supabase.auth.admin.generateLink({
+            type: "recovery",
+            email,
+            options: { redirectTo: `${origin}/auth/reset-password` },
+          });
+          if (recovery.error || !recovery.data?.user) {
+            console.error("[stripe-webhook] claim: could not generate auth link:", invite.error, recovery.error);
+            return NextResponse.json({ error: "Account creation failed" }, { status: 500 });
+          }
+          userId = recovery.data.user.id;
+          actionLink = recovery.data.properties?.action_link ?? "";
+        } else {
+          userId = invite.data.user?.id ?? null;
+          actionLink = invite.data.properties?.action_link ?? "";
+          createdUser = true;
+        }
+
+        if (!userId) {
+          return NextResponse.json({ error: "Account creation failed" }, { status: 500 });
+        }
+
+        const planFull = billingCycle === "annual" ? `${plan} – Annual` : `${plan} – Monthly`;
+
+        const { error: updateErr } = await supabase
+          .from("service_registrations")
+          .update({
+            user_id: userId,
+            membership_plan: planFull,
+            membership_billing: billingCycle,
+            stripe_customer_id: session.customer ?? null,
+            stripe_subscription_id: session.subscription ?? null,
+            subscription_status: "active",
+            status: "pending",
+          })
+          .eq("slug", claimSlug)
+          .is("user_id", null);
+
+        if (updateErr) {
+          if (createdUser) await supabase.auth.admin.deleteUser(userId);
+          console.error("[stripe-webhook] claim: update failed:", updateErr);
+          return NextResponse.json({ error: "Claim update failed" }, { status: 500 });
+        }
+
+        if (actionLink) {
+          await sendEmail({
+            to_email: email,
+            to_name: email,
+            greeting: "Hi there,",
+            button_url: actionLink,
+            subject: "Your claim is confirmed — set up your Partner Portal account",
+            headline: "You're all set — finish your account",
+            message_html: `<p>Your payment was received and your listing on <strong>${claimSlug}</strong> has been linked to your account. Click below to set your password and access your dashboard.</p>`,
+            button_label: "Set Your Password",
+            footnote: "If you didn't claim this listing, you can safely ignore this email.",
+          });
+        }
+
+        await supabase
+          .from("pending_registrations")
+          .update({ consumed_at: new Date().toISOString() })
+          .eq("id", claimPendingId);
+      }
+      return NextResponse.json({ received: true });
+    }
+
     if (!pendingId) {
       // Not one of our registration checkouts.
       return NextResponse.json({ received: true });

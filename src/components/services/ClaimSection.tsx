@@ -58,7 +58,7 @@ export default function ClaimSection({ providerId, slug, isLoggedIn, claimStatus
           <p className="text-xs text-gray-500 mt-0.5">Sign in to claim this listing and manage your profile.</p>
         </div>
         <Link
-          href={`/register?claim=${slug}`}
+          href={`/claim/${slug}`}
           className="shrink-0 bg-gma-navy text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gma-primary transition-colors"
         >
           Claim Listing
