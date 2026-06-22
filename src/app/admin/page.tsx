@@ -25,7 +25,7 @@ export default async function AdminPage() {
     service.from("service_registrations").select("*", { count: "exact", head: true }).eq("claim_status", "pending"),
     service.from("service_registrations").select("*", { count: "exact", head: true }).eq("badge_purchased", true),
     service.from("service_registrations")
-      .select("id,company_name,register_as,membership_plan,status,is_verified,badge_purchased,created_at,primary_contact_email,primary_contact_name,primary_category,sub_category,delivery_model,company_size,headquarters_country,headquarters_city,short_description,website_url,slug,logo_url")
+      .select("id,company_name,register_as,membership_plan,status,is_verified,is_featured,badge_purchased,created_at,primary_contact_email,primary_contact_name,primary_category,sub_category,delivery_model,company_size,headquarters_country,headquarters_city,short_description,website_url,slug,logo_url")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(500),

@@ -12,6 +12,7 @@ interface Registration {
   membership_plan: string | null;
   status: string;
   is_verified: boolean;
+  is_featured: boolean;
   badge_purchased: boolean;
   created_at: string;
   primary_contact_email: string | null;
@@ -128,6 +129,7 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
       membership_plan: r.membership_plan,
       status: r.status,
       is_verified: r.is_verified,
+      is_featured: r.is_featured,
       primary_category: r.primary_category,
       sub_category: r.sub_category,
       delivery_model: r.delivery_model,
@@ -342,6 +344,13 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
                             <button onClick={() => setEditFields(p => ({ ...p, is_verified: !p.is_verified }))}
                               style={{ padding: "9px 18px", borderRadius: 8, border: "1.5px solid", fontSize: 13, fontWeight: 700, cursor: "pointer", background: editFields.is_verified ? "#f0fdf4" : "#f9fafb", color: editFields.is_verified ? "#16a34a" : "#6b7280", borderColor: editFields.is_verified ? "#86efac" : "#dde3ee" }}>
                               {editFields.is_verified ? "✓ Verified" : "Not Verified"}
+                            </button>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 10.5, fontWeight: 700, color: "#5b6a7e", letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>Recommended</label>
+                            <button onClick={() => setEditFields(p => ({ ...p, is_featured: !p.is_featured }))}
+                              style={{ padding: "9px 18px", borderRadius: 8, border: "1.5px solid", fontSize: 13, fontWeight: 700, cursor: "pointer", background: editFields.is_featured ? "#fffbeb" : "#f9fafb", color: editFields.is_featured ? "#b45309" : "#6b7280", borderColor: editFields.is_featured ? "#fde68a" : "#dde3ee" }}>
+                              {editFields.is_featured ? "★ Recommended" : "Not Recommended"}
                             </button>
                           </div>
                         </div>

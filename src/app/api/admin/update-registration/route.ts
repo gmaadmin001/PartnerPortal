@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 const EDITABLE_FIELDS = new Set([
-  "company_name", "register_as", "membership_plan", "status", "is_verified",
+  "company_name", "register_as", "membership_plan", "status", "is_verified", "is_featured",
   "primary_category", "sub_category", "delivery_model", "company_size",
   "headquarters_country", "headquarters_city", "primary_contact_name",
   "primary_contact_email", "primary_contact_phone", "short_description",
