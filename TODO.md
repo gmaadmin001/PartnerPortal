@@ -488,14 +488,7 @@ in place. This is a dashboard-only configuration step.
       - Login screen UI change: password field becomes optional — submitting with only
         email/username triggers the admin check + OTP flow.
 
-- [ ] **Verified + Recommended badge logic — two separate gates:**
-      - **VERIFIED (`is_verified`):** Set automatically when a user completes email verification
-        during account creation (Phase 9 email flow). When they verify their email, flip
-        `is_verified = true` on their `service_registrations` row. Badge shows for Premier
-        members who have verified. Blocked on Phase 9.
-      - **RECOMMENDED (`is_recommended`):** Admin-controlled flag — admins toggle it per-supplier
-        via the admin dashboard. Add the column + toggle when building the admin dashboard.
-        Blocked on admin dashboard (Paul).
+- [x] **`is_recommended` toggle:** Admin-controlled flag — implemented as `is_featured` (existing column). Toggle added to admin dashboard inline edit panel. `is_verified` is set by admin after reviewing a badge purchase (`badge_purchased → admin approves → is_verified = true`). Both flows complete.
 - [ ] **Searcher registration & gating:** *(V2 — deferred)* Put search behind a Searcher Login and gate Reviews behind it.
 
 - [ ] **Rebrand navbar + footer → Relocentra powered by Global Mobility Adviser:** *(pending post-meeting 2026-06-19)*
@@ -575,28 +568,17 @@ All the content we brought over is going to get super simplified (IN THE FUTURE,
 > deliver to arbitrary inboxes (only to the Resend account owner's email). Verification adds
 > SPF/DKIM/DMARC records so emails land in inboxes instead of spam.
 
-#### Step 1a — Log into Resend and add domain
+#### Step 1a — Log into Resend and add domain ✅
 
-- [ ] Go to [resend.com](https://resend.com) → sign in
-- [ ] Left sidebar → **Domains** → **+ Add Domain** (top right)
-- [ ] Enter domain: `globalmobilityadviser.com` (whichever domain has DNS in Cloudflare)
-- [ ] Click **Add** — leave this tab open, you'll need the DNS records it shows
+- [x] Domain `globalmobilityadviser.com` added and verified in Resend
 
+#### Step 1b — Add DNS records in Cloudflare ✅
 
-#### Step 1b — Add DNS records in Cloudflare
+- [x] SPF/DKIM/DMARC records added in Cloudflare DNS
 
-- [ ] Open Cloudflare → your domain → **DNS** → **Records** → **+ Add record**
-- [ ] Add each record Resend shows (typically 2–3):
-  - **TXT** — DKIM record (`resend._domainkey` or similar name)
-  - **MX** — bounce handling record (recommended, not required)
-  - **TXT** — SPF record (if an SPF record already exists, add the Resend include value to it — do not create a duplicate SPF record)
-- [ ] Copy values exactly from Resend — do not retype
+#### Step 1c — Verify in Resend ✅
 
-#### Step 1c — Verify in Resend
-
-- [ ] Back in Resend → click **Verify Domain**
-- [ ] All checkmarks go green ✅ (usually 2–5 minutes on Cloudflare; can take up to 1 hour)
-- [ ] If not verifying: double-check record names/values match exactly, confirm no proxy (orange cloud) on DNS records in Cloudflare — should be DNS-only (grey cloud)
+- [x] All checkmarks green — domain verified (confirmed in E7 QA)
 
 #### Step 1d — Create SMTP API key
 
