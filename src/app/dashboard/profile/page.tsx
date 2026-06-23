@@ -148,6 +148,10 @@ export default function ProfilePage() {
     headquarters_country: "", headquarters_city: "",
     countries_served: [] as string[], states_served: [] as string[],
     logo_url: "",
+    core_services: [] as string[],
+    diversity_flags: [] as string[],
+    social_linkedin: "",
+    social_discord: "",
   });
 
   // Logo upload
@@ -192,6 +196,10 @@ export default function ProfilePage() {
       countries_served: (reg.countries_served as string[]) ?? [],
       states_served: (reg.states_served as string[]) ?? [],
       logo_url: reg.logo_url ?? "",
+      core_services: (reg.core_services as string[]) ?? [],
+      diversity_flags: (reg.diversity_flags as string[]) ?? [],
+      social_linkedin: (reg.social_profiles as { linkedin?: string } | null)?.linkedin ?? "",
+      social_discord: (reg.social_profiles as { discord?: string } | null)?.discord ?? "",
     });
     setEditing(true);
   }
@@ -422,9 +430,13 @@ export default function ProfilePage() {
 
           {/* Service Classification */}
           <Section title="Service Classification" color="#7c3aed" bg="#f5f3ff" icon={TagIcon}>
-            <div className="reg-g2">
+            <div className="reg-g2" style={{ marginBottom: 16 }}>
               <div><Lbl>Primary Category</Lbl><Inp value={form.primary_category} onChange={v => setField("primary_category", v)} placeholder="e.g. Relocation Services" /></div>
               <div><Lbl>Sub-Category</Lbl><Inp value={form.sub_category} onChange={v => setField("sub_category", v)} placeholder="e.g. Corporate Relocation" /></div>
+            </div>
+            <div>
+              <Lbl>Core Services <span style={{ fontWeight: 500, color: "#9ca3af", textTransform: "none", letterSpacing: 0 }}>— displayed on Premier listings</span></Lbl>
+              <TagInput tags={form.core_services} setTags={t => setField("core_services", t)} placeholder="e.g. Employee Relocation — press Enter to add" />
             </div>
           </Section>
 
@@ -441,6 +453,24 @@ export default function ProfilePage() {
             <div>
               <Lbl>States / Provinces Served</Lbl>
               <TagInput tags={form.states_served} setTags={t => setField("states_served", t)} placeholder="Type a state/province and press Enter" />
+            </div>
+          </Section>
+
+          {/* Diversity & Social */}
+          <Section title="Diversity & Social" color="#0891b2" bg="#ecfeff" icon={<svg width="14" height="14" fill="none" stroke="#0891b2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>}>
+            <div style={{ marginBottom: 16 }}>
+              <Lbl>Diversity Certifications / Flags</Lbl>
+              <TagInput tags={form.diversity_flags} setTags={t => setField("diversity_flags", t)} placeholder="e.g. Women-Owned, LGBTQ+ Inclusive — press Enter" />
+            </div>
+            <div className="reg-g2">
+              <div>
+                <Lbl>LinkedIn URL</Lbl>
+                <Inp value={form.social_linkedin} onChange={v => setField("social_linkedin", v)} placeholder="https://linkedin.com/company/…" />
+              </div>
+              <div>
+                <Lbl>Discord URL</Lbl>
+                <Inp value={form.social_discord} onChange={v => setField("social_discord", v)} placeholder="https://discord.gg/…" />
+              </div>
             </div>
           </Section>
         </>
@@ -474,6 +504,13 @@ export default function ProfilePage() {
           <Section title="Service Classification" color="#7c3aed" bg="#f5f3ff" icon={TagIcon}>
             <FR label="Primary Category" value={reg.primary_category || "—"} />
             <FR label="Sub-Category" value={reg.sub_category || "—"} />
+            {Array.isArray(reg.core_services) && reg.core_services.length > 0 && (
+              <FR label="Core Services" value={
+                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 }}>
+                  {(reg.core_services as string[]).map(s => <span key={s} className="country-chip">{s}</span>)}
+                </div>
+              } />
+            )}
           </Section>
 
           <Section title="Geographic Coverage" color="#ea580c" bg="#fff7ed" icon={GlobeIcon}>
@@ -492,6 +529,22 @@ export default function ProfilePage() {
                 </div>
               } />
             )}
+          </Section>
+
+          <Section title="Diversity & Social" color="#0891b2" bg="#ecfeff" icon={<svg width="14" height="14" fill="none" stroke="#0891b2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>}>
+            <FR label="Diversity Flags" value={
+              Array.isArray(reg.diversity_flags) && reg.diversity_flags.length
+                ? <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 }}>
+                    {(reg.diversity_flags as string[]).map(f => <span key={f} className="country-chip">{f}</span>)}
+                  </div>
+                : "—"
+            } />
+            <FR label="LinkedIn" value={(reg.social_profiles as { linkedin?: string } | null)?.linkedin
+              ? <a href={(reg.social_profiles as { linkedin?: string }).linkedin} target="_blank" rel="noopener noreferrer">{(reg.social_profiles as { linkedin?: string }).linkedin}</a>
+              : "—"} />
+            <FR label="Discord" value={(reg.social_profiles as { discord?: string } | null)?.discord
+              ? <a href={(reg.social_profiles as { discord?: string }).discord} target="_blank" rel="noopener noreferrer">{(reg.social_profiles as { discord?: string }).discord}</a>
+              : "—"} />
           </Section>
         </>
       )}
