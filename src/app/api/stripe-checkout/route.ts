@@ -132,54 +132,42 @@ export async function POST(req: NextRequest) {
         .eq("user_id", authUser.id)
         .single();
 
-      // ── Case A: Existing subscription — update price in Stripe ────────────────
-      if (reg?.stripe_subscription_id) {
+      // ── Case A: Existing subscription — route through Billing Portal for confirmation ──
+      if (reg?.stripe_subscription_id && reg?.stripe_customer_id) {
         const subRes = await fetch(
           `https://api.stripe.com/v1/subscriptions/${reg.stripe_subscription_id}`,
           { headers: { Authorization: `Bearer ${secretKey}` } },
         );
-        const sub = await subRes.json();
-        const itemId = (sub as { items?: { data?: Array<{ id: string }> } }).items?.data?.[0]?.id;
+        const sub = await subRes.json() as { items?: { data?: Array<{ id: string }> } };
+        const itemId = sub.items?.data?.[0]?.id;
 
         if (!itemId) {
-          return NextResponse.json(
-            { error: "Subscription item not found." },
-            { status: 500 },
-          );
+          return NextResponse.json({ error: "Subscription item not found." }, { status: 500 });
         }
 
-        const updateForm = new URLSearchParams({
-          "items[0][id]": itemId,
-          "items[0][price]": priceId,
-          proration_behavior: "create_prorations",
+        const portalForm = new URLSearchParams({
+          customer: reg.stripe_customer_id as string,
+          return_url: `${appOrigin(req)}/dashboard/plans?upgraded=1`,
+          "flow_data[type]": "subscription_update_confirm",
+          "flow_data[subscription_update_confirm][subscription]": reg.stripe_subscription_id as string,
+          "flow_data[subscription_update_confirm][items][0][id]": itemId,
+          "flow_data[subscription_update_confirm][items][0][price]": priceId,
+          "flow_data[subscription_update_confirm][items][0][quantity]": "1",
         });
-        const updateRes = await fetch(
-          `https://api.stripe.com/v1/subscriptions/${reg.stripe_subscription_id}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${secretKey}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: updateForm.toString(),
-          },
-        );
 
-        if (!updateRes.ok) {
-          const err = (await updateRes.json()) as { error?: { message?: string } };
-          return NextResponse.json(
-            { error: err.error?.message ?? "Stripe error updating subscription." },
-            { status: 502 },
-          );
+        const portalRes = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/x-www-form-urlencoded" },
+          body: portalForm.toString(),
+        });
+
+        if (!portalRes.ok) {
+          const err = await portalRes.json() as { error?: { message?: string } };
+          return NextResponse.json({ error: err.error?.message ?? "Stripe portal error." }, { status: 502 });
         }
 
-        const planFull = billing === "annual" ? `${planName} – Annual` : `${planName} – Monthly`;
-        await supabase
-          .from("service_registrations")
-          .update({ membership_plan: planFull, membership_billing: billing })
-          .eq("user_id", authUser.id);
-
-        return NextResponse.json({ success: true });
+        const portal = await portalRes.json() as { url?: string };
+        return NextResponse.json({ url: portal.url });
       }
 
       // ── Case B: No subscription (upgrading from Basic) — new Checkout session ─

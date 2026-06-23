@@ -104,6 +104,17 @@ function mapSubscriptionStatus(stripeStatus?: string): string | null {
   }
 }
 
+// Reverse-map a Stripe price ID to plan name + billing cycle.
+function planFromPriceId(priceId: string): { plan: string; billing: "monthly" | "annual" } | null {
+  const map: Record<string, { plan: string; billing: "monthly" | "annual" }> = {
+    [process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID ?? ""]: { plan: "Professional", billing: "monthly" },
+    [process.env.STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID ?? ""]:  { plan: "Professional", billing: "annual" },
+    [process.env.STRIPE_PREMIER_MONTHLY_PRICE_ID ?? ""]:      { plan: "Premier", billing: "monthly" },
+    [process.env.STRIPE_PREMIER_ANNUAL_PRICE_ID ?? ""]:       { plan: "Premier", billing: "annual" },
+  };
+  return map[priceId] ?? null;
+}
+
 async function setStatusBySubscription(
   supabase: ReturnType<typeof createServiceClient>,
   subscriptionId: string | undefined,
@@ -159,12 +170,48 @@ export async function POST(req: NextRequest) {
   ) {
     try {
       const supabase = createServiceClient();
-      const obj = (event.data?.object ?? {}) as { id?: string; status?: string; subscription?: string };
+      const obj = (event.data?.object ?? {}) as {
+        id?: string; status?: string; subscription?: string;
+        items?: { data?: Array<{ price?: { id?: string } }> };
+      };
+      const prev = (event.data as Record<string, unknown>)?.previous_attributes as Record<string, unknown> | undefined;
+
       if (event.type === "customer.subscription.deleted") {
-        await setStatusBySubscription(supabase, obj.id, "Suspended");
+        // Full downgrade: set plan to Basic, clear Stripe fields, change slug
+        const { data: reg } = await supabase
+          .from("service_registrations")
+          .select("id, user_id, slug")
+          .eq("stripe_subscription_id", obj.id ?? "")
+          .maybeSingle();
+        if (reg) {
+          const basicSlug = "basic-" + (reg.user_id as string).replace(/-/g, "").substring(0, 8);
+          await supabase.from("service_registrations").update({
+            membership_plan: "Basic",
+            membership_billing: null,
+            subscription_status: null,
+            stripe_subscription_id: null,
+            premium_slug: reg.slug,
+            slug: basicSlug,
+          }).eq("id", reg.id);
+        }
       } else if (event.type === "customer.subscription.updated") {
-        const mapped = mapSubscriptionStatus(obj.status);
-        if (mapped) await setStatusBySubscription(supabase, obj.id, mapped);
+        if (prev?.items) {
+          // Price changed — update plan name in DB
+          const newPriceId = obj.items?.data?.[0]?.price?.id;
+          const planInfo = newPriceId ? planFromPriceId(newPriceId) : null;
+          if (planInfo) {
+            const planFull = planInfo.billing === "annual" ? `${planInfo.plan} – Annual` : `${planInfo.plan} – Monthly`;
+            await supabase.from("service_registrations").update({
+              membership_plan: planFull,
+              membership_billing: planInfo.billing,
+              subscription_status: "active",
+            }).eq("stripe_subscription_id", obj.id ?? "");
+          }
+        } else {
+          // Status change only (e.g. cancel_at_period_end toggled, payment status, etc.)
+          const mapped = mapSubscriptionStatus(obj.status);
+          if (mapped) await setStatusBySubscription(supabase, obj.id, mapped);
+        }
       } else {
         // invoice.payment_failed — early "retrying" signal
         await setStatusBySubscription(supabase, obj.subscription, "past_due");

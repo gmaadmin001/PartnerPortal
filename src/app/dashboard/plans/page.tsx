@@ -124,9 +124,8 @@ export default function PlansPage() {
     setConfirming(true);
 
     try {
-      // Downgrade to Basic: cancel recurring subscription; update DB locally for slug + plan.
+      // Downgrade to Basic: schedule Stripe cancellation at period end; keep plan active until then.
       if (downgradeTarget.id === "Basic") {
-        // Stop the Stripe subscription
         if (reg?.stripe_subscription_id) {
           const cancelRes = await fetch("/api/stripe-cancel", { method: "POST" });
           if (!cancelRes.ok) {
@@ -135,31 +134,32 @@ export default function PlansPage() {
             setConfirming(false);
             return;
           }
-        }
+          const cancelData = await cancelRes.json();
+          const periodEnd = cancelData.period_end
+            ? new Date(cancelData.period_end).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+            : null;
 
-        // Update the local DB record immediately (plan change, slug housekeeping)
-        const supabase = createClient();
-        const updateData: Record<string, unknown> = {
-          membership_plan: "Basic",
-          membership_billing: null,
-          subscription_status: reg?.stripe_subscription_id ? "cancelled" : null,
-        };
-        if (reg?.slug) {
-          updateData.premium_slug = reg.slug;
-          updateData.slug = "basic-" + user.id.replace(/-/g, "").substring(0, 8);
-        }
-        const { error } = await supabase
-          .from("service_registrations")
-          .update(updateData)
-          .eq("user_id", user.id);
+          // Mark as cancelling — DO NOT change membership_plan; let subscription.deleted webhook handle it
+          const supabase = createClient();
+          const { error } = await supabase
+            .from("service_registrations")
+            .update({ subscription_status: "cancelling" })
+            .eq("user_id", user.id);
 
-        setConfirming(false);
-        if (error) {
-          showToast("Failed to update plan. Please try again.", "error");
+          setConfirming(false);
+          if (error) {
+            showToast("Failed to update. Please try again.", "error");
+          } else {
+            const msg = periodEnd
+              ? `Your plan will switch to Basic on ${periodEnd}. Access continues until then.`
+              : "Your subscription is scheduled to cancel at the end of your billing period.";
+            showToast(msg, "info");
+            setDowngradeTarget(null);
+            setTimeout(() => window.location.reload(), 1400);
+          }
         } else {
-          showToast("Downgraded to Basic. Your subscription will not renew.", "success");
+          setConfirming(false);
           setDowngradeTarget(null);
-          setTimeout(() => window.location.reload(), 1400);
         }
         return;
       }
@@ -327,7 +327,11 @@ export default function PlansPage() {
               {reg.membership_billing === "annual" ? "Billed annually" : currentPlanName === "Basic" ? "Free tier" : "Billed monthly"}
             </p>
           </div>
-          <span style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 700 }}>Active</span>
+          {reg.subscription_status === "cancelling" ? (
+            <span style={{ background: "rgba(251,191,36,0.2)", border: "1px solid rgba(251,191,36,0.5)", color: "#fbbf24", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 700 }}>Cancelling</span>
+          ) : (
+            <span style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 700 }}>Active</span>
+          )}
         </div>
       )}
 

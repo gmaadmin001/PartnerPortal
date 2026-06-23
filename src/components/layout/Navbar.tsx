@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-const GMA_SITE = "https://honeydew-capybara-608687.hostingersite.com";
+const GMA_SITE = "https://globalmobilityadviser.com";
 const MAIN_APP = process.env.NEXT_PUBLIC_MAIN_APP_URL || "";
 
 const NAV_LINKS = [
@@ -77,7 +77,7 @@ export default function Navbar() {
             style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
           >
             <img
-              src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png"
+              src="https://globalmobilityadviser.com/wp-content/uploads/2025/11/GMA-1.png"
               alt="Global Mobility Adviser"
               style={{ height: 28, width: "auto" }}
             />

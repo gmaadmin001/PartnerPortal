@@ -27,8 +27,9 @@ export async function POST(_req: NextRequest) {
       );
     }
 
-    await cancelSubscriptionAtPeriodEnd(reg.stripe_subscription_id as string);
-    return NextResponse.json({ success: true });
+    const sub = await cancelSubscriptionAtPeriodEnd(reg.stripe_subscription_id as string) as { current_period_end?: number };
+    const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
+    return NextResponse.json({ success: true, period_end: periodEnd });
   } catch (err) {
     console.error("[stripe-cancel] Error:", err);
     return NextResponse.json(

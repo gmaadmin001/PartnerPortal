@@ -80,9 +80,9 @@ export async function GET(req: NextRequest) {
   if (diversityFlags.length > 0) query = query.overlaps("diversity_flags", diversityFlags);
 
   query = query
-    .order("is_featured",  { ascending: false })
-    .order("is_verified",  { ascending: false })
-    .order("created_at",   { ascending: false })
+    .order("is_featured",   { ascending: false })
+    .order("is_verified",   { ascending: false })
+    .order("company_name",  { ascending: true })
     .range(from, to);
 
   const { data, error, count } = await query;
