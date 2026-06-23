@@ -24,6 +24,8 @@ const SELECTED_COLUMNS = [
   "membership_plan",
   "is_verified",
   "is_featured",
+  "register_as",
+  "delivery_model",
   "created_at",
 ].join(", ");
 
@@ -32,6 +34,7 @@ export async function GET(req: NextRequest) {
 
   const primaryService  = (sp.get("primaryService") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const subService      = (sp.get("subService")     ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const subKeyword      = sp.get("subKeyword")       ?? "";
   const country         = (sp.get("country")        ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const state           = (sp.get("state")          ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const city            = sp.get("city")             ?? "";
@@ -40,6 +43,10 @@ export async function GET(req: NextRequest) {
   const serviceScope    = sp.get("serviceScope")     ?? "";
   const companySize     = sp.get("companySize")      ?? "";
   const companyName     = sp.get("companyName")      ?? "";
+  const keyword         = sp.get("keyword")          ?? "";
+  const listingType     = sp.get("listingType")      ?? "";
+  const coreService     = sp.get("coreService")      ?? "";
+  const deliveryModel   = sp.get("deliveryModel")    ?? "";
   const diversityFlags  = (sp.get("diversityFlags") ?? "")
     .split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -57,6 +64,7 @@ export async function GET(req: NextRequest) {
 
   if (primaryService.length > 0) query = query.in("primary_category", primaryService);
   if (subService.length > 0)    query = query.in("sub_category", subService);
+  if (subKeyword)     query = query.ilike("sub_category", `%${subKeyword}%`);
   if (country.length > 0)       query = query.overlaps("countries_served", country);
   if (state.length > 0)         query = query.overlaps("states_served", state);
   if (city)           query = query.ilike("headquarters_city", `%${city}%`);
@@ -65,6 +73,10 @@ export async function GET(req: NextRequest) {
   if (serviceScope)   query = query.eq("service_scope", serviceScope);
   if (companySize)    query = query.eq("company_size", companySize);
   if (companyName)    query = query.ilike("company_name", `%${companyName}%`);
+  if (keyword)        query = query.or(`company_name.ilike.%${keyword}%,short_description.ilike.%${keyword}%`);
+  if (listingType)    query = query.eq("register_as", listingType);
+  if (coreService)    query = query.contains("core_services", [coreService]);
+  if (deliveryModel)  query = query.eq("delivery_model", deliveryModel);
   if (diversityFlags.length > 0) query = query.overlaps("diversity_flags", diversityFlags);
 
   query = query

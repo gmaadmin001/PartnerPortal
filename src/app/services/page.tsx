@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { cap } from "@/lib/utils";
 import type { ServiceRegistration } from "@/types";
 
@@ -172,14 +171,13 @@ function FilterSelect({ value, onChange, options, placeholder }: {
 
 export default function ServicesPage() {
   const [providers, setProviders] = useState<ServiceRegistration[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [page, setPage] = useState(1);
 
   const SEARCH_PAGE_SIZE = 25;
-  const totalPages = Math.max(1, Math.ceil(providers.length / SEARCH_PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paginated = providers.slice((safePage - 1) * SEARCH_PAGE_SIZE, safePage * SEARCH_PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(total / SEARCH_PAGE_SIZE));
 
   const [keyword, setKeyword] = useState("");
   const [primaryCat, setPrimaryCat] = useState("");
@@ -193,7 +191,8 @@ export default function ServicesPage() {
 
   const doSearch = useCallback(async (overrides?: {
     keyword?: string; primaryCat?: string; subCat?: string; coreService?: string;
-    country?: string; deliveryModel?: string; companySize?: string; listingType?: string; diversity?: string[];
+    country?: string; deliveryModel?: string; companySize?: string; listingType?: string;
+    diversity?: string[]; page?: number;
   }) => {
     setLoading(true);
     setHasSearched(true);
@@ -206,38 +205,26 @@ export default function ServicesPage() {
     const sz = overrides?.companySize ?? companySize;
     const lt = overrides?.listingType ?? listingType;
     const dv = overrides?.diversity ?? diversity;
+    const pg = overrides?.page ?? 1;
 
-    const supabase = createClient();
-    let q = supabase.from("service_registrations").select("*").eq("status", "active").order("company_name");
+    const params = new URLSearchParams();
+    params.set("page", String(pg));
+    params.set("limit", String(SEARCH_PAGE_SIZE));
+    if (kw) params.set("keyword", kw);
+    if (pc) params.set("primaryService", pc);
+    if (sc) params.set("subKeyword", sc);
+    if (cs) params.set("coreService", cs);
+    if (ct) params.set("country", ct);
+    if (dm) params.set("deliveryModel", dm);
+    if (sz) params.set("companySize", sz);
+    if (lt) params.set("listingType", lt);
+    if (dv.length > 0) params.set("diversityFlags", dv.join(","));
 
-    if (pc) q = q.eq("primary_category", pc);
-    if (sc) q = q.ilike("sub_category", `%${sc}%`);
-    if (ct) q = q.contains("countries_served", [ct]);
-    if (dm) q = q.ilike("delivery_model", `%${dm}%`);
-    if (sz) q = q.eq("company_size", sz);
-    if (lt) q = q.eq("register_as", lt);
-    if (kw) q = q.or(`company_name.ilike.%${kw}%,short_description.ilike.%${kw}%,company_bio.ilike.%${kw}%`);
-
-    const { data } = await q.limit(100);
-    let results = (data as ServiceRegistration[]) ?? [];
-
-    // Client-side filters
-    if (cs) {
-      const needle = cs.toLowerCase();
-      results = results.filter(r => {
-        const services = (r.core_services ?? []) as string[];
-        return services.some(s => s.toLowerCase().includes(needle));
-      });
-    }
-    if (dv.length > 0) {
-      results = results.filter(r =>
-        dv.some(d => ((r.diversity_flags ?? []) as string[]).some(f => f.toLowerCase().includes(d.toLowerCase()))
-          || (r.certifications || "").toLowerCase().includes(d.toLowerCase()))
-      );
-    }
-
-    setProviders(results);
-    setPage(1);
+    const res = await fetch(`/api/services?${params}`);
+    const json = await res.json();
+    setProviders((json.data ?? []) as ServiceRegistration[]);
+    setTotal(json.total ?? 0);
+    setPage(pg);
     setLoading(false);
   }, [keyword, primaryCat, subCat, coreService, country, deliveryModel, companySize, listingType, diversity]);
 
@@ -269,7 +256,7 @@ export default function ServicesPage() {
   function clearAll() {
     setKeyword(""); setPrimaryCat(""); setSubCat(""); setCoreService("");
     setCountry(""); setDeliveryModel(""); setCompanySize(""); setListingType("");
-    setDiversity([]); setProviders([]); setHasSearched(false);
+    setDiversity([]); setProviders([]); setTotal(0); setHasSearched(false); setPage(1);
     window.history.replaceState({}, "", window.location.pathname);
   }
 
@@ -413,11 +400,11 @@ export default function ServicesPage() {
 
           {hasSearched && !loading && (
             <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 14, fontWeight: 500 }}>
-              {providers.length === 0
+              {total === 0
                 ? "No results found"
-                : providers.length > SEARCH_PAGE_SIZE
-                  ? `Showing ${(safePage - 1) * SEARCH_PAGE_SIZE + 1}–${Math.min(safePage * SEARCH_PAGE_SIZE, providers.length)} of ${providers.length} provider${providers.length !== 1 ? "s" : ""}`
-                  : `${providers.length} provider${providers.length !== 1 ? "s" : ""} found`}
+                : total > SEARCH_PAGE_SIZE
+                  ? `Showing ${(page - 1) * SEARCH_PAGE_SIZE + 1}–${Math.min(page * SEARCH_PAGE_SIZE, total)} of ${total} provider${total !== 1 ? "s" : ""}`
+                  : `${total} provider${total !== 1 ? "s" : ""} found`}
             </p>
           )}
 
@@ -427,25 +414,25 @@ export default function ServicesPage() {
             </div>
           )}
 
-          {!loading && hasSearched && providers.length > 0 && (
+          {!loading && hasSearched && total > 0 && (
             <>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {paginated.map(r => <ProviderCard key={r.id} r={r} />)}
+                {providers.map(r => <ProviderCard key={r.id} r={r} />)}
               </div>
-              {providers.length > SEARCH_PAGE_SIZE && (
+              {total > SEARCH_PAGE_SIZE && (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 24, flexWrap: "wrap", gap: 10 }}>
                   <span style={{ fontSize: 13, color: "#6b7280" }}>
-                    Page {safePage} of {totalPages}
+                    Page {page} of {totalPages}
                   </span>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      disabled={safePage === 1}
-                      style={{ padding: "9px 20px", background: "#fff", border: "1.5px solid #dde3ee", borderRadius: 10, fontSize: 13, fontWeight: 700, color: safePage === 1 ? "#c0c7d4" : "#1E2E61", cursor: safePage === 1 ? "not-allowed" : "pointer" }}>
+                    <button onClick={() => { doSearch({ page: page - 1 }); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      disabled={page === 1}
+                      style={{ padding: "9px 20px", background: "#fff", border: "1.5px solid #dde3ee", borderRadius: 10, fontSize: 13, fontWeight: 700, color: page === 1 ? "#c0c7d4" : "#1E2E61", cursor: page === 1 ? "not-allowed" : "pointer" }}>
                       ← Previous
                     </button>
-                    <button onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      disabled={safePage === totalPages}
-                      style={{ padding: "9px 20px", background: safePage === totalPages ? "#f3f4f6" : "linear-gradient(135deg,#1E2E61,#1C66AD)", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, color: safePage === totalPages ? "#c0c7d4" : "#fff", cursor: safePage === totalPages ? "not-allowed" : "pointer" }}>
+                    <button onClick={() => { doSearch({ page: page + 1 }); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      disabled={page === totalPages}
+                      style={{ padding: "9px 20px", background: page === totalPages ? "#f3f4f6" : "linear-gradient(135deg,#1E2E61,#1C66AD)", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, color: page === totalPages ? "#c0c7d4" : "#fff", cursor: page === totalPages ? "not-allowed" : "pointer" }}>
                       Next →
                     </button>
                   </div>
@@ -454,7 +441,7 @@ export default function ServicesPage() {
             </>
           )}
 
-          {!loading && hasSearched && providers.length === 0 && (
+          {!loading && hasSearched && total === 0 && (
             <div style={{ background: "#fff", borderRadius: 14, padding: "60px 24px", textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #dde3ee" }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
               <h3 className="dsp" style={{ fontSize: 18, fontWeight: 700, color: "#0a1628", marginBottom: 8 }}>No providers found</h3>
