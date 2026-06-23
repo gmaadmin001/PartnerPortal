@@ -363,6 +363,27 @@ export default function PlansPage() {
         </div>
       )}
 
+      {/* Past due warning */}
+      {reg?.subscription_status === "past_due" && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderLeft: "4px solid #ef4444", borderRadius: 14, padding: "18px 22px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="18" height="18" fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+            </div>
+            <div>
+              <p style={{ fontSize: 13.5, fontWeight: 700, color: "#991b1b", marginBottom: 2 }}>Payment failed</p>
+              <p style={{ fontSize: 12.5, color: "#b91c1c" }}>Your last payment didn&apos;t go through. Update your payment method to keep your plan active.</p>
+            </div>
+          </div>
+          <button
+            onClick={openBillingPortal}
+            style={{ padding: "9px 18px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}
+          >
+            Update Payment Method →
+          </button>
+        </div>
+      )}
+
       {/* Billing toggle */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28, background: "#fff", border: "1px solid #dde3ee", borderRadius: 12, padding: "12px 18px", maxWidth: 360, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
         <span style={{ fontSize: 13.5, fontWeight: 600, color: billing === "monthly" ? "#0a1628" : "#9ca3af" }}>Monthly</span>
