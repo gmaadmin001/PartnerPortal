@@ -101,11 +101,14 @@ function Badge({ value, colorMap }: { value: string | null; colorMap: Record<str
   );
 }
 
+const PAGE_SIZE = 50;
+
 export default function AdminDashboardClient({ admin, registrations, stats }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [planFilter, setPlanFilter] = useState("");
+  const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFields, setEditFields] = useState<Partial<Registration>>({});
   const [saving, setSaving] = useState(false);
@@ -120,6 +123,10 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
       return true;
     });
   }, [registrations, search, typeFilter, planFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   function startEdit(r: Registration) {
     setEditingId(r.id);
@@ -228,12 +235,12 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
       <div style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", border: "1px solid #e8edf5", marginBottom: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 10, background: "#f6f8fc", border: "1.5px solid #dde3ee", borderRadius: 10, padding: "9px 14px" }}>
           <svg width="15" height="15" fill="none" stroke="#8a96a8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input type="text" placeholder="Search by company name or email…" value={search} onChange={e => setSearch(e.target.value)}
+          <input type="text" placeholder="Search by company name or email…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ border: "none", background: "none", outline: "none", fontSize: 13.5, color: "#0a1628", width: "100%" }} />
         </div>
         {([
-          { label: "All Types", key: "typeFilter", setter: setTypeFilter, value: typeFilter, opts: ["supplier","realtor","consultant","broker"] },
-          { label: "All Plans", key: "planFilter", setter: setPlanFilter, value: planFilter, opts: ["Basic","Professional","Premier"] },
+          { label: "All Types", key: "typeFilter", setter: (v: string) => { setTypeFilter(v); setPage(1); }, value: typeFilter, opts: ["supplier","realtor","consultant","broker"] },
+          { label: "All Plans", key: "planFilter", setter: (v: string) => { setPlanFilter(v); setPage(1); }, value: planFilter, opts: ["Basic","Professional","Premier"] },
         ] as const).map(f => (
           <select key={f.key} value={f.value} onChange={e => f.setter(e.target.value)}
             style={{ padding: "9px 12px", border: "1.5px solid #dde3ee", borderRadius: 10, fontSize: 13, color: f.value ? "#0a1628" : "#8a96a8", background: "#fff", outline: "none", cursor: "pointer" }}>
@@ -260,7 +267,7 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
             {filtered.length === 0 && (
               <tr><td colSpan={admin.role !== "search" ? 6 : 5} style={{ padding: "48px 16px", textAlign: "center" as const, color: "#8a96a8", fontSize: 14 }}>No active listings match your filters.</td></tr>
             )}
-            {filtered.map(r => (
+            {paginated.map(r => (
               <>
                 <tr key={r.id}
                   style={{ borderBottom: editingId === r.id ? "none" : "1px solid #f3f4f6", transition: "background 0.1s" }}
@@ -375,6 +382,28 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {filtered.length > PAGE_SIZE && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 4px", flexWrap: "wrap", gap: 10 }}>
+          <span style={{ fontSize: 13, color: "#6b7280" }}>
+            Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+              style={{ padding: "8px 18px", background: "#fff", border: "1.5px solid #dde3ee", borderRadius: 9, fontSize: 13, fontWeight: 600, color: safePage === 1 ? "#c0c7d4" : "#374151", cursor: safePage === 1 ? "not-allowed" : "pointer" }}>
+              ← Prev
+            </button>
+            <span style={{ padding: "8px 14px", fontSize: 13, color: "#374151", fontWeight: 600 }}>
+              {safePage} / {totalPages}
+            </span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+              style={{ padding: "8px 18px", background: "#fff", border: "1.5px solid #dde3ee", borderRadius: 9, fontSize: 13, fontWeight: 600, color: safePage === totalPages ? "#c0c7d4" : "#374151", cursor: safePage === totalPages ? "not-allowed" : "pointer" }}>
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 9999, background: toast.type === "success" ? "#16a34a" : "#dc2626", color: "#fff", padding: "13px 22px", borderRadius: 12, fontSize: 14, fontWeight: 600, boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>

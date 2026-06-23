@@ -174,6 +174,12 @@ export default function ServicesPage() {
   const [providers, setProviders] = useState<ServiceRegistration[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const SEARCH_PAGE_SIZE = 25;
+  const totalPages = Math.max(1, Math.ceil(providers.length / SEARCH_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = providers.slice((safePage - 1) * SEARCH_PAGE_SIZE, safePage * SEARCH_PAGE_SIZE);
 
   const [keyword, setKeyword] = useState("");
   const [primaryCat, setPrimaryCat] = useState("");
@@ -231,6 +237,7 @@ export default function ServicesPage() {
     }
 
     setProviders(results);
+    setPage(1);
     setLoading(false);
   }, [keyword, primaryCat, subCat, coreService, country, deliveryModel, companySize, listingType, diversity]);
 
@@ -406,7 +413,11 @@ export default function ServicesPage() {
 
           {hasSearched && !loading && (
             <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 14, fontWeight: 500 }}>
-              {providers.length === 0 ? "No results found" : `${providers.length} provider${providers.length !== 1 ? "s" : ""} found`}
+              {providers.length === 0
+                ? "No results found"
+                : providers.length > SEARCH_PAGE_SIZE
+                  ? `Showing ${(safePage - 1) * SEARCH_PAGE_SIZE + 1}–${Math.min(safePage * SEARCH_PAGE_SIZE, providers.length)} of ${providers.length} provider${providers.length !== 1 ? "s" : ""}`
+                  : `${providers.length} provider${providers.length !== 1 ? "s" : ""} found`}
             </p>
           )}
 
@@ -417,9 +428,30 @@ export default function ServicesPage() {
           )}
 
           {!loading && hasSearched && providers.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {providers.map(r => <ProviderCard key={r.id} r={r} />)}
-            </div>
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {paginated.map(r => <ProviderCard key={r.id} r={r} />)}
+              </div>
+              {providers.length > SEARCH_PAGE_SIZE && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 24, flexWrap: "wrap", gap: 10 }}>
+                  <span style={{ fontSize: 13, color: "#6b7280" }}>
+                    Page {safePage} of {totalPages}
+                  </span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      disabled={safePage === 1}
+                      style={{ padding: "9px 20px", background: "#fff", border: "1.5px solid #dde3ee", borderRadius: 10, fontSize: 13, fontWeight: 700, color: safePage === 1 ? "#c0c7d4" : "#1E2E61", cursor: safePage === 1 ? "not-allowed" : "pointer" }}>
+                      ← Previous
+                    </button>
+                    <button onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      disabled={safePage === totalPages}
+                      style={{ padding: "9px 20px", background: safePage === totalPages ? "#f3f4f6" : "linear-gradient(135deg,#1E2E61,#1C66AD)", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, color: safePage === totalPages ? "#c0c7d4" : "#fff", cursor: safePage === totalPages ? "not-allowed" : "pointer" }}>
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {!loading && hasSearched && providers.length === 0 && (
