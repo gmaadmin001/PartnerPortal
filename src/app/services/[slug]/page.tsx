@@ -158,14 +158,9 @@ export default async function ProviderProfilePage({
                     VERIFIED
                   </span>
                 )}
-                {isPremier && (
+                {isPremier && provider.is_featured && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.35)", color: "#fcd34d", borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 700 }}>
                     ⭐ RECOMMENDED
-                  </span>
-                )}
-                {isPremier && provider.is_featured && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(67,180,227,0.2)", border: "1px solid rgba(67,180,227,0.35)", color: "#7dd3fc", borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 700 }}>
-                    👍 BEST MATCH
                   </span>
                 )}
               </div>
