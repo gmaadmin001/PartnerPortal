@@ -26,9 +26,15 @@ body {
 }
 .dsp { font-family: 'Space Grotesk', system-ui, sans-serif; }
 
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: #eef1f8; }
+::-webkit-scrollbar-thumb { background: #c5d0e0; border-radius: 999px; border: 2px solid #eef1f8; }
+::-webkit-scrollbar-thumb:hover { background: #1C66AD; }
+* { scrollbar-width: thin; scrollbar-color: #c5d0e0 #eef1f8; }
+
 /* ── Navbar ── */
 .site-nav { position: sticky; top: 0; z-index: 200; flex-shrink: 0; }
-.nav-accent { height: 4px; background: #1E2E61; }
 .nav-bar { background: #fff; border-bottom: 1px solid #e9edf4; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 .nav-inner {
   max-width: 1440px; margin: 0 auto; padding: 0 40px;

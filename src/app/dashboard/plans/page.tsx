@@ -71,6 +71,7 @@ export default function PlansPage() {
   const [downgradeTarget, setDowngradeTarget] = useState<typeof PLANS[0] | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [badgeLoading, setBadgeLoading] = useState(false);
+  const [resumeLoading, setResumeLoading] = useState(false);
 
   // Detect ?upgraded=1 or ?badge=1 from Stripe Checkout redirects
   useEffect(() => {
@@ -209,6 +210,24 @@ export default function PlansPage() {
     }
   }
 
+  async function handleResume() {
+    setResumeLoading(true);
+    try {
+      const res = await fetch("/api/stripe-resume", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? "Failed to resume subscription. Please try again.", "error");
+        return;
+      }
+      showToast("Subscription resumed. Your plan will continue as normal.", "success");
+      setTimeout(() => window.location.reload(), 1400);
+    } catch {
+      showToast("Unexpected error. Please try again.", "error");
+    } finally {
+      setResumeLoading(false);
+    }
+  }
+
   async function openBillingPortal() {
     try {
       const res = await fetch("/api/stripe-portal", { method: "POST" });
@@ -328,7 +347,16 @@ export default function PlansPage() {
             </p>
           </div>
           {reg.subscription_status === "cancelling" ? (
-            <span style={{ background: "rgba(251,191,36,0.2)", border: "1px solid rgba(251,191,36,0.5)", color: "#fbbf24", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 700 }}>Cancelling</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ background: "rgba(251,191,36,0.2)", border: "1px solid rgba(251,191,36,0.5)", color: "#fbbf24", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 700 }}>Cancelling</span>
+              <button
+                onClick={handleResume}
+                disabled={resumeLoading}
+                style={{ padding: "5px 16px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: resumeLoading ? "not-allowed" : "pointer", opacity: resumeLoading ? 0.6 : 1, transition: "opacity 0.2s" }}
+              >
+                {resumeLoading ? "Resuming…" : "↩ Resume Subscription"}
+              </button>
+            </div>
           ) : (
             <span style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 700 }}>Active</span>
           )}

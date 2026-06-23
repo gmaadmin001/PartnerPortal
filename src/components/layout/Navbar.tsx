@@ -69,7 +69,6 @@ export default function Navbar() {
 
   return (
     <header className="site-nav">
-      <div className="nav-accent" />
       <div className="nav-bar">
         <div className="nav-inner">
           <a
