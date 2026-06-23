@@ -85,6 +85,21 @@ export default function PlansPage() {
     }
   }, []);
 
+  // Reload plan data when the user returns to this tab after visiting Stripe Dashboard
+  // or the Customer Portal, so stale plan state doesn't persist.
+  useEffect(() => {
+    let hiddenAt = 0;
+    function onVisibility() {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === "visible" && hiddenAt > 0 && Date.now() - hiddenAt > 3000) {
+        window.location.reload();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
   function showToast(msg: string, type: "info" | "success" | "error" = "info") {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);

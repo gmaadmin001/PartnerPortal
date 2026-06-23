@@ -138,11 +138,26 @@ export async function POST(req: NextRequest) {
           `https://api.stripe.com/v1/subscriptions/${reg.stripe_subscription_id}`,
           { headers: { Authorization: `Bearer ${secretKey}` } },
         );
-        const sub = await subRes.json() as { items?: { data?: Array<{ id: string }> } };
+        const sub = await subRes.json() as { items?: { data?: Array<{ id: string; price?: { id: string } }> } };
         const itemId = sub.items?.data?.[0]?.id;
+        const currentPriceId = sub.items?.data?.[0]?.price?.id;
 
         if (!itemId) {
           return NextResponse.json({ error: "Subscription item not found." }, { status: 500 });
+        }
+
+        // Stripe already has this subscription on the target price (e.g. user changed plan
+        // directly in the Stripe Dashboard and our DB is stale). Sync the DB and return
+        // success — creating a subscription_update_confirm session would fail with
+        // "no changes to confirm".
+        if (currentPriceId === priceId) {
+          const planFull = billing === "annual" ? `${planName} – Annual` : `${planName} – Monthly`;
+          await supabase.from("service_registrations").update({
+            membership_plan: planFull,
+            membership_billing: billing,
+            subscription_status: "active",
+          }).eq("user_id", authUser.id);
+          return NextResponse.json({ success: true });
         }
 
         const portalForm = new URLSearchParams({
