@@ -8,6 +8,37 @@ not code. Detailed sub-steps live in the referenced files; this is the master ga
 > the production domain (`relocentra.com`). Until then everything runs on
 > `partnerportal.gmaadmin001.workers.dev` in test/sandbox mode.
 
+> **V2 features do not start until this checklist is complete.**
+
+---
+
+## Current Status (as of 2026-06-23)
+
+### ✅ Code Complete — Deployed to partnerportal.gmaadmin001.workers.dev
+
+- Stripe integration (checkout, webhooks, cancel, resume subscription)
+- Plan upgrade / downgrade / billing-cycle switch flows
+- Admin dashboard with pagination (50/page vendor list, 25/page search)
+- 410+ listings imported, A–Z alphabetical directory order
+- Media persistence on plan downgrade (photos stay in DB, gated by plan)
+- Plan feature gates fixed (suffixed plan names e.g. "Premier – Monthly")
+- Resume subscription button when in cancelling state
+- Past-due payment banner with Update Payment Method CTA
+- Profile edit form: core services, diversity flags, LinkedIn, Discord
+- RECOMMENDED badge gated on is_featured (not all Premier users)
+- Michael added as admin (michael@globalmobilityadvisor.com)
+- Navbar links updated to globalmobilityadviser.com
+
+### ⏳ Immediately Pending (blocking or near-blocking)
+
+- **Steven's admin email** — Michael to send to Alan
+- **Relocentra rebrand** — Michael to provide wording + color scheme
+- **Stripe Customer Portal config** — Paul to enable subscription updates in Stripe Dashboard (plan switch confirmation UI is code-ready, just needs portal config)
+- **Michael bug hunt** — testing the platform, compiling issues
+- **AI project / Tidio replacement** — Alan to build once Michael sends requirements to Paul
+
+---
+
 Each item is a gate cycle: plan → approval → do → verify → commit/push approval (where code is
 involved). Dashboard-only steps still get walked through click-by-click.
 

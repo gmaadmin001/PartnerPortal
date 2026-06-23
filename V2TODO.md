@@ -2,6 +2,8 @@
 
 Last updated: 2026-06-23
 
+> **Prerequisites: complete [GOLIVETODO.md](GOLIVETODO.md) first.** V2 features do not start until the site is live at relocentra.com with real Stripe keys and production email.
+
 ---
 
 ## Phase 1 — Current (Complete or Near-Complete)
