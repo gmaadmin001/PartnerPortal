@@ -100,6 +100,17 @@ export default function PlansPage() {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
+  // Verify plan against Stripe on every load — corrects any DB/Stripe mismatch silently.
+  useEffect(() => {
+    if (!reg?.stripe_subscription_id) return;
+    fetch("/api/stripe-sync", { method: "POST" })
+      .then(r => r.json())
+      .then((data: { corrected?: boolean }) => {
+        if (data.corrected) window.location.reload();
+      })
+      .catch(() => {});
+  }, [reg?.stripe_subscription_id]);
+
   function showToast(msg: string, type: "info" | "success" | "error" = "info") {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
