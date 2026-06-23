@@ -499,11 +499,33 @@ export default function ProfilePage() {
       {/* ── Photo Gallery (always shown, independent of edit mode) ── */}
       <Section title="Photo Gallery" color="#7c3aed" bg="#f5f3ff" icon={PhotoIcon}>
         {!isPremier ? (
-          <div style={{ textAlign: "center", padding: "24px 0", color: "#9ca3af" }}>
-            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ margin: "0 auto 10px", display: "block", opacity: 0.4 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 4 }}>Premier Plan required</p>
-            <p style={{ fontSize: 12 }}>Upgrade to Premier to add a photo gallery to your profile.</p>
-          </div>
+          galleryPhotos.length > 0 ? (
+            <>
+              <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+                <svg width="16" height="16" fill="none" stroke="#d97706" viewBox="0 0 24 24" style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <div>
+                  <p style={{ fontSize: 12.5, fontWeight: 700, color: "#92400e", marginBottom: 2 }}>
+                    {galleryPhotos.length} photo{galleryPhotos.length !== 1 ? "s" : ""} saved — upgrade to Premier to display them on your listing
+                  </p>
+                  <a href="/dashboard/plans" style={{ fontSize: 12, color: "#b45309", fontWeight: 600 }}>View Plans →</a>
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, opacity: 0.45, pointerEvents: "none" }}>
+                {galleryPhotos.map((url, i) => (
+                  <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb", aspectRatio: "16/9", background: "#f9fafb" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Photo ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ textAlign: "center", padding: "24px 0", color: "#9ca3af" }}>
+              <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ margin: "0 auto 10px", display: "block", opacity: 0.4 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 4 }}>Premier Plan required</p>
+              <p style={{ fontSize: 12 }}>Upgrade to Premier to add a photo gallery to your profile.</p>
+            </div>
+          )
         ) : (
           <>
             <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 14 }}>
