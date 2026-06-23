@@ -89,7 +89,8 @@ export default async function ProviderProfilePage({
   const serviceAreas = [...countries, ...states];
   const social = (provider.social_profiles ?? {}) as Record<string, string>;
   const PLAN_RANK: Record<string, number> = { Basic: 0, Professional: 1, Premier: 2 };
-  const rank = PLAN_RANK[provider.membership_plan ?? "Basic"] ?? 0;
+  const planBase = (provider.membership_plan ?? "Basic").split(/\s*[–—]\s*/)[0].trim();
+  const rank = PLAN_RANK[planBase] ?? 0;
   const isPro = rank >= 1;
   const isPremier = rank >= 2;
   const websiteDisplay = (provider.website_url ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "");
