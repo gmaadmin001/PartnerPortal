@@ -33,7 +33,7 @@ not code. Detailed sub-steps live in the referenced files; this is the master ga
 
 - **Steven's admin email** — Michael to send to Alan
 - **Relocentra rebrand** — Michael to provide wording + color scheme
-- **Stripe Customer Portal config** — Paul to enable subscription updates in Stripe Dashboard (plan switch confirmation UI is code-ready, just needs portal config)
+- ~~**Stripe Customer Portal config**~~ ✅ Done (test mode) — must reconfigure in **live mode** after key swap (see §2)
 - **Michael bug hunt** — testing the platform, compiling issues
 - **AI project / Tidio replacement** — Alan to build once Michael sends requirements to Paul
 
@@ -93,6 +93,11 @@ involved). Dashboard-only steps still get walked through click-by-click.
       is a build-time variable, so it requires a rebuild to take effect.
 - [ ] **2.8 — Real-card smoke test** on the lowest-priced tier; confirm the account is created via
       the live webhook; **refund** via the dashboard.
+- [ ] **2.9 — Reconfigure Stripe Customer Portal in live mode.** Stripe portal settings are
+      per-mode — test-mode config does **not** carry over to live. In the Stripe Dashboard, switch
+      to **Live mode** → Settings → Customer Portal → re-enable the same options configured in test
+      mode (subscription updates, plan switching, cancellation). Confirm the paid→paid plan-switch
+      confirmation flow works end-to-end with a real card before launch.
 
 ## 3. Production email (TODO.md → Phase 9: Task 22 + E1–E8)
 
