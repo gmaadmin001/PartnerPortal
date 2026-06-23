@@ -97,11 +97,13 @@ export async function POST(req: NextRequest) {
       countries_served:      countriesArr,
       states_served:         statesArr,
       logo_url:              logo_url              || null,
-      industry_focus:        industry_focus        || null,
-      service_scope:         service_scope         || null,
-      diversity_flags:       Array.isArray(diversity_flags) ? diversity_flags : [],
-      core_services:         Array.isArray(core_services)   ? core_services   : [],
-      social_profiles:       Object.keys(socialProfiles).length > 0 ? socialProfiles : null,
+      ...(industry_focus  !== undefined ? { industry_focus:  industry_focus  || null } : {}),
+      ...(service_scope   !== undefined ? { service_scope:   service_scope   || null } : {}),
+      ...(Array.isArray(core_services)   ? { core_services }   : {}),
+      ...(Array.isArray(diversity_flags) ? { diversity_flags } : {}),
+      ...("social_linkedin" in body || "social_discord" in body
+        ? { social_profiles: Object.keys(socialProfiles).length > 0 ? socialProfiles : null }
+        : {}),
     })
     .eq("user_id", user.id);
 
