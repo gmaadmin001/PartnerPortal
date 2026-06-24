@@ -26,12 +26,12 @@ not code. Detailed sub-steps live in the referenced files; this is the master ga
 - Past-due payment banner with Update Payment Method CTA
 - Profile edit form: core services, diversity flags, LinkedIn, Discord
 - RECOMMENDED badge gated on is_featured (not all Premier users)
-- Michael added as admin (michael@globalmobilityadvisor.com)
+- Michael added as admin (michael@globalmobilityadviser.com)
 - Navbar links updated to globalmobilityadviser.com
 
 ### ⏳ Immediately Pending (blocking or near-blocking)
 
-- **Steven's admin email** — Michael to send to Alan
+- ~~**Steven's admin email**~~ ✅ Done — steven@globalmobilityadviser.com added as admin
 - **Relocentra rebrand** — Michael to provide wording + color scheme
 - ~~**Stripe Customer Portal config**~~ ✅ Done (test mode) — must reconfigure in **live mode** after key swap (see §2)
 - **Michael bug hunt** — testing the platform, compiling issues

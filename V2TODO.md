@@ -18,7 +18,7 @@ Last updated: 2026-06-23
 | 6 | Media persistence on plan downgrade | ✅ Done | Photos stay in DB; hidden until re-upgrade |
 | 7 | Plan feature gates fixed (suffixed plan names) | ✅ Done | "Premier – Monthly" now correctly resolves |
 | 8 | Add Michael as admin | ✅ Done | michael@globalmobilityadvisor.com |
-| 9 | Add Steven as admin | ⏳ Waiting | Email address TBD — Michael to send |
+| 9 | Add Steven as admin | ✅ Done | steven@globalmobilityadviser.com |
 | 10 | Plan switch UX — Stripe confirmation page (paid→paid) | ✅ Done | Code deployed; Paul configured Stripe Customer Portal (test mode — must redo in live mode per GOLIVETODO §2) |
 | 11 | Relocentra rebrand | ⏳ Waiting | Michael to provide wording + color scheme |
 | 12 | relocentra.com domain pointed to site | ⏳ Waiting | Paul's task |
@@ -75,7 +75,6 @@ Last updated: 2026-06-23
 
 | Person | Item |
 |--------|------|
-| Michael | Steven's admin email address |
 | Michael | Relocentra rebrand details (wording, colors) |
 | Michael | Full Version 2 feature list |
 | Michael | AI project (Tidio) requirements → send to Paul |
