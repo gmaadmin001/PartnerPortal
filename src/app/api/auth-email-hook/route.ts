@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const EMAIL_COPY: Record<string, {
   subject: string;
@@ -125,9 +126,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const copy = EMAIL_COPY[actionType];
+    let copy = EMAIL_COPY[actionType];
     if (!copy) {
       return NextResponse.json({ success: true });
+    }
+
+    // Admins signing up get account-appropriate copy instead of vendor registration copy.
+    if (actionType === "signup") {
+      try {
+        const supabase = createServiceClient();
+        const { data } = await supabase
+          .from("admins")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+        if (data) {
+          copy = {
+            subject: "Your admin account is ready",
+            headline: "Your Admin Account",
+            message_html: "<p>Your admin account for the Global Mobility Adviser Partner Portal has been created. Click the button below to verify your email and access the admin dashboard.</p>",
+            button_label: "Access Admin Dashboard",
+            footnote: "If you didn't create an account, you can safely ignore this email.",
+          };
+        }
+      } catch {
+        // Non-fatal — fall back to default signup copy
+      }
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
