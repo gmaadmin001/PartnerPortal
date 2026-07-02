@@ -2,6 +2,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
 	"name": "partnerportal",
+	"account_id": "1f1abb56981605a3282067ee3895bbd7",
 	"compatibility_date": "2026-06-06",
 	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 	"assets": {
