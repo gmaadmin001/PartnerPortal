@@ -12,7 +12,7 @@ export default function Footer() {
               <img
                 src="/relocentra-logo.png"
                 alt="ReloCentra"
-                style={{ height: 26, width: "auto", filter: "brightness(0) invert(1)" }}
+                style={{ height: 40, width: "auto", filter: "brightness(0) invert(1)" }}
               />
             </a>
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 24 }}>

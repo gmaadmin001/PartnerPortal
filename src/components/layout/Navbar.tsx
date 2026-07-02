@@ -73,13 +73,21 @@ export default function Navbar() {
         <div className="nav-inner">
           <a
             href="/"
-            style={{ display: "flex", alignItems: "center", flexShrink: 0, textDecoration: "none", marginLeft: -8 }}
+            style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flexShrink: 0, textDecoration: "none", marginLeft: -8 }}
           >
             <img
               src="/relocentra-logo.png"
               alt="ReloCentra"
-              style={{ height: 34, width: "auto" }}
+              style={{ height: 42, width: "auto" }}
             />
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3 }}>
+              <span style={{ fontSize: 9, color: "#9ca3af", fontWeight: 500, letterSpacing: "0.03em", lineHeight: 1 }}>Powered by</span>
+              <img
+                src="https://globalmobilityadviser.com/wp-content/uploads/2025/11/GMA-1.png"
+                alt="Global Mobility Adviser"
+                style={{ height: 13, width: "auto" }}
+              />
+            </div>
           </a>
 
           <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
