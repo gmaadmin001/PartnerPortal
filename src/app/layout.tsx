@@ -5,8 +5,9 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
-  title: "Global Mobility Adviser Partner Portal",
-  description: "Manage your GMA partner listing, membership, and reviews.",
+  title: "ReloCentra — Global Mobility Partner Directory",
+  description: "Find and connect with global mobility service providers on ReloCentra, powered by Global Mobility Adviser.",
+  icons: { icon: "/relocentra-favicon.png" },
 };
 
 export default async function RootLayout({
