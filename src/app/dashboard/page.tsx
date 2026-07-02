@@ -128,7 +128,7 @@ export default function DashboardOverview() {
                   <>
                     <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>·</span>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(135deg,#b45309,#d97706)", color: "#fff", fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 20, letterSpacing: "0.04em", boxShadow: "0 2px 8px rgba(180,83,9,0.4)" }}>
-                      ✦ GMA Verified
+                      ✦ ReloCentra Verified
                     </span>
                   </>
                 )}
@@ -195,7 +195,7 @@ export default function DashboardOverview() {
                 <span style={{ color: "#fff", fontSize: 14 }}>✦</span>
               </div>
             </div>
-            <p className="stat-value" style={{ fontSize: 15, color: "#92400e" }}>GMA Verified</p>
+            <p className="stat-value" style={{ fontSize: 15, color: "#92400e" }}>ReloCentra Verified</p>
             <p style={{ fontSize: 10.5, color: "#b45309", marginTop: 4, fontWeight: 600 }}>Badge Active</p>
           </div>
         ) : (

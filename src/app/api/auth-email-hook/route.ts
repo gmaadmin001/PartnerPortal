@@ -12,7 +12,7 @@ const EMAIL_COPY: Record<string, {
   signup: {
     subject: "Verify your email address",
     headline: "Verify Your Email Address",
-    message_html: "<p>Thanks for registering with the Global Mobility Adviser Partner Portal. Click the button below to verify your email address and activate your account.</p>",
+    message_html: "<p>Thanks for registering with the ReloCentra Partner Portal. Click the button below to verify your email address and activate your account.</p>",
     button_label: "Verify Email",
     footnote: "If you didn't create an account, you can safely ignore this email.",
   },
@@ -26,7 +26,7 @@ const EMAIL_COPY: Record<string, {
   magiclink: {
     subject: "Your sign-in link",
     headline: "Your Sign-In Link",
-    message_html: "<p>Click the button below to sign in to the Global Mobility Adviser Partner Portal. This link expires in 1 hour.</p>",
+    message_html: "<p>Click the button below to sign in to the ReloCentra Partner Portal. This link expires in 1 hour.</p>",
     button_label: "Sign In",
     footnote: "If you didn't request this link, you can safely ignore this email.",
   },
@@ -40,7 +40,7 @@ const EMAIL_COPY: Record<string, {
   invite: {
     subject: "You've been invited",
     headline: "You've Been Invited to Partner Portal",
-    message_html: "<p>You've been invited to join the Global Mobility Adviser Partner Portal. Click the button below to accept your invitation and set up your account.</p>",
+    message_html: "<p>You've been invited to join the ReloCentra Partner Portal. Click the button below to accept your invitation and set up your account.</p>",
     button_label: "Accept Invitation",
     footnote: "This invitation expires in 7 days.",
   },
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
           copy = {
             subject: "Your admin account is ready",
             headline: "Your Admin Account",
-            message_html: "<p>Your admin account for the Global Mobility Adviser Partner Portal has been created. Click the button below to verify your email and access the admin dashboard.</p>",
+            message_html: "<p>Your admin account for the ReloCentra Partner Portal has been created. Click the button below to verify your email and access the admin dashboard.</p>",
             button_label: "Access Admin Dashboard",
             footnote: "If you didn't create an account, you can safely ignore this email.",
           };

@@ -132,7 +132,7 @@ const INVITE_COPY = {
   subject: "Payment confirmed — set up your Partner Portal account",
   headline: "You're all set — finish your account",
   message_html:
-    "<p>Your payment was received and your Global Mobility Adviser Partner listing has been created. Click below to set your password and access your dashboard.</p>",
+    "<p>Your payment was received and your ReloCentra Partner listing has been created. Click below to set your password and access your dashboard.</p>",
   button_label: "Set Your Password",
   footnote: "If you didn't sign up for the Partner Portal, you can safely ignore this email.",
 };
@@ -332,7 +332,7 @@ export async function POST(req: NextRequest) {
                 message_html: `<p><strong>${companyLabel}</strong> has purchased the Verified Badge and is awaiting your approval in the admin dashboard. Please review and set their listing to <em>active</em> when ready.</p>`,
                 button_label: "Review in Admin Dashboard",
                 button_url: `${adminOrigin}/admin`,
-                footnote: "This is an automated notification from the GMA Partner Portal.",
+                footnote: "This is an automated notification from the ReloCentra Partner Portal.",
               })
             )
           );

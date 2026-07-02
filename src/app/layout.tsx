@@ -6,7 +6,7 @@ import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "ReloCentra — Global Mobility Partner Directory",
-  description: "Find and connect with global mobility service providers on ReloCentra, powered by Global Mobility Adviser.",
+  description: "Find and connect with global mobility service providers on ReloCentra.",
   icons: { icon: "/relocentra-favicon.png" },
 };
 

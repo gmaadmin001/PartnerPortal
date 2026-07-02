@@ -316,7 +316,7 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h2 className="dsp" style={{ fontSize: 28, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>Payment confirmed!</h2>
-          <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>Your GMA Partner listing is being set up.</p>
+          <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>Your ReloCentra listing is being set up.</p>
           <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32, lineHeight: 1.5 }}>Check your inbox for an email with a link to set your password and access your dashboard.</p>
           <Link href="/">
             <span style={{ fontSize: 13, color: "#1C66AD", cursor: "pointer" }}>Return to main site →</span>
@@ -336,7 +336,7 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h2 className="dsp" style={{ fontSize: 28, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>You&apos;re listed!</h2>
-          <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>Your GMA Partner profile has been submitted successfully.</p>
+          <p style={{ fontSize: 14.5, color: "#6b7280", marginBottom: 8, lineHeight: 1.5 }}>Your ReloCentra profile has been submitted successfully.</p>
           <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32 }}>{successDetail}</p>
           <Link href="/dashboard">
             <button className="reg-btn reg-btn-primary" style={{ width: "100%", padding: "13px 26px" }}>Go to Dashboard →</button>
@@ -356,8 +356,7 @@ export default function RegisterPage() {
             <span className="dsp" style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>G</span>
           </div>
           <div style={{ minWidth: 0 }}>
-            <p className="dsp" style={{ color: "#fff", fontWeight: 800, fontSize: 12.5, lineHeight: 1.15 }}>Global Mobility</p>
-            <p className="dsp" style={{ color: "#fff", fontWeight: 800, fontSize: 12.5, lineHeight: 1.15 }}>Adviser</p>
+            <p className="dsp" style={{ color: "#fff", fontWeight: 800, fontSize: 12.5, lineHeight: 1.15 }}>ReloCentra</p>
             <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 9.5, marginTop: 2 }}>Partner Portal</p>
           </div>
         </div>
@@ -453,7 +452,7 @@ export default function RegisterPage() {
             <button className="reg-btn reg-btn-primary" onClick={() => next(1)}>Continue →</button>
 
             <div style={{ marginTop: 44, paddingTop: 40, borderTop: "1px solid #dde3ee" }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: 18 }}>Why join the GMA network?</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: 18 }}>Why join the ReloCentra network?</p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
                 {[{ n: "190+", l: "Partner listings", s: "across the network" }, { n: "50+", l: "Countries covered", s: "global service reach" }, { n: "Free", l: "to get started", s: "no credit card needed", c: "#059669" }].map(item => (
                   <div key={item.n} style={{ background: "#fff", border: "1px solid #dde3ee", borderRadius: 12, padding: "16px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>

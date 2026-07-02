@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
           </div>
           <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 26, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>Password set!</h2>
           <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 32, lineHeight: 1.6 }}>
-            Your password has been updated. You can now sign in to your GMA Partner Portal account.
+            Your password has been updated. You can now sign in to your ReloCentra account.
           </p>
           <button
             onClick={() => router.push("/login")}
@@ -129,7 +129,7 @@ export default function ResetPasswordPage() {
               <span style={{ color: "#fff", fontWeight: 800, fontSize: 16, fontFamily: "'Space Grotesk',sans-serif" }}>G</span>
             </div>
             <div>
-              <p style={{ color: "#fff", fontWeight: 800, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.2 }}>Global Mobility Adviser</p>
+              <p style={{ color: "#fff", fontWeight: 800, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.2 }}>ReloCentra</p>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 10 }}>Partner Portal</p>
             </div>
           </div>

@@ -1,7 +1,5 @@
 "use client";
 
-const GMA_SITE = "https://honeydew-capybara-608687.hostingersite.com";
-
 export default function Footer() {
   return (
     <footer className="site-footer">
@@ -10,15 +8,15 @@ export default function Footer() {
         <div className="footer-grid">
           {/* Brand + subscribe */}
           <div>
-            <a href={GMA_SITE} style={{ display: "inline-block", marginBottom: 18 }}>
+            <a href="/" style={{ display: "inline-block", marginBottom: 18 }}>
               <img
-                src="https://honeydew-capybara-608687.hostingersite.com/wp-content/uploads/2025/11/GMA-1.png"
-                alt="Global Mobility Adviser"
+                src="/relocentra-logo.png"
+                alt="ReloCentra"
                 style={{ height: 26, width: "auto", filter: "brightness(0) invert(1)" }}
               />
             </a>
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 24 }}>
-              At Global Mobility Adviser, we deliver results you can trust, led by Michael Ray — an expert in Talent Mobility, Relocation, and Remote Work strategies.
+              ReloCentra is the premier directory connecting businesses with trusted global mobility service providers worldwide.
             </p>
             <p className="footer-col-head" style={{ marginBottom: 10 }}>Stay updated</p>
             <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", gap: 8 }}>
@@ -57,11 +55,10 @@ export default function Footer() {
           {/* Site Map */}
           <div>
             <p className="footer-col-head">Site Map</p>
-            <a className="footer-link" href={`${GMA_SITE}/solutions/`}>Solutions</a>
-            <a className="footer-link" href={`${GMA_SITE}/global-mobility-courses/`}>Education</a>
-            <a className="footer-link" href={`${GMA_SITE}/about-us/`}>About Us</a>
-            <a className="footer-link" href={`${GMA_SITE}/resources/`}>Resources</a>
-            <a className="footer-link" href={`${GMA_SITE}/contact-us/`}>Contact Us</a>
+            <a className="footer-link" href="/services">Directory</a>
+            <a className="footer-link" href="/login">Sign In</a>
+            <a className="footer-link" href="/register">Join as Partner</a>
+            <a className="footer-link" href="/dashboard">Dashboard</a>
           </div>
 
           {/* Policies */}
@@ -74,11 +71,9 @@ export default function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>© 2025 Global Mobility Adviser. All rights reserved.</p>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>© 2025 ReloCentra. All rights reserved.</p>
           <a
-            href="https://www.linkedin.com/company/global-mobility-adviser"
-            target="_blank"
-            rel="noopener"
+            href="#"
             className="linkedin-btn"
             aria-label="LinkedIn"
           >

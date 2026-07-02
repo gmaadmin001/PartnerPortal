@@ -104,7 +104,7 @@ export default function LoginPage() {
             <span className="dsp" style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>G</span>
           </div>
           <div>
-            <p className="dsp" style={{ fontWeight: 700, fontSize: 13.5, color: "#111", lineHeight: 1.15 }}>Global Mobility Adviser</p>
+            <p className="dsp" style={{ fontWeight: 700, fontSize: 13.5, color: "#111", lineHeight: 1.15 }}>ReloCentra</p>
             <p style={{ fontSize: 10.5, color: "#9ca3af", lineHeight: 1.2 }}>Partner Portal</p>
           </div>
         </div>
@@ -260,7 +260,7 @@ export default function LoginPage() {
         )}
 
         <p style={{ textAlign: "center", fontSize: 11.5, color: "rgba(0,0,0,0.2)", marginTop: 24 }}>
-          Global Mobility Adviser · Partner Portal
+          ReloCentra · Partner Portal
         </p>
       </div>
     </main>
