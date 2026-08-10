@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   const { data: listing } = await service
     .from("service_registrations")
-    .select("company_name, primary_contact_email, primary_contact_name, status")
+    .select("company_name, primary_contact_email, primary_contact_name, status, slug")
     .eq("id", provider_id)
     .single();
 
@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: "Failed to activate listing." }, { status: 500 });
 
   const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
+  const listingUrl = listing.slug ? `${origin}/services/${listing.slug}` : `${origin}/services`;
   if (listing.primary_contact_email) {
     await sendEmail({
       to_email: listing.primary_contact_email as string,
@@ -40,9 +41,9 @@ export async function POST(req: NextRequest) {
       greeting: listing.primary_contact_name ? `Hi ${listing.primary_contact_name},` : "Hi there,",
       subject: "Your listing is now live",
       headline: "Your Listing Has Been Approved",
-      message_html: `<p>Great news — your listing for <strong>${listing.company_name}</strong> has been reviewed and is now live in the directory.</p><p>Sign in to your dashboard to update your profile, add photos, and manage your listing.</p>`,
-      button_label: "Go to Dashboard",
-      button_url: `${origin}/dashboard`,
+      message_html: `<p style="text-align:center;margin-bottom:20px;"><img src="https://globalmobilityadviser.com/wp-content/uploads/2025/11/GMA-1.png" alt="Global Mobility Adviser" style="max-width:180px;height:auto;" /></p><p>Great news — your listing for <strong>${listing.company_name}</strong> has been reviewed and is now live in the ReloCentra directory.</p><p>You can <a href="${listingUrl}" style="color:#1a3c5e;font-weight:bold;">view your live listing here</a>, or sign in to your dashboard to update your profile, add photos, and manage your listing.</p>`,
+      button_label: "View Your Listing",
+      button_url: listingUrl,
       footnote: "If you have any questions, please contact our support team.",
     });
   }
