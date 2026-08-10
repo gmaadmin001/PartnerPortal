@@ -220,7 +220,7 @@ export default function ServicesPage() {
     if (lt) params.set("listingType", lt);
     if (dv.length > 0) params.set("diversityFlags", dv.join("|"));
 
-    const res = await fetch(`/api/services?${params}`);
+    const res = await fetch(`/api/services?${params.toString().replace(/%26/g, '__amp__')}`);
     const json = await res.json();
     setProviders((json.data ?? []) as ServiceRegistration[]);
     setTotal(json.total ?? 0);

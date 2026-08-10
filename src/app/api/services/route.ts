@@ -29,25 +29,27 @@ const SELECTED_COLUMNS = [
   "created_at",
 ].join(", ");
 
+function da(s: string): string { return s.replace(/__amp__/g, "&"); }
+
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
 
-  const primaryService  = (sp.get("primaryService") ?? "").split("|").map((s) => s.trim()).filter(Boolean);
-  const subService      = (sp.get("subService")     ?? "").split("|").map((s) => s.trim()).filter(Boolean);
-  const subKeyword      = sp.get("subKeyword")       ?? "";
-  const country         = (sp.get("country")        ?? "").split("|").map((s) => s.trim()).filter(Boolean);
-  const state           = (sp.get("state")          ?? "").split("|").map((s) => s.trim()).filter(Boolean);
-  const city            = sp.get("city")             ?? "";
+  const primaryService  = da(sp.get("primaryService") ?? "").split("|").map((s) => s.trim()).filter(Boolean);
+  const subService      = da(sp.get("subService")     ?? "").split("|").map((s) => s.trim()).filter(Boolean);
+  const subKeyword      = da(sp.get("subKeyword")       ?? "");
+  const country         = da(sp.get("country")        ?? "").split("|").map((s) => s.trim()).filter(Boolean);
+  const state           = da(sp.get("state")          ?? "").split("|").map((s) => s.trim()).filter(Boolean);
+  const city            = da(sp.get("city")             ?? "");
   const zip             = sp.get("zip")              ?? "";
-  const industry        = sp.get("industry")         ?? "";
+  const industry        = da(sp.get("industry")         ?? "");
   const serviceScope    = sp.get("serviceScope")     ?? "";
   const companySize     = sp.get("companySize")      ?? "";
-  const companyName     = sp.get("companyName")      ?? "";
-  const keyword         = sp.get("keyword")          ?? "";
+  const companyName     = da(sp.get("companyName")      ?? "");
+  const keyword         = da(sp.get("keyword")          ?? "");
   const listingType     = sp.get("listingType")      ?? "";
-  const coreService     = sp.get("coreService")      ?? "";
+  const coreService     = da(sp.get("coreService")      ?? "");
   const deliveryModel   = sp.get("deliveryModel")    ?? "";
-  const diversityFlags  = (sp.get("diversityFlags") ?? "")
+  const diversityFlags  = da(sp.get("diversityFlags") ?? "")
     .split("|").map((s) => s.trim()).filter(Boolean);
 
   const page  = Math.max(1, parseInt(sp.get("page")  ?? "1"));
