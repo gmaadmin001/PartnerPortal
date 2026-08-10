@@ -507,7 +507,7 @@ export default function RegisterPage() {
                   <label className="reg-lbl">Delivery Model</label>
                   <select className="reg-inp" value={delivery} onChange={e => setDelivery(e.target.value)}>
                     <option value="">Select…</option>
-                    {["Direct","Aggregator","Mixed","Franchise","Unknown"].map(v => <option key={v}>{v}</option>)}
+                    {["Company provides service directly to customer","Company provides service using suppliers","Mixed"].map(v => <option key={v}>{v}</option>)}
                   </select>
                 </div>
                 <div>
