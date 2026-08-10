@@ -170,7 +170,7 @@ export default function RegisterPage() {
 
   function validate1() {
     const e: Record<string, string> = {};
-    if (!regType) e.type = "Please select Vendor or Realtor.";
+    if (!regType) e.type = "Please select a listing type.";
     if (!category) e.category = "Please select a category.";
     if (Object.keys(e).length) { setErrs(e); return false; }
     return true;
@@ -410,10 +410,20 @@ export default function RegisterPage() {
 
             <div className="type-grid">
               {[
-                { id: "Vendor", icon: "🏢", color: "linear-gradient(135deg,#1E2E61,#1C66AD)", desc: "Service provider in the relocation ecosystem — moving, immigration, housing, finance, and more." },
-                { id: "Realtor", icon: "🏡", color: "linear-gradient(135deg,#065f46,#059669)", desc: "Real estate agent or broker helping clients buy, sell, or rent a home in a new location." },
+                { id: "Vendor", label: "Mobility Service Provider", icon: "🏢", color: "linear-gradient(135deg,#1E2E61,#1C66AD)", desc: "Service provider in the relocation ecosystem — moving, immigration, housing, finance, and more." },
+                { id: "Realtor", label: "Realtor", icon: "🏡", color: "linear-gradient(135deg,#065f46,#059669)", desc: "Real estate agent or broker helping clients buy, sell, or rent a home in a new location." },
               ].map(t => (
-                <div key={t.id} className={`type-card${regType === t.id ? " selected" : ""}`} onClick={() => { setRegType(t.id); clearErr("type"); }}>
+                <div key={t.id} className={`type-card${regType === t.id ? " selected" : ""}`} onClick={() => {
+                  setRegType(t.id);
+                  clearErr("type");
+                  if (t.id === "Realtor") {
+                    setCategory("Real Estate Professionals (Realtors)");
+                    setSubCategory("Realtors Serving the Mobility Market");
+                  } else {
+                    setCategory("");
+                    setSubCategory("");
+                  }
+                }}>
                   <div className="type-card-top" style={{ background: t.color }}>
                     <div style={{ position: "absolute", width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.06)", top: -30, right: -20 }} />
                     <div style={{ position: "absolute", width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.05)", bottom: -10, left: 10 }} />
@@ -423,7 +433,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
                   <div className="type-card-body">
-                    <p className="type-card-title">{t.id}</p>
+                    <p className="type-card-title">{t.label}</p>
                     <p className="type-card-desc">{t.desc}</p>
                   </div>
                 </div>
@@ -431,23 +441,25 @@ export default function RegisterPage() {
             </div>
             {errs.type && <p style={{ fontSize: 11.5, color: "#dc2626", marginBottom: 20, marginTop: 8 }}>{errs.type}</p>}
 
-            <div className="reg-g2" style={{ marginBottom: 32 }}>
-              <div>
-                <label className="reg-lbl">Primary Category <span style={{ color: "#dc2626", fontWeight: 400, textTransform: "none" }}>*</span></label>
-                <select className="reg-inp" value={category} onChange={e => { setCategory(e.target.value); setSubCategory(""); clearErr("category"); }}>
-                  <option value="">Select category…</option>
-                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                </select>
-                {errs.category && <p style={{ fontSize: 11.5, color: "#dc2626", marginTop: 5 }}>{errs.category}</p>}
+            {regType !== "Realtor" && (
+              <div className="reg-g2" style={{ marginBottom: 32 }}>
+                <div>
+                  <label className="reg-lbl">Primary Category <span style={{ color: "#dc2626", fontWeight: 400, textTransform: "none" }}>*</span></label>
+                  <select className="reg-inp" value={category} onChange={e => { setCategory(e.target.value); setSubCategory(""); clearErr("category"); }}>
+                    <option value="">Select category…</option>
+                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                  {errs.category && <p style={{ fontSize: 11.5, color: "#dc2626", marginTop: 5 }}>{errs.category}</p>}
+                </div>
+                <div>
+                  <label className="reg-lbl">Sub-Category <span style={{ fontWeight: 400, color: "#9ca3af", textTransform: "none", fontSize: 11 }}>(optional)</span></label>
+                  <select className="reg-inp" value={subCategory} onChange={e => setSubCategory(e.target.value)} disabled={!category}>
+                    <option value="">{category ? "None / not applicable" : "Select a category first"}</option>
+                    {(SUBCATS[category] || []).map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="reg-lbl">Sub-Category <span style={{ fontWeight: 400, color: "#9ca3af", textTransform: "none", fontSize: 11 }}>(optional)</span></label>
-                <select className="reg-inp" value={subCategory} onChange={e => setSubCategory(e.target.value)} disabled={!category}>
-                  <option value="">{category ? "None / not applicable" : "Select a category first"}</option>
-                  {(SUBCATS[category] || []).map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
+            )}
 
             <button className="reg-btn reg-btn-primary" onClick={() => next(1)}>Continue →</button>
 
@@ -680,7 +692,7 @@ export default function RegisterPage() {
               </div>
               <div>
                 <p style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{companyName || "Your Company"}</p>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>{regType} · {category || "Uncategorized"} · {membershipPlan}</p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>{regType === "Vendor" ? "Mobility Service Provider" : regType} · {category || "Uncategorized"} · {membershipPlan}</p>
               </div>
             </div>
 
