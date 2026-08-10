@@ -7,6 +7,7 @@ import ProviderCard, { Provider } from "@/components/services/ProviderCard";
 
 export function filtersToParams(v: FilterValues): URLSearchParams {
   const p = new URLSearchParams();
+  if (v.keyword)                p.set("keyword",        v.keyword);
   if (v.primaryServices.length) p.set("primaryService", v.primaryServices.join("|"));
   if (v.subServices.length)     p.set("subService",     v.subServices.join("|"));
   if (v.countries.length)       p.set("country",        v.countries.join("|"));

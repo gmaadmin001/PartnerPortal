@@ -32,11 +32,11 @@ const SELECTED_COLUMNS = [
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
 
-  const primaryService  = (sp.get("primaryService") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const subService      = (sp.get("subService")     ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const primaryService  = (sp.get("primaryService") ?? "").split("|").map((s) => s.trim()).filter(Boolean);
+  const subService      = (sp.get("subService")     ?? "").split("|").map((s) => s.trim()).filter(Boolean);
   const subKeyword      = sp.get("subKeyword")       ?? "";
-  const country         = (sp.get("country")        ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const state           = (sp.get("state")          ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const country         = (sp.get("country")        ?? "").split("|").map((s) => s.trim()).filter(Boolean);
+  const state           = (sp.get("state")          ?? "").split("|").map((s) => s.trim()).filter(Boolean);
   const city            = sp.get("city")             ?? "";
   const zip             = sp.get("zip")              ?? "";
   const industry        = sp.get("industry")         ?? "";
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   const coreService     = sp.get("coreService")      ?? "";
   const deliveryModel   = sp.get("deliveryModel")    ?? "";
   const diversityFlags  = (sp.get("diversityFlags") ?? "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+    .split("|").map((s) => s.trim()).filter(Boolean);
 
   const page  = Math.max(1, parseInt(sp.get("page")  ?? "1"));
   const limit = Math.min(50, Math.max(1, parseInt(sp.get("limit") ?? "20")));
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
   if (serviceScope)   query = query.eq("service_scope", serviceScope);
   if (companySize)    query = query.eq("company_size", companySize);
   if (companyName)    query = query.ilike("company_name", `%${companyName}%`);
-  if (keyword)        query = query.or(`company_name.ilike.%${keyword}%,short_description.ilike.%${keyword}%`);
+  if (keyword)        query = query.or(`company_name.ilike.%${keyword}%,short_description.ilike.%${keyword}%,primary_category.ilike.%${keyword}%,sub_category.ilike.%${keyword}%,certifications.ilike.%${keyword}%`);
   if (listingType)    query = query.eq("register_as", listingType);
   if (coreService)    query = query.contains("core_services", [coreService]);
   if (deliveryModel)  query = query.eq("delivery_model", deliveryModel);

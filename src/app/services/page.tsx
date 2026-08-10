@@ -218,7 +218,7 @@ export default function ServicesPage() {
     if (dm) params.set("deliveryModel", dm);
     if (sz) params.set("companySize", sz);
     if (lt) params.set("listingType", lt);
-    if (dv.length > 0) params.set("diversityFlags", dv.join(","));
+    if (dv.length > 0) params.set("diversityFlags", dv.join("|"));
 
     const res = await fetch(`/api/services?${params}`);
     const json = await res.json();
@@ -287,7 +287,7 @@ export default function ServicesPage() {
             </svg>
             <input
               type="text"
-              placeholder="Search by company name or description…"
+              placeholder="Search by company, category, certifications…"
               value={keyword}
               onChange={e => setKeyword(e.target.value)}
               onKeyDown={e => e.key === "Enter" && doSearch()}
