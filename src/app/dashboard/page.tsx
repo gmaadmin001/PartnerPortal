@@ -317,6 +317,67 @@ export default function DashboardOverview() {
         </div>
       </div>
 
+      {/* Upgrade CTA */}
+      {planName !== "Premier" && (() => {
+        const isBasic = planName === "Basic";
+        const nextPlan = isBasic ? "Professional" : "Premier";
+        const price = isBasic ? "$25/mo" : "$50/mo";
+        const color = isBasic ? "#1C66AD" : "#1E2E61";
+        const features = isBasic
+          ? [
+              "Company logo & description on your listing",
+              "Contact details visible to directory visitors",
+              "Up to 3 service categories & areas",
+              "Self-service profile editing",
+              "Company bio section",
+            ]
+          : [
+              "Unlimited service categories & areas",
+              "Verified Badge — included at no extra cost",
+              "Star ratings & reviews from clients",
+              "Preferred search placement in the directory",
+              "Media photo gallery on your listing",
+            ];
+        return (
+          <div className="crd" style={{ borderTop: `3px solid ${color}`, marginBottom: 20, background: isBasic ? "linear-gradient(135deg,#f0f5ff,#fff)" : "linear-gradient(135deg,#f5f7ff,#fff)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <div className="crd-title-icon" style={{ background: isBasic ? "#eff6ff" : "#eff4ff" }}>
+                    <svg width="14" height="14" fill="none" stroke={color} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
+                  <p className="dsp" style={{ fontSize: 15, fontWeight: 800, color: "#0a1628" }}>Upgrade to {nextPlan}</p>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: "#fff", background: color, borderRadius: 20, padding: "3px 10px" }}>from {price}</span>
+                </div>
+                <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 14 }}>
+                  {isBasic
+                    ? "Unlock full profile editing and more visibility in the directory."
+                    : "Get maximum visibility and everything ReloCentra has to offer."}
+                </p>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 7 }}>
+                  {features.map(f => (
+                    <li key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151" }}>
+                      <span style={{ width: 18, height: 18, borderRadius: "50%", background: isBasic ? "#eff6ff" : "#eff4ff", border: `1.5px solid ${isBasic ? "#bfdbfe" : "#c7d2fe"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width="9" height="9" fill="none" stroke={color} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
+                      </span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", gap: 10, flexShrink: 0 }}>
+                <Link href="/dashboard/plans">
+                  <button style={{ padding: "11px 24px", background: `linear-gradient(135deg,${color},${isBasic ? "#1C66AD" : "#1C66AD"})`, color: "#fff", border: "none", borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: "pointer", boxShadow: `0 4px 14px ${isBasic ? "rgba(28,102,173,0.3)" : "rgba(30,46,97,0.3)"}`, whiteSpace: "nowrap" }}>
+                    Upgrade to {nextPlan} →
+                  </button>
+                </Link>
+                <p style={{ fontSize: 11, color: "#9ca3af", textAlign: "right" }}>No contracts · Cancel anytime</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Membership card */}
       <div className="crd" style={{ borderTop: "3px solid #1E2E61" }}>
         <div className="crd-title">
