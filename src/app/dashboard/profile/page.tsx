@@ -127,8 +127,23 @@ const TagIcon = <svg width="14" height="14" fill="none" stroke="#7c3aed" viewBox
 const GlobeIcon = <svg width="14" height="14" fill="none" stroke="#ea580c" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>;
 const PhotoIcon = <svg width="14" height="14" fill="none" stroke="#7c3aed" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>;
 
-const COMPANY_SIZES = ["1–10", "11–50", "51–200", "201–500", "500+"].map(v => ({ value: v, label: v }));
-const DELIVERY_MODELS = ["Remote", "On-site", "Hybrid", "Franchise"].map(v => ({ value: v.toLowerCase(), label: v }));
+const COMPANY_SIZES = ["1–50", "51–500", "500+"].map(v => ({ value: v, label: v }));
+const DELIVERY_MODELS = [
+  "Company provides service directly to customer",
+  "Company provides service using suppliers",
+  "Mixed",
+].map(v => ({ value: v, label: v }));
+
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.length === 10) return `+1 (${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  if (digits.length === 11 && digits[0] === "1") return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+  const cc = digits.slice(0, Math.min(3, digits.length));
+  const rest = digits.slice(cc.length);
+  if (!rest) return `+${cc}`;
+  return `+${cc} ${(rest.match(/.{1,4}/g) || []).join(" ")}`;
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -424,7 +439,8 @@ export default function ProfilePage() {
             </div>
             <div>
               <Lbl>Contact Phone</Lbl>
-              <Inp value={form.primary_contact_phone} onChange={v => setField("primary_contact_phone", v)} placeholder="+1 555 000 0000" />
+              <Inp value={form.primary_contact_phone} onChange={v => setField("primary_contact_phone", formatPhone(v))} placeholder="+1 202 555 0000" />
+              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Include country code (e.g. +1 202 555 0000)</p>
             </div>
           </Section>
 
