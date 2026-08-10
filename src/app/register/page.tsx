@@ -180,8 +180,34 @@ export default function RegisterPage() {
     if (!companyName.trim()) e.companyName = "Company name is required.";
     if (!contactName.trim()) e.contactName = "Contact name required.";
     if (!contactEmail.trim() || !/\S+@\S+\.\S+/.test(contactEmail)) e.contactEmail = "Valid email required.";
+    if (contactPhone.trim() && contactPhone.replace(/\D/g, "").length < 7) {
+      e.contactPhone = "Please enter a valid phone number.";
+    }
     if (Object.keys(e).length) { setErrs(e); return false; }
     return true;
+  }
+
+  function formatPhone(raw: string): string {
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) return "";
+    // 10 digits → assume US, no country code supplied
+    if (digits.length === 10) {
+      return `+1 (${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+    }
+    // 11 digits starting with 1 → US with country code
+    if (digits.length === 11 && digits[0] === "1") {
+      return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+    }
+    // International: first up to 3 digits = country code, rest grouped in 4s
+    const cc = digits.slice(0, Math.min(3, digits.length));
+    const rest = digits.slice(cc.length);
+    if (!rest) return `+${cc}`;
+    return `+${cc} ${(rest.match(/.{1,4}/g) || []).join(" ")}`;
+  }
+
+  function handlePhoneChange(val: string) {
+    setContactPhone(formatPhone(val));
+    clearErr("contactPhone");
   }
   function validate3() {
     if (!plan) { setErrs({ plan: "Please select a plan." }); return false; }
@@ -579,7 +605,9 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <label className="reg-lbl">Phone</label>
-                  <input className="reg-inp" type="tel" placeholder="+1 (555) 000-0000" value={contactPhone} onChange={e => setContactPhone(e.target.value)} />
+                  <input className="reg-inp" type="tel" placeholder="+1 202 555 0000" value={contactPhone} onChange={e => handlePhoneChange(e.target.value)} />
+                  <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Include country code (e.g. +1 202 555 0000)</p>
+                  {errs.contactPhone && <p style={{ fontSize: 11.5, color: "#dc2626", marginTop: 5 }}>{errs.contactPhone}</p>}
                 </div>
               </div>
             </div>
