@@ -140,7 +140,7 @@ export default function DashboardOverview() {
                 </a>
               )}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12, flexShrink: 0 }}>
+            <div className="dash-banner-right">
               <div className="banner-company-initial">{initial}</div>
               <div style={{ textAlign: "right" }}>
                 <p className="dsp" style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1 }}>{planName} Plan</p>
