@@ -221,6 +221,10 @@ body {
 
 /* ── Grid ── */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+/* ── Confirm modal ── */
+.confirm-modal-overlay { position: fixed; inset: 0; background: rgba(10,22,40,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.confirm-modal { background: #fff; border-radius: 18px; padding: 32px 36px; max-width: 480px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+
 /* ── Dashboard mobile nav ── */
 .dash-mobile-nav { display: none; }
 .dash-mobile-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 12px; color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 600; text-decoration: none; background: none; border: none; cursor: pointer; transition: color 0.15s; line-height: 1; }
@@ -452,4 +456,6 @@ textarea.reg-inp { resize: vertical; min-height: 78px; line-height: 1.5; }
 
 @media (max-width: 540px) {
   .footer-grid { grid-template-columns: 1fr; }
+  .confirm-modal-overlay { padding: 12px; }
+  .confirm-modal { padding: 20px 16px; border-radius: 12px; }
 }

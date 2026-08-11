@@ -289,10 +289,10 @@ export default function PlansPage() {
       {/* Downgrade confirmation modal */}
       {downgradeTarget && (
         <div
-          style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+          className="confirm-modal-overlay"
           onClick={e => { if (e.target === e.currentTarget) setDowngradeTarget(null); }}
         >
-          <div style={{ background: "#fff", borderRadius: 18, padding: "32px 36px", maxWidth: 480, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,0.3)" }}>
+          <div className="confirm-modal">
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
               <div>
                 <p style={{ fontSize: 10.5, fontWeight: 700, color: "#ef4444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Confirm Downgrade</p>
