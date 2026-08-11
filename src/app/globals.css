@@ -221,6 +221,13 @@ body {
 
 /* ── Grid ── */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+/* ── Services search button ── */
+.services-search-btn { padding: 9px 24px; background: linear-gradient(135deg,#fff 0%,#e8edff 100%); color: #1E2E61; border-radius: 10px; border: none; font-size: 13.5px; font-weight: 800; cursor: pointer; flex-shrink: 0; }
+
+/* ── Provider hero row ── */
+.provider-hero-row { display: flex; align-items: flex-start; gap: 28px; flex-wrap: wrap; }
+.provider-hero-actions { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+
 /* ── Confirm modal ── */
 .confirm-modal-overlay { position: fixed; inset: 0; background: rgba(10,22,40,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .confirm-modal { background: #fff; border-radius: 18px; padding: 32px 36px; max-width: 480px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
@@ -444,8 +451,11 @@ textarea.reg-inp { resize: vertical; min-height: 78px; line-height: 1.5; }
   .services-search-grid { grid-template-columns: 1fr; }
   .services-filter-panel { position: static; }
   .provider-hero-inner { padding: 24px 16px 28px; }
+  .provider-hero-row { gap: 16px; }
+  .provider-hero-actions { flex-direction: row; flex-wrap: wrap; width: 100%; order: 10; }
   .provider-body { flex-direction: column; padding: 20px 16px 40px; }
   .provider-sidebar { width: 100%; position: static; }
+  .services-search-btn { padding: 9px 14px; font-size: 13px; }
   .nav-auth-area { display: none; }
   .nav-link-item { text-align: center; display: block; }
   .nav-mobile-auth { display: block; border-top: 2px solid #f3f4f6; margin-top: 4px; padding-top: 4px; }

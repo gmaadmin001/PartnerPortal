@@ -142,7 +142,7 @@ export default async function ProviderProfilePage({
             Back to results
           </Link>
 
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 28, flexWrap: "wrap" }}>
+          <div className="provider-hero-row">
             {/* Logo / Avatar */}
             {isPro && provider.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -206,7 +206,7 @@ export default async function ProviderProfilePage({
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, flexShrink: 0 }}>
+            <div className="provider-hero-actions">
               {provider.website_url && (
                 <a
                   href={provider.website_url}

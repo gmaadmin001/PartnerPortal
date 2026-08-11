@@ -295,7 +295,7 @@ export default function ServicesPage() {
             />
             <button
               onClick={() => doSearch()}
-              style={{ padding: "9px 24px", background: "linear-gradient(135deg,#fff 0%,#e8edff 100%)", color: "#1E2E61", borderRadius: 10, border: "none", fontSize: 13.5, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}
+              className="services-search-btn"
             >
               Search
             </button>
