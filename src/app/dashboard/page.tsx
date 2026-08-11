@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useDashboard } from "./layout";
-import { cap, fmtDate } from "@/lib/utils";
+import { cap, fmtDate, displayRegisterAs } from "@/lib/utils";
 import type { ServiceRegistration } from "@/types";
 
 const MAIN_APP = process.env.NEXT_PUBLIC_MAIN_APP_URL || "";
@@ -96,7 +96,7 @@ export default function DashboardOverview() {
   const billing = reg.membership_billing;
   const statusCls = reg.status === "active" ? "badge-green" : reg.status === "pending" ? "badge-amber" : "badge-gray";
   const statusLabel = cap(reg.status || "pending");
-  const registerAs = cap(reg.register_as) || "Vendor";
+  const registerAs = displayRegisterAs(reg.register_as) || "Mobility Service Provider";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const initial = (reg.company_name ?? "?")[0].toUpperCase();

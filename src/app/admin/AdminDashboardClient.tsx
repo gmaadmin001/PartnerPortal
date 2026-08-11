@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { displayRegisterAs } from "@/lib/utils";
 import AdminShell from "@/components/admin/AdminShell";
 import type { AdminUser } from "@/lib/admin-auth";
 
@@ -59,7 +60,8 @@ const PRIMARY_CATEGORIES = [
 ];
 
 const TYPE_COLOR: Record<string, string> = {
-  supplier: "#1C66AD", realtor: "#7c3aed", consultant: "#16a34a", broker: "#d97706",
+  "Mobility Service Provider": "#1C66AD", Vendor: "#1C66AD", supplier: "#1C66AD",
+  realtor: "#7c3aed", consultant: "#16a34a", broker: "#d97706",
 };
 const PLAN_COLOR: Record<string, string> = {
   Basic: "#6b7280", Professional: "#0891b2", Premier: "#7c3aed",
@@ -290,7 +292,7 @@ export default function AdminDashboardClient({ admin, registrations, stats }: Pr
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: "14px 16px" }}><Badge value={r.register_as} colorMap={TYPE_COLOR} /></td>
+                  <td style={{ padding: "14px 16px" }}><Badge value={displayRegisterAs(r.register_as)} colorMap={TYPE_COLOR} /></td>
                   <td style={{ padding: "14px 16px" }}><Badge value={r.membership_plan} colorMap={PLAN_COLOR} /></td>
                   <td style={{ padding: "14px 16px", textAlign: "center" as const }}>
                     {r.is_verified

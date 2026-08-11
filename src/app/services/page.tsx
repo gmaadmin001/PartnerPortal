@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { cap } from "@/lib/utils";
+import { cap, displayRegisterAs } from "@/lib/utils";
 import type { ServiceRegistration } from "@/types";
 
 const MAIN_APP = process.env.NEXT_PUBLIC_MAIN_APP_URL || "";
@@ -115,7 +115,7 @@ function ProviderCard({ r }: { r: ServiceRegistration }) {
             )}
             {r.register_as && (
               <span style={{ fontSize: 10.5, fontWeight: 600, color: "#7c3aed", background: "#f5f3ff", border: "1px solid #ddd6fe", borderRadius: 20, padding: "2px 8px", textTransform: "capitalize" }}>
-                {r.register_as}
+                {displayRegisterAs(r.register_as)}
               </span>
             )}
           </div>

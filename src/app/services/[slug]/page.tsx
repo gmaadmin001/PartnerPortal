@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { displayRegisterAs } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import PhotoCarousel from "@/components/services/PhotoCarousel";
@@ -190,7 +191,7 @@ export default async function ProviderProfilePage({
                 )}
                 {provider.register_as && (
                   <span style={{ display: "flex", alignItems: "center", gap: 5, color: "rgba(255,255,255,0.5)", fontSize: 12.5, textTransform: "capitalize" }}>
-                    · {provider.register_as}
+                    · {displayRegisterAs(provider.register_as)}
                   </span>
                 )}
               </div>
@@ -264,7 +265,7 @@ export default async function ProviderProfilePage({
                 {provider.register_as && (
                   <div>
                     <p style={{ fontSize: 10.5, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Type</p>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "#0a1628", textTransform: "capitalize" }}>{provider.register_as}</p>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "#0a1628" }}>{displayRegisterAs(provider.register_as)}</p>
                   </div>
                 )}
                 {provider.delivery_model && (
@@ -376,7 +377,7 @@ export default async function ProviderProfilePage({
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
                 { label: "Plan", value: provider.membership_plan ?? "Basic" },
-                { label: "Type", value: provider.register_as, cap: true },
+                { label: "Type", value: displayRegisterAs(provider.register_as) },
                 { label: "Delivery", value: provider.delivery_model, cap: true },
                 { label: "Size", value: provider.company_size },
               ].filter(r => r.value).map(r => (

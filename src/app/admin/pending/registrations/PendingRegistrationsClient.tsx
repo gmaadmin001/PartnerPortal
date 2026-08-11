@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { displayRegisterAs } from "@/lib/utils";
 import AdminShell from "@/components/admin/AdminShell";
 import type { AdminUser } from "@/lib/admin-auth";
 
@@ -109,7 +110,7 @@ export default function PendingRegistrationsClient({ admin, listings: initial, c
                     <h2 style={{ fontSize: 17, fontWeight: 800, color: "#0a1628", margin: 0 }}>{r.company_name ?? "—"}</h2>
                     {r.register_as && (
                       <span style={{ fontSize: 11, fontWeight: 700, background: "#e0e7ff", color: "#3730a3", borderRadius: 20, padding: "3px 10px", textTransform: "capitalize" }}>
-                        {r.register_as}
+                        {displayRegisterAs(r.register_as)}
                       </span>
                     )}
                     {r.membership_plan && (

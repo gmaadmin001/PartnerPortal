@@ -3,6 +3,12 @@ export function cap(s: string | null | undefined): string {
   return s.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 }
 
+export function displayRegisterAs(s: string | null | undefined): string {
+  if (!s) return "";
+  if (s === "Vendor") return "Mobility Service Provider";
+  return cap(s);
+}
+
 export function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
