@@ -7,7 +7,7 @@ const EDITABLE_FIELDS = new Set([
   "primary_category", "sub_category", "delivery_model", "company_size",
   "headquarters_country", "headquarters_city", "primary_contact_name",
   "primary_contact_email", "primary_contact_phone", "short_description",
-  "website_url",
+  "website_url", "certifications",
 ]);
 
 export async function POST(req: NextRequest) {

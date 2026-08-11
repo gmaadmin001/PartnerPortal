@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useDashboard } from "../layout";
 import { cap } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { CATEGORIES, SUBCATS } from "@/data/categories";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -447,8 +448,20 @@ export default function ProfilePage() {
           {/* Service Classification */}
           <Section title="Service Classification" color="#7c3aed" bg="#f5f3ff" icon={TagIcon}>
             <div className="reg-g2" style={{ marginBottom: 16 }}>
-              <div><Lbl>Primary Category</Lbl><Inp value={form.primary_category} onChange={v => setField("primary_category", v)} placeholder="e.g. Relocation Services" /></div>
-              <div><Lbl>Sub-Category</Lbl><Inp value={form.sub_category} onChange={v => setField("sub_category", v)} placeholder="e.g. Corporate Relocation" /></div>
+              <div>
+                <Lbl>Primary Category</Lbl>
+                <select value={form.primary_category} onChange={e => { setField("primary_category", e.target.value); setField("sub_category", ""); }} className="reg-inp">
+                  <option value="">— Select —</option>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <Lbl>Sub-Category</Lbl>
+                <select value={form.sub_category} onChange={e => setField("sub_category", e.target.value)} className="reg-inp" disabled={!form.primary_category}>
+                  <option value="">{form.primary_category ? "None / not applicable" : "Select a category first"}</option>
+                  {(SUBCATS[form.primary_category] ?? []).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
             </div>
             <div>
               <Lbl>Core Services <span style={{ fontWeight: 500, color: "#9ca3af", textTransform: "none", letterSpacing: 0 }}>— displayed on Premier listings</span></Lbl>
