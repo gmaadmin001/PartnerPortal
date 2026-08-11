@@ -424,7 +424,7 @@ export default function PlansPage() {
       </div>
 
       {/* Plan cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22 }}>
+      <div className="plan-grid">
         {PLANS.map(p => {
           const isSamePlan = p.id === currentPlanName;
           const targetRank = PLAN_RANK[p.id] ?? 0;
