@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   title: "ReloCentra — Global Mobility Partner Directory",
   description: "Find and connect with global mobility service providers on ReloCentra.",
   icons: { icon: "/relocentra-favicon.png" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({

@@ -201,7 +201,7 @@ function UpgradeBanner({ plan, onUpgrade }: { plan: string; onUpgrade: () => voi
   const cta = isPro ? "Upgrade to Premier →" : "View Plans →";
 
   return (
-    <div className={`border-b ${bg} px-8 py-3.5 flex items-center gap-4 flex-wrap`}>
+    <div className={`border-b ${bg} px-4 md:px-8 py-3.5 flex items-center gap-4 flex-wrap`}>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-bold ${text}`}>{headline}</p>
         <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -1745,10 +1745,11 @@ export default function DashboardClient({
   const activeLabel = NAV_ITEMS.find((n) => n.id === active)?.label ?? "Dashboard";
 
   return (
+    <>
     <div className="flex min-h-[calc(100vh-100px)]">
 
       {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
-      <aside className="w-56 shrink-0 bg-gma-navy sticky top-25 h-[calc(100vh-100px)] overflow-y-auto flex flex-col">
+      <aside className="hidden md:flex w-56 shrink-0 bg-gma-navy sticky top-25 h-[calc(100vh-100px)] overflow-y-auto flex-col">
 
         {/* Company identity */}
         <div className="px-5 py-5 border-b border-white/10">
@@ -1816,7 +1817,7 @@ export default function DashboardClient({
       <div className="flex-1 min-w-0 flex flex-col">
 
         {/* Page header */}
-        <div className="bg-white border-b border-gray-100 px-8 py-4 flex items-center gap-4">
+        <div className="bg-white border-b border-gray-100 px-4 py-3 md:px-8 md:py-4 flex items-center gap-4">
           <div className="w-9 h-9 rounded-full bg-gma-navy flex items-center justify-center shrink-0">
             <span className="text-white font-bold font-display text-sm">{initials}</span>
           </div>
@@ -1830,7 +1831,7 @@ export default function DashboardClient({
         <UpgradeBanner plan={reg?.membership_plan ?? "Basic"} onUpgrade={() => setActive("plans")} />
 
         {/* Panel */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
           {active === "overview"  && <OverviewPanel reg={reg} setActive={setActive} />}
           {active === "profile"   && <ProfilePanel reg={reg} setActive={setActive} />}
           {active === "listing"   && <ListingPanel reg={reg} setActive={setActive} />}
@@ -1845,5 +1846,25 @@ export default function DashboardClient({
         </div>
       </div>
     </div>
+
+    {/* ── Mobile bottom tab bar ── */}
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gma-navy flex z-50 border-t border-white/10">
+      {NAV_ITEMS.map(({ id, Icon }) => {
+        const shorts: Partial<Record<Panel, string>> = {
+          overview: "Home", profile: "Profile", listing: "Listing", plans: "Plans", settings: "More",
+        };
+        return (
+          <button
+            key={id}
+            onClick={() => setActive(id)}
+            className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${active === id ? "text-white" : "text-white/40"}`}
+          >
+            <span className="w-5 h-5"><Icon /></span>
+            <span className="text-[10px] font-semibold">{shorts[id] ?? id}</span>
+          </button>
+        );
+      })}
+    </nav>
+    </>
   );
 }

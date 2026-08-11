@@ -304,10 +304,10 @@ export default function ServicesPage() {
       </div>
 
       {/* Body */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "36px 24px", display: "grid", gridTemplateColumns: "280px 1fr", gap: 28, alignItems: "start" }}>
+      <div className="services-search-grid">
 
         {/* ── Filter sidebar ── */}
-        <aside style={{ background: "#fff", borderRadius: 16, padding: 22, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", position: "sticky", top: 24, border: "1px solid #dde3ee" }}>
+        <aside className="services-filter-panel" style={{ background: "#fff", borderRadius: 16, padding: 22, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", border: "1px solid #dde3ee" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #f3f4f6" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 28, height: 28, borderRadius: 8, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center" }}>

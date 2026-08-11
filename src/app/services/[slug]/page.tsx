@@ -135,7 +135,7 @@ export default async function ProviderProfilePage({
         <div style={{ position: "absolute", top: "-40%", right: "-5%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle,rgba(67,180,227,0.12) 0%,transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: "-30%", left: "10%", width: 360, height: 360, borderRadius: "50%", background: "radial-gradient(circle,rgba(28,102,173,0.18) 0%,transparent 70%)", pointerEvents: "none" }} />
 
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 40px 44px", position: "relative" }}>
+        <div className="provider-hero-inner">
           {/* Back link */}
           <Link href="/services" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", textDecoration: "none", marginBottom: 28, transition: "color 0.15s" }}>
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -230,7 +230,7 @@ export default async function ProviderProfilePage({
       </div>
 
       {/* ── Body ────────────────────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "36px 40px 60px", display: "flex", gap: 28, alignItems: "flex-start" }}>
+      <div className="provider-body">
 
         {/* ── Main column ─────────────────────────────────────────────────── */}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
@@ -269,7 +269,7 @@ export default async function ProviderProfilePage({
           {/* Service Details */}
           {(provider.register_as || provider.delivery_model || provider.company_size) && (
             <SCard icon={<InfoIcon />} label="Service Details" color="#7c3aed" iconBg="#f5f3ff">
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 20 }}>
                 {provider.register_as && (
                   <div>
                     <p style={{ fontSize: 10.5, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Type</p>
@@ -347,7 +347,7 @@ export default async function ProviderProfilePage({
         </div>
 
         {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-        <aside style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 112, alignSelf: "flex-start" }}>
+        <aside className="provider-sidebar">
 
           {/* Contact Details — always show for Pro+; for Basic show only to owner */}
           {(isPro || isOwner) && <SCard icon={<PhoneIcon />} label="Contact Details" color="#1C66AD" iconBg="#eff6ff">
