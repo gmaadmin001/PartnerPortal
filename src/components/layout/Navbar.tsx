@@ -79,9 +79,9 @@ export default function Navbar() {
             <img
               src="/relocentra-logo.png"
               alt="ReloCentra"
-              style={{ height: 42, width: "auto" }}
+              className="nav-logo-img"
             />
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3 }}>
+            <div className="nav-logo-powered">
               <span style={{ fontSize: 9, color: "#9ca3af", fontWeight: 500, letterSpacing: "0.03em", lineHeight: 1 }}>Powered by</span>
               <img
                 src="https://globalmobilityadviser.com/wp-content/uploads/2025/11/GMA-1.png"
@@ -98,6 +98,24 @@ export default function Navbar() {
                   {l.label}
                 </a>
               ))}
+              {/* Mobile-only auth links — hidden on desktop, shown in hamburger */}
+              <div className="nav-mobile-auth">
+                {authReady && !user && (
+                  <Link href="/login" className="nav-link-item" onClick={() => setMobileNavOpen(false)}>
+                    SIGN IN
+                  </Link>
+                )}
+                {authReady && user && (
+                  <>
+                    <Link href="/dashboard" className="nav-link-item" onClick={() => setMobileNavOpen(false)}>
+                      DASHBOARD
+                    </Link>
+                    <button className="nav-mobile-signout" onClick={() => { setMobileNavOpen(false); handleSignOut(); }}>
+                      SIGN OUT
+                    </button>
+                  </>
+                )}
+              </div>
             </nav>
 
             <button className="hamburger-btn" onClick={() => setMobileNavOpen(o => !o)} aria-label="Toggle navigation">
@@ -107,15 +125,8 @@ export default function Navbar() {
               }
             </button>
 
-            {/* Auth area */}
-            <div
-              style={{
-                minWidth: 150,
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "center",
-              }}
-            >
+            {/* Auth area — hidden on mobile via .nav-auth-area CSS rule */}
+            <div className="nav-auth-area">
               {!authReady ? (
                 <div className="nav-auth-skel" />
               ) : !user ? (

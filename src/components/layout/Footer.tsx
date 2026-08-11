@@ -47,7 +47,7 @@ export default function Footer() {
               </div>
               <div>
                 <p style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 3 }}>Email</p>
-                <p style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>contactus@globalmobilityadviser.com</p>
+                <p style={{ fontSize: 13, color: "#fff", fontWeight: 500, wordBreak: "break-all" }}>contactus@globalmobilityadviser.com</p>
               </div>
             </a>
           </div>

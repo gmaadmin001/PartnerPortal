@@ -221,10 +221,34 @@ body {
 
 /* ── Grid ── */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+/* ── Dashboard mobile nav ── */
+.dash-mobile-nav { display: none; }
+.dash-mobile-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 12px; color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 600; text-decoration: none; background: none; border: none; cursor: pointer; transition: color 0.15s; line-height: 1; }
+.dash-mobile-tab.active { color: #43B4E3; }
+.dash-mobile-tab svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* ── Dashboard grids ── */
+.dash-stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+.dash-mem-grid { display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid #f3f4f6; border-radius: 10px; overflow: hidden; }
+.dash-banner-inner { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.dash-banner-company { font-size: 27px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 12px; }
+
+/* ── Navbar mobile extras ── */
+.nav-auth-area { display: flex; min-width: 150px; justify-content: flex-end; align-items: center; }
+.nav-mobile-auth { display: none; }
+.nav-logo-img { height: 42px; width: auto; }
+.nav-logo-powered { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+
 @media (max-width: 900px) {
   .grid-2 { grid-template-columns: 1fr; }
   .sidebar { display: none; }
-  .dash-content { padding: 20px; }
+  .dash-content { padding: 16px 16px 80px; }
+  .dash-mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: #12213d; border-top: 1px solid rgba(255,255,255,0.08); z-index: 200; }
+  .dash-stats-grid { grid-template-columns: repeat(2,1fr); gap: 12px; }
+  .dash-mem-grid { grid-template-columns: 1fr; }
+  .welcome-banner { padding: 18px 20px; }
+  .dash-banner-inner { flex-direction: column; gap: 10px; }
+  .dash-banner-company { font-size: 20px; }
 }
 
 /* ── Footer ── */
@@ -415,4 +439,10 @@ textarea.reg-inp { resize: vertical; min-height: 78px; line-height: 1.5; }
   .provider-hero-inner { padding: 24px 16px 28px; }
   .provider-body { flex-direction: column; padding: 20px 16px 40px; }
   .provider-sidebar { width: 100%; position: static; }
+  .nav-auth-area { display: none; }
+  .nav-link-item { text-align: center; }
+  .nav-mobile-auth { display: block; border-top: 2px solid #f3f4f6; margin-top: 4px; padding-top: 4px; }
+  .nav-logo-img { height: 28px; }
+  .nav-logo-powered { display: none; }
+  .nav-mobile-signout { width: 100%; background: none; border: none; cursor: pointer; color: #dc2626; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; padding: 14px 24px; border-bottom: 1px solid #f3f4f6; display: block; }
 }

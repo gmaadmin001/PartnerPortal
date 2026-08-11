@@ -110,14 +110,14 @@ export default function DashboardOverview() {
         <div className="banner-circle1" />
         <div className="banner-circle2" />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div className="dash-banner-inner">
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                 <p style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Partner Account</p>
                 <span className="banner-tag">{statusLabel}</span>
               </div>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 4, fontWeight: 500 }}>{greeting}.</p>
-              <h1 className="dsp" style={{ fontSize: 27, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 12 }}>
+              <h1 className="dsp dash-banner-company">
                 {reg.company_name || "Your Company"}
               </h1>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -159,7 +159,7 @@ export default function DashboardOverview() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
+      <div className="dash-stats-grid">
         <div className="stat-card navy">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <p className="stat-label">Plan Tier</p>
@@ -394,7 +394,7 @@ export default function DashboardOverview() {
             { label: "Status", val: <span className={`badge ${statusCls}`}><span className="badge-dot" />{statusLabel}</span> },
           ];
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", border: "1px solid #f3f4f6", borderRadius: 10, overflow: "hidden" }}>
+            <div className="dash-mem-grid">
               {mstats.map((s, i) => (
                 <div key={s.label} style={{ padding: "18px 22px", borderRight: i < mstats.length - 1 ? "1px solid #f3f4f6" : undefined }}>
                   <p style={{ fontSize: 10.5, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>{s.label}</p>
