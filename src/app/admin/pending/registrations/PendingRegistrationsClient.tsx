@@ -36,6 +36,7 @@ export default function PendingRegistrationsClient({ admin, listings: initial, c
   const [listings, setListings] = useState(initial);
   const [loading, setLoading] = useState<Record<string, "activating" | "rejecting">>({});
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [rejectModal, setRejectModal] = useState<{ id: string; reason: string } | null>(null);
 
   function showToast(msg: string, type: "success" | "error") {
     setToast({ msg, type });
@@ -64,14 +65,14 @@ export default function PendingRegistrationsClient({ admin, listings: initial, c
     setLoading(l => { const n = { ...l }; delete n[id]; return n; });
   }
 
-  async function reject(id: string) {
-    if (!confirm("Reject and delete this registration? This will also remove the user account.")) return;
+  async function reject(id: string, reason: string) {
+    setRejectModal(null);
     setLoading(l => ({ ...l, [id]: "rejecting" }));
     try {
       const res = await fetch("/api/admin/reject-registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider_id: id }),
+        body: JSON.stringify({ provider_id: id, reason: reason.trim() || undefined }),
       });
       if (res.ok) {
         setListings(l => l.filter(r => r.id !== id));
@@ -142,7 +143,7 @@ export default function PendingRegistrationsClient({ admin, listings: initial, c
                 </div>
 
                 <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                  <button onClick={() => reject(r.id)} disabled={!!loading[r.id]}
+                  <button onClick={() => setRejectModal({ id: r.id, reason: "" })} disabled={!!loading[r.id]}
                     style={{ padding: "10px 20px", background: "#fff", border: "1.5px solid #fca5a5", borderRadius: 10, fontSize: 13, fontWeight: 700, color: "#dc2626", cursor: loading[r.id] ? "not-allowed" : "pointer", opacity: loading[r.id] ? 0.6 : 1 }}>
                     {loading[r.id] === "rejecting" ? "Rejecting…" : "Reject"}
                   </button>
@@ -154,6 +155,34 @@ export default function PendingRegistrationsClient({ admin, listings: initial, c
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {rejectModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: "32px 28px", width: "100%", maxWidth: 480, boxShadow: "0 16px 48px rgba(0,0,0,0.2)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0a1628", margin: "0 0 8px" }}>Reject Registration</h2>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px", lineHeight: 1.5 }}>
+              This will permanently delete the listing and remove the user account. Optionally include a reason — it will be included in the rejection email sent to the applicant.
+            </p>
+            <textarea
+              value={rejectModal.reason}
+              onChange={e => setRejectModal(m => m ? { ...m, reason: e.target.value } : m)}
+              placeholder="Reason for rejection (optional)"
+              rows={4}
+              style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1.5px solid #e8edf5", borderRadius: 10, fontSize: 13, color: "#0a1628", resize: "vertical", outline: "none", fontFamily: "inherit" }}
+            />
+            <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+              <button onClick={() => setRejectModal(null)}
+                style={{ padding: "10px 20px", background: "#fff", border: "1.5px solid #e8edf5", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+                Cancel
+              </button>
+              <button onClick={() => reject(rejectModal.id, rejectModal.reason)}
+                style={{ padding: "10px 20px", background: "#dc2626", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

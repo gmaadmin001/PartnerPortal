@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const { data: admin } = await service.from("admins").select("role").eq("email", user.email).maybeSingle();
   if (!admin) return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
 
-  const { provider_id } = await req.json();
+  const { provider_id, reason } = await req.json();
   if (!provider_id) return NextResponse.json({ error: "Missing provider_id." }, { status: 400 });
 
   const { data: listing } = await service
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       greeting: listing.primary_contact_name ? `Hi ${listing.primary_contact_name},` : "Hi there,",
       subject: "Update on your listing submission",
       headline: "Listing Could Not Be Approved",
-      message_html: `<p>Thank you for submitting your listing for <strong>${listing.company_name}</strong>. After review, we were unable to approve it at this time.</p><p>If you believe this is an error or would like more information, please contact us and we'll be happy to assist.</p>`,
+      message_html: `<p>Thank you for submitting your listing for <strong>${listing.company_name}</strong>. After review, we were unable to approve it at this time.</p>${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}<p>If you believe this is an error or would like more information, please contact us and we'll be happy to assist.</p>`,
       button_label: "Contact Support",
       button_url: `${origin}/services`,
       footnote: "If you didn't submit this listing, no action is needed.",
