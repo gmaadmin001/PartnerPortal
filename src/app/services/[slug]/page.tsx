@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { displayRegisterAs } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
@@ -66,7 +66,15 @@ export default async function ProviderProfilePage({
     .eq("slug", slug)
     .single();
 
-  if (error || !provider) notFound();
+  if (error || !provider) {
+    const { data: moved } = await supabase
+      .from("service_registrations")
+      .select("slug")
+      .eq("premium_slug", slug)
+      .maybeSingle();
+    if (moved?.slug) redirect(`/services/${moved.slug}`);
+    notFound();
+  }
 
   const { data: { user } } = await supabase.auth.getUser();
   const isOwner = user?.id === provider.user_id;

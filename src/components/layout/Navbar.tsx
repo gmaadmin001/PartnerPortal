@@ -23,6 +23,7 @@ export default function Navbar() {
   const [listingSlug, setListingSlug] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [ddOpen, setDdOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const ddRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
@@ -90,14 +91,21 @@ export default function Navbar() {
             </div>
           </a>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-            <nav className="nav-links">
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <nav className={`nav-links${mobileNavOpen ? " open" : ""}`}>
               {NAV_LINKS.map((l) => (
-                <a key={l.label} className="nav-link-item" href={l.href}>
+                <a key={l.label} className="nav-link-item" href={l.href} onClick={() => setMobileNavOpen(false)}>
                   {l.label}
                 </a>
               ))}
             </nav>
+
+            <button className="hamburger-btn" onClick={() => setMobileNavOpen(o => !o)} aria-label="Toggle navigation">
+              {mobileNavOpen
+                ? <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                : <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+              }
+            </button>
 
             {/* Auth area */}
             <div
