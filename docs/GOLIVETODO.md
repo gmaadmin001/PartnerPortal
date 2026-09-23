@@ -104,21 +104,30 @@ involved). Dashboard-only steps still get walked through click-by-click.
 > Auth/transactional email must be deliverable from an authenticated domain before real users sign
 > up or reset passwords. Conforms to `architecture.md` → "Auth emails delegated to the app."
 
-- [ ] **3.1 — Authenticate the sending domain in Resend** (Task 22): add the domain (likely a
-      `relocentra.com` / `globalmobilityadviser.com` subdomain), add the SPF/DKIM (and optional MX)
-      DNS records in Cloudflare, verify green in Resend.
-- [ ] **3.2 — Supabase custom SMTP** (Task E8): Authentication → SMTP Settings → enable, host
-      `smtp.resend.com`, port `465`, user `resend`, password = Resend API key, sender = address on
-      the verified domain.
-- [ ] **3.3 — Raise the email rate limit** (Task E8): Authentication → Rate Limits → raise "Rate
-      limit for sending emails" above the 2/hour default (e.g. 100+/hour) — only editable once
-      custom SMTP is on; still applies even with the E4 Send Email hook active.
-- [ ] **3.4 — App-owned branded auth emails** (Tasks E1–E7): Send Email hook → Edge route →
-      branded template rendered in code and sent via the Resend API, signature-verified. End state that supersedes
-      the interim built-in mailer.
-- [ ] **3.5 — Email deliverability QA** (Task E7/E6): trigger recovery + (if enabled) signup;
-      confirm branded mail arrives from the authenticated domain and lands in the inbox (not
-      Spam/Promotions). A 200 from Resend = accepted, **not** delivered.
+- [x] **3.1 — Authenticate the sending domain in Resend** (Task 22): ✅ 2026-09-22 —
+      `globalmobilityadviser.com` verified in Resend (SPF/DKIM/DMARC aligned); a live send from
+      `noreply@globalmobilityadviser.com` was accepted and delivered.
+      ⚠️ **`relocentra.com` is NOT yet added to Resend.** Until it is, `EMAIL_FROM` keeps the GMA
+      envelope with a ReloCentra display name. Sending from an unverified domain fails outright, so
+      do not point `EMAIL_FROM` at `relocentra.com` before verifying it — see §1 for the DNS move.
+- [x] **3.2 — Supabase custom SMTP** (Task E8): ✅ Verified 2026-09-22 in the dashboard — enabled,
+      host `smtp.resend.com`, port `465`, user `resend`, password = the current `RESEND_API_KEY`,
+      sender `noreply@globalmobilityadviser.com`.
+      Note: the username and password were **wrong until 2026-09-22** (username was an email address;
+      password was a since-revoked key). It went unnoticed because the E4 Send Email hook supersedes
+      SMTP, so this server carries no production traffic — its real job is to unlock §3.3. That also
+      made it a silent trap: had the hook ever been disabled, auth mail would have failed with no
+      obvious cause. Re-check these credentials whenever the Resend key is rotated.
+- [x] **3.3 — Raise the email rate limit** (Task E8): ✅ Verified 2026-09-22 — "Rate limit for
+      sending emails" is **100 emails/hour** (default is 2). Still applies with the E4 hook active.
+- [x] **3.4 — App-owned branded auth emails** (Tasks E1–E7): ✅ 2026-09-22 — Send Email hook → Edge
+      route → branded template **rendered in code** (`renderEmail()` in `src/lib/email.ts`) and sent
+      via the Resend HTTP API, signature-verified. EmailJS is fully removed: no code, env var, Worker
+      secret or account remains.
+- [x] **3.5 — Email deliverability QA** (Task E7/E6): ✅ 2026-09-22 — password reset triggered in
+      production against the deployed Worker; branded mail arrived in the inbox from
+      `noreply@globalmobilityadviser.com`. Signup/invite paths share the same helper and template.
+      Remember: a 200 from Resend = accepted, **not** delivered — always confirm inbox placement.
 
 ## 4. Cloudflare production environment variables
 

@@ -451,7 +451,7 @@ in place. This is a dashboard-only configuration step.
       only becomes editable once custom SMTP is enabled; set it to a value sized for production
       sign-up volume (e.g. 100+/hour). Note: this rate limit still applies when the E4 Send
       Email hook is active, so it must be raised even though SMTP itself is superseded by the hook.
-- [x] **Task E7 — QA:** ✅ Complete. Resend domain DNS verified (SPF/DKIM/DMARC on `globalmobilityadviser.com`). SMTP transport working through EmailJS. Branded dynamic template delivering correctly to inboxes. Password reset (recovery) email working end-to-end. Account creation via invite link (pay → invite email → `/auth/reset-password` → set password) working. Signature rejection verified in code: expired timestamp (±5 min window), bad HMAC, and missing `webhook-id`/`webhook-timestamp`/`webhook-signature` headers all return 401.
+- [x] **Task E7 — QA:** ✅ Complete — **re-verified 2026-09-22 after the Resend migration.** Resend domain DNS verified (SPF/DKIM/DMARC on `globalmobilityadviser.com`). The app calls the Resend HTTP API directly — **no EmailJS layer**. Branded template rendered in code (`renderEmail()`) delivering correctly to inboxes. Password reset (recovery) confirmed end-to-end in production: Supabase hook fired → Resend accepted → email received in inbox. Account creation via invite link (pay → invite email → `/auth/reset-password` → set password) working. Signature rejection verified in code: expired timestamp (±5 min window), bad HMAC, and missing `webhook-id`/`webhook-timestamp`/`webhook-signature` headers all return 401. Supabase custom SMTP + the 100/hour email rate limit were both re-checked in the dashboard the same day.
 
 ## Feedback
 
@@ -789,4 +789,4 @@ All emails are sent by passing these params to the single master template:
 - [x] **E5** — Env wiring: `RESEND_API_KEY` + `EMAIL_FROM` + `SUPABASE_AUTH_HOOK_SECRET` in `.dev.vars` and Cloudflare (the four `EMAILJS_*` vars are retired)
 - [x] **E6** — Reconcile existing `/api/request-reset` + `resetPasswordForEmail` flow with new hook
 - [x] **E8** — Supabase dashboard: confirm custom SMTP on, raise email rate limit above 2/hour
-- [x] **E7** — QA complete: ✅ Resend DNS verified, ✅ SMTP via EmailJS working, ✅ branded dynamic template delivering, ✅ password reset working, ✅ invite link account creation working. Signature rejection (bad HMAC, expired timestamp, missing headers) returns 401 — verified in `auth-email-hook/route.ts`.
+- [x] **E7** — QA complete (re-verified 2026-09-22 on Resend): ✅ Resend DNS verified, ✅ Resend HTTP API called directly (EmailJS removed), ✅ in-code template delivering, ✅ password reset confirmed in production inbox, ✅ invite link account creation working, ✅ Supabase SMTP + 100/hour rate limit re-checked. Signature rejection (bad HMAC, expired timestamp, missing headers) returns 401 — verified in `auth-email-hook/route.ts`.
