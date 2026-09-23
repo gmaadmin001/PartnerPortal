@@ -53,17 +53,22 @@ export async function POST(req: NextRequest) {
   // Send rejection email
   const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
   if (listing.claim_email) {
-    await sendEmail({
-      to_email: listing.claim_email as string,
-      to_name: (listing.claim_name as string) || (listing.claim_email as string),
-      greeting: listing.claim_name ? `Hi ${listing.claim_name},` : "Hi there,",
-      subject: "Update on your listing claim",
-      headline: "Claim Could Not Be Verified",
-      message_html: `<p>Thank you for submitting a claim for a listing in our directory. After review, we were unable to verify your ownership of this listing.</p><p>If you believe this is an error, please contact us with supporting documentation and we'll be happy to review it again.</p>`,
-      button_label: "Contact Support",
-      button_url: `${origin}/services`,
-      footnote: "If you didn't submit this claim, no action is needed.",
-    });
+    // Claim is already rejected — a send failure must not fail the admin action.
+    try {
+      await sendEmail({
+        to: listing.claim_email as string,
+        toName: (listing.claim_name as string) || undefined,
+        greeting: listing.claim_name ? `Hi ${listing.claim_name},` : "Hi there,",
+        subject: "Update on your listing claim",
+        headline: "Claim Could Not Be Verified",
+        bodyHtml: `<p>Thank you for submitting a claim for a listing in our directory. After review, we were unable to verify your ownership of this listing.</p><p>If you believe this is an error, please contact us with supporting documentation and we'll be happy to review it again.</p>`,
+        buttonLabel: "Contact Support",
+        buttonUrl: `${origin}/services`,
+        footnote: "If you didn't submit this claim, no action is needed.",
+      });
+    } catch (err) {
+      console.error("[reject-claim] Email send failed:", err);
+    }
   }
 
   return NextResponse.json({ ok: true });

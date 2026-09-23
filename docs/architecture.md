@@ -9,44 +9,68 @@ new project; it is not auto-loaded into every session.
 
 ## Email & messaging
 
-### Two-provider email split
+### One provider: Resend
 
-- **In-app transactional email → EmailJS** (`https://api.emailjs.com/api/v1.0/email/send`).
-  One shared send helper POSTs to a **single reusable template** parameterized by
-  `template_params`: subject, greeting, headline, `message_html`, button label/url,
-  footnote. The helper **fails soft** — if env vars are missing it logs a warning
-  and returns instead of throwing, so a misconfigured environment never crashes a
-  request flow.
-  - Env: `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`,
-    `EMAILJS_PRIVATE_KEY`.
-- **Background / worker / bulk email → Resend** (`https://api.resend.com/emails`)
-  with hand-built branded HTML, sent from a standalone worker rather than the
-  request path. Gate the send behind an env flag (e.g. a `SEND_*` boolean) and
-  stamp a `*_sent_at` column on success for idempotency.
-  - Env: `RESEND_API_KEY`.
+**All email — in-app transactional and background/bulk — goes through Resend**
+(`https://api.resend.com/emails`), behind one shared send helper in
+[`src/lib/email.ts`](../src/lib/email.ts).
 
-Rule of thumb: one template-driven helper for user-facing transactional mail in
-the app; raw-HTML Resend for batch/onboarding jobs in workers.
+- **Plain `fetch` + `Authorization: Bearer $RESEND_API_KEY`** — no Resend Node SDK,
+  so the helper runs on Cloudflare Workers/Edge. Body: `{ from, to, subject, html, text }`.
+- The helper **fails soft** — if `RESEND_API_KEY` is missing it logs a warning and
+  returns instead of throwing, so a misconfigured environment never crashes a
+  request flow. A real Resend error with the key present **throws**.
+- Env: `RESEND_API_KEY`, `EMAIL_FROM` (defaults to
+  `ReloCentra Partner Portal <noreply@globalmobilityadviser.com>`). The one key also
+  covers Resend's SMTP surface (`smtp.resend.com`, port `465`, username `resend`,
+  password = the API key) — needed only for the Supabase dashboard SMTP setting.
+
+**Resend has no hosted template editor** — unlike EmailJS (used here until the
+2026-09 migration), there is no server-side template to parameterize. The
+replacement for "one reusable template" is **one shared layout function in code**:
+
+- `renderEmail({ subject, greeting, headline, bodyHtml, buttonLabel, buttonUrl,
+  footnote })` owns the wrapper: brand header, typography, CTA button, copy-paste
+  link fallback, footer. Every call site composes against it and supplies content only.
+- All CSS is inline (no `<style>` blocks, no external images) — mail clients strip
+  them. `sendEmail` also derives a `text/plain` alternative from the same content.
+- `greeting`, `headline`, `footnote`, `buttonLabel` and `buttonUrl` are
+  HTML-escaped by `renderEmail`. `bodyHtml` is a **trusted fragment** — call sites
+  must run interpolated user/DB values through the exported `escapeHtml`.
+
+**Call-site failure handling.** Because the helper throws, each call site decides
+what a send failure means:
+
+- Flows where the state change already committed (admin approve/reject, Stripe
+  webhook fulfilment) **catch and log** — never fail the action or trigger a
+  Stripe retry over a notification email.
+- The auth email hook **lets it throw** → 500, so Supabase records the hook as
+  failed. A silently dropped auth email locks the user out.
+
+For **background / worker / bulk** sends, add two things on top of the same helper:
+gate the send behind an env flag (e.g. a `SEND_*` boolean), and stamp a
+`*_sent_at` column on success for idempotency.
 
 ### Deliverability: send from an authenticated domain (NON-NEGOTIABLE)
 
-The EmailJS template/helper is only the *rendering+send* layer — it does not by
-itself get mail to the inbox. What lands transactional mail (especially auth /
-magic-link mail, where a spam-filed message = the user literally cannot log in)
-is **domain authentication on the sending identity**:
+The send helper is only the *rendering+send* layer — it does not by itself get
+mail to the inbox. What lands transactional mail (especially auth / magic-link
+mail, where a spam-filed message = the user literally cannot log in) is **domain
+authentication on the sending identity**:
 
-- **Never ship auth/transactional mail from a personal mailbox** (e.g. a
-  personal Gmail wired into EmailJS). It has no SPF/DKIM/DMARC alignment with the
-  product domain and gets filtered to spam — and mail sent *from* a Gmail account
-  *to* that same account (incl. `+aliases`) is a near-worst-case for Gmail's spam
-  filter, so it's also a misleading way to test.
-- Point the sender at the **product domain** (`noreply@<domain>`) backed by a real
-  ESP (Resend / Mailgun / SendGrid / Postmark), and verify the domain so **SPF,
-  DKIM, and DMARC** all align. With DNS on Cloudflare the records are quick to add.
-- This keeps the architecture intact: the Send-Email-hook → EmailJS template flow
-  is unchanged; only EmailJS's underlying **email service** swaps from a personal
-  mailbox to the authenticated-domain ESP/SMTP.
-- A `200 OK` from the EmailJS API means *accepted for sending*, NOT *delivered to
+- **Never ship auth/transactional mail from a personal mailbox.** It has no
+  SPF/DKIM/DMARC alignment with the product domain and gets filtered to spam —
+  and mail sent *from* a Gmail account *to* that same account (incl. `+aliases`)
+  is a near-worst-case for Gmail's spam filter, so it's also a misleading way to
+  test.
+- Point the sender at the **product domain** (`noreply@<domain>`) and verify that
+  domain in Resend so **SPF, DKIM, and DMARC** all align. Resend emits the exact
+  DNS records; with DNS on Cloudflare they are quick to add. **Sending from an
+  unverified domain fails outright** — this is a hard gate, not a nicety.
+  Verified today: `globalmobilityadviser.com`. `relocentra.com` is not yet added
+  to Resend, which is why `EMAIL_FROM` keeps the GMA envelope with a ReloCentra
+  display name.
+- A `200 OK` from the Resend API means *accepted for sending*, NOT *delivered to
   inbox*. Verify actual inbox placement (and check Spam/Promotions) before calling
   an email flow done.
 
@@ -64,9 +88,9 @@ through the app so branding and copy live in one place:
   - **Multi-signature support** (space-separated `v1,<sig>` entries) for key rotation.
   - Secret in `SUPABASE_AUTH_HOOK_SECRET`, format `v1,whsec_<base64>`.
 - The route maps `email_action_type` (`signup`, `recovery`, `magiclink`,
-  `email_change`, `invite`) → branded templates, builds the provider's
-  `/auth/v1/verify?token=...&type=...&redirect_to=...` confirmation URL, and sends
-  via the email helper above.
+  `email_change`, `invite`) → branded HTML built with `renderEmail`, builds the
+  provider's `/auth/v1/verify?token=...&type=...&redirect_to=...` confirmation URL,
+  and sends via the Resend helper above.
 
 ### Typical call sites
 
@@ -81,7 +105,7 @@ All routed through the one email helper:
 A unified **in-app inbox** where each message carries a **delivery-type badge**
 (Email / SMS) and threads link to domain records (jobs, clients, etc.):
 
-- Email via the providers above.
+- Email via Resend as above.
 - **SMS via a provider (e.g. Twilio)** — wire it as a second channel behind the
   same compose + inbox surface, with per-message "send via" channel selection.
 - **Gate any unbuilt channel behind a feature flag** until it is fully wired.
@@ -183,7 +207,7 @@ Three clients, never interchangeable, chosen by who is acting:
 ## External provider integrations (Workers/Edge)
 
 Conventions every third-party integration on this stack follows — Anthropic,
-ElevenLabs, Deepgram, Twilio, EmailJS/Resend all conform:
+ElevenLabs, Deepgram, Twilio, Resend all conform:
 
 - **Plain `fetch` + the provider's own auth header — never the vendor's Node SDK.**
   This is what lets the call run on Cloudflare Workers/Edge at all. Examples:

@@ -349,12 +349,15 @@ Do NOT start the next task until the previous Gate 2 is approved and committed.
 > (`gmaadmin001@gmail.com`). All other recipients are blocked with a `550` error.
 > This must be resolved before the portal goes live with real users.
 >
-> **Email stack (confirmed):**
-> - **EmailJS** — handles all email sending and template management. Email verification and
->   password reset both go through EmailJS using a single reusable branded template.
-> - **Resend** — acts as the underlying SMTP server that EmailJS routes through. Resend provides
->   domain authentication (SPF/DKIM/DMARC) and delivery. EmailJS is the app-facing layer;
->   Resend is the deliverability layer underneath it.
+> **Email stack (current, since 2026-09-22 — EmailJS removed):**
+> - **Resend only** — the app calls `https://api.resend.com/emails` directly from
+>   `src/lib/email.ts`. Resend also provides domain authentication (SPF/DKIM/DMARC) and delivery.
+> - **The base email template lives in code**, not in a vendor dashboard: `renderEmail()` in
+>   `src/lib/email.ts` owns the brand wrapper; call sites supply content only.
+>
+> *Historical:* tasks E1–E7 and M1–M2 below were built against EmailJS (app-facing template +
+> send API) with Resend as its SMTP transport. That middle layer is gone; the EmailJS dashboard
+> steps in M1/M2 are kept only as a record of what the template used to be.
 >
 > **Two parts:** (A) **Task 22** — authenticate a sending domain in Resend so mail is deliverable
 > (interim fix; keeps Supabase's built-in mailer). (B) **Tasks E1–E8** — conform to the master
@@ -412,15 +415,16 @@ in place. This is a dashboard-only configuration step.
 > Supabase's built-in templated mailer for auth mail. The same helper later serves claim
 > notifications and the dashboard notification toggles. Each task runs its own Gate 1 before building.
 
-- [x] **Task E1 — Shared EmailJS send helper:** One helper POSTs to a single reusable EmailJS
-      template (`https://api.emailjs.com/api/v1.0/email/send`) parameterized by `template_params`
-      (subject, greeting, headline, `message_html`, button label/url, footnote). **Fails soft** —
-      logs a warning and returns (never throws) if env vars are missing, so a misconfigured
-      environment never crashes a request. In the EmailJS dashboard, configure the email service
-      to use **Resend as the SMTP provider** (host: `smtp.resend.com`, port 465, API key as
-      password) pointing at the domain verified in Task 22 — this is what gives SPF/DKIM/DMARC
-      alignment. EmailJS is the template + send API layer; Resend is the SMTP/deliverability layer.
-      Env: `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`.
+- [x] **Task E1 — Shared send helper** ~~(EmailJS)~~ **→ superseded 2026-09-22 by Resend.**
+      `src/lib/email.ts` now POSTs directly to `https://api.resend.com/emails` with
+      `Authorization: Bearer $RESEND_API_KEY` and a `{ from, to, subject, html, text }` body.
+      The base template is `renderEmail({ subject, greeting, headline, bodyHtml, buttonLabel,
+      buttonUrl, footnote })` in the same file — no vendor-hosted template. **Fails soft** on a
+      missing `RESEND_API_KEY` (warn + return); a real Resend error with the key present **throws**,
+      and each call site decides whether to swallow it (already-committed writes) or surface it
+      (auth hook → 500). Deliverability still rests on the domain verified in Task 22.
+      Env: `RESEND_API_KEY`, `EMAIL_FROM`.
+      *Original EmailJS wording kept in git history; the four `EMAILJS_*` vars are retired.*
 - [x] **Task E2 — Auth-email webhook Edge route** (`src/app/api/auth-email-hook/route.ts`, Edge
       runtime): verify the Standard Webhooks signature before trusting the payload — HMAC-SHA256
       via Web Crypto (`crypto.subtle`), **constant-time** comparison, **±5-min** timestamp
@@ -432,7 +436,7 @@ in place. This is a dashboard-only configuration step.
 - [x] **Task E4 — Configure the Supabase Send Email hook:** Dashboard → **Authentication → Hooks**
       → **Send Email Hook** → point to the deployed Edge route URL and set the signing secret.
       Once active, Supabase delegates these emails to our route instead of its built-in mailer.
-- [x] **Task E5 — Env wiring:** Add `EMAILJS_*` and `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars`
+- [x] **Task E5 — Env wiring:** Add `RESEND_API_KEY` / `EMAIL_FROM` (was `EMAILJS_*`) and `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars`
       and Cloudflare (build var vs. encrypted secret as appropriate — keys/secrets stay encrypted).
 - [x] **Task E6 — Reconcile the existing recovery flow:** The current `/api/request-reset` +
       `resetPasswordForEmail` still triggers Supabase, which now fires the hook → our route.
@@ -540,7 +544,7 @@ Admin Dashboard:
 - [x] Search for a registration (A vendor or a Realtor)
 - [x] Add the ability to edit their record (Not an automatic edit, force the admin to click edit)
 - [x] Role-based access (list / search / admin differentiation)
-- [x] Set up three values first, create template, then connect EmailJS
+- [x] Set up three values first, create template, then connect the email provider *(EmailJS at the time; Resend direct since 2026-09-22)*
 - [x] Configure Supabase
 
 
@@ -778,11 +782,11 @@ All emails are sent by passing these params to the single master template:
 > These are the same tasks already listed in Phase 9 above. Repeated here for sequencing clarity.
 > Each runs its own Gate 1 before building.
 
-- [x] **E1** — Shared EmailJS send helper (`src/lib/email.ts`)
+- [x] **E1** — Shared send helper (`src/lib/email.ts`) — Resend since 2026-09-22 (was EmailJS)
 - [x] **E2** — Auth-email webhook Edge route (`src/app/api/auth-email-hook/route.ts`)
 - [x] **E3** — Action-type → param mapping (signup / recovery / magiclink / email_change / invite)
 - [x] **E4** — Configure Supabase Send Email hook in dashboard (point to deployed E2 route)
-- [x] **E5** — Env wiring: add all four `EMAILJS_*` vars + `SUPABASE_AUTH_HOOK_SECRET` to `.dev.vars` and Cloudflare
+- [x] **E5** — Env wiring: `RESEND_API_KEY` + `EMAIL_FROM` + `SUPABASE_AUTH_HOOK_SECRET` in `.dev.vars` and Cloudflare (the four `EMAILJS_*` vars are retired)
 - [x] **E6** — Reconcile existing `/api/request-reset` + `resetPasswordForEmail` flow with new hook
 - [x] **E8** — Supabase dashboard: confirm custom SMTP on, raise email rate limit above 2/hour
 - [x] **E7** — QA complete: ✅ Resend DNS verified, ✅ SMTP via EmailJS working, ✅ branded dynamic template delivering, ✅ password reset working, ✅ invite link account creation working. Signature rejection (bad HMAC, expired timestamp, missing headers) returns 401 — verified in `auth-email-hook/route.ts`.

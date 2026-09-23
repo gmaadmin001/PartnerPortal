@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendEmail } from "@/lib/email";
+import { escapeHtml, sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -40,17 +40,22 @@ export async function POST(req: NextRequest) {
 
   const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
   if (listing.primary_contact_email) {
-    await sendEmail({
-      to_email: listing.primary_contact_email as string,
-      to_name: (listing.primary_contact_name as string) || (listing.primary_contact_email as string),
-      greeting: listing.primary_contact_name ? `Hi ${listing.primary_contact_name},` : "Hi there,",
-      subject: "Update on your listing submission",
-      headline: "Listing Could Not Be Approved",
-      message_html: `<p>Thank you for submitting your listing for <strong>${listing.company_name}</strong>. After review, we were unable to approve it at this time.</p>${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}<p>If you believe this is an error or would like more information, please contact us and we'll be happy to assist.</p>`,
-      button_label: "Contact Support",
-      button_url: `${origin}/services`,
-      footnote: "If you didn't submit this listing, no action is needed.",
-    });
+    // Listing is already rejected — a send failure must not fail the admin action.
+    try {
+      await sendEmail({
+        to: listing.primary_contact_email as string,
+        toName: (listing.primary_contact_name as string) || undefined,
+        greeting: listing.primary_contact_name ? `Hi ${listing.primary_contact_name},` : "Hi there,",
+        subject: "Update on your listing submission",
+        headline: "Listing Could Not Be Approved",
+        bodyHtml: `<p>Thank you for submitting your listing for <strong>${escapeHtml(listing.company_name as string)}</strong>. After review, we were unable to approve it at this time.</p>${reason ? `<p><strong>Reason:</strong> ${escapeHtml(String(reason))}</p>` : ""}<p>If you believe this is an error or would like more information, please contact us and we'll be happy to assist.</p>`,
+        buttonLabel: "Contact Support",
+        buttonUrl: `${origin}/services`,
+        footnote: "If you didn't submit this listing, no action is needed.",
+      });
+    } catch (err) {
+      console.error("[reject-registration] Email send failed:", err);
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -62,17 +62,22 @@ export async function POST(req: NextRequest) {
 
   const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
   if (listing.claim_email) {
-    await sendEmail({
-      to_email: listing.claim_email as string,
-      to_name: (listing.claim_name as string) || (listing.claim_email as string),
-      greeting: listing.claim_name ? `Hi ${listing.claim_name},` : "Hi there,",
-      subject: "Your listing claim has been approved",
-      headline: "Claim Approved — Welcome to the Directory",
-      message_html: `<p>Great news! Your claim has been reviewed and approved. Your listing is now active and linked to your account.</p><p>Sign in to your dashboard to manage your profile and update your details.</p>`,
-      button_label: "Go to Dashboard",
-      button_url: `${origin}/dashboard`,
-      footnote: "If you have any questions, please contact our support team.",
-    });
+    // Claim is already approved — a send failure must not fail the admin action.
+    try {
+      await sendEmail({
+        to: listing.claim_email as string,
+        toName: (listing.claim_name as string) || undefined,
+        greeting: listing.claim_name ? `Hi ${listing.claim_name},` : "Hi there,",
+        subject: "Your listing claim has been approved",
+        headline: "Claim Approved — Welcome to the Directory",
+        bodyHtml: `<p>Great news! Your claim has been reviewed and approved. Your listing is now active and linked to your account.</p><p>Sign in to your dashboard to manage your profile and update your details.</p>`,
+        buttonLabel: "Go to Dashboard",
+        buttonUrl: `${origin}/dashboard`,
+        footnote: "If you have any questions, please contact our support team.",
+      });
+    } catch (err) {
+      console.error("[approve-claim] Email send failed:", err);
+    }
   }
 
   return NextResponse.json({ ok: true });

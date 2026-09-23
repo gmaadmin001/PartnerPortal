@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendEmail } from "@/lib/email";
+import { escapeHtml, sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -35,17 +35,22 @@ export async function POST(req: NextRequest) {
   const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
   const listingUrl = listing.slug ? `${origin}/services/${listing.slug}` : `${origin}/services`;
   if (listing.primary_contact_email) {
-    await sendEmail({
-      to_email: listing.primary_contact_email as string,
-      to_name: (listing.primary_contact_name as string) || (listing.primary_contact_email as string),
-      greeting: listing.primary_contact_name ? `Hi ${listing.primary_contact_name},` : "Hi there,",
-      subject: "Your listing is now live",
-      headline: "Your Listing Has Been Approved",
-      message_html: `<p style="text-align:center;margin-bottom:20px;"><img src="https://globalmobilityadviser.com/wp-content/uploads/2025/11/GMA-1.png" alt="Global Mobility Adviser" style="max-width:180px;height:auto;" /></p><p>Great news — your listing for <strong>${listing.company_name}</strong> has been reviewed and is now live in the ReloCentra directory.</p><p>You can <a href="${listingUrl}" style="color:#1a3c5e;font-weight:bold;">view your live listing here</a>, or sign in to your dashboard to update your profile, add photos, and manage your listing.</p>`,
-      button_label: "View Your Listing",
-      button_url: listingUrl,
-      footnote: "If you have any questions, please contact our support team.",
-    });
+    // Listing is already active — a send failure must not fail the admin action.
+    try {
+      await sendEmail({
+        to: listing.primary_contact_email as string,
+        toName: (listing.primary_contact_name as string) || undefined,
+        greeting: listing.primary_contact_name ? `Hi ${listing.primary_contact_name},` : "Hi there,",
+        subject: "Your listing is now live",
+        headline: "Your Listing Has Been Approved",
+        bodyHtml: `<p>Great news — your listing for <strong>${escapeHtml(listing.company_name as string)}</strong> has been reviewed and is now live in the ReloCentra directory.</p><p>You can <a href="${escapeHtml(listingUrl)}" style="color:#1C66AD;font-weight:bold;">view your live listing here</a>, or sign in to your dashboard to update your profile, add photos, and manage your listing.</p>`,
+        buttonLabel: "View Your Listing",
+        buttonUrl: listingUrl,
+        footnote: "If you have any questions, please contact our support team.",
+      });
+    } catch (err) {
+      console.error("[activate-registration] Email send failed:", err);
+    }
   }
 
   return NextResponse.json({ ok: true });

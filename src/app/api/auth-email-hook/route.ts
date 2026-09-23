@@ -5,43 +5,43 @@ import { createServiceClient } from "@/lib/supabase/service";
 const EMAIL_COPY: Record<string, {
   subject: string;
   headline: string;
-  message_html: string;
-  button_label: string;
+  bodyHtml: string;
+  buttonLabel: string;
   footnote: string;
 }> = {
   signup: {
     subject: "Verify your email address",
     headline: "Verify Your Email Address",
-    message_html: "<p>Thanks for registering with the ReloCentra Partner Portal. Click the button below to verify your email address and activate your account.</p>",
-    button_label: "Verify Email",
+    bodyHtml: "<p>Thanks for registering with the ReloCentra Partner Portal. Click the button below to verify your email address and activate your account.</p>",
+    buttonLabel: "Verify Email",
     footnote: "If you didn't create an account, you can safely ignore this email.",
   },
   recovery: {
     subject: "Reset your password",
     headline: "Reset Your Password",
-    message_html: "<p>We received a request to reset your password. Click the button below to choose a new one. This link expires in 1 hour.</p>",
-    button_label: "Reset Password",
+    bodyHtml: "<p>We received a request to reset your password. Click the button below to choose a new one. This link expires in 1 hour.</p>",
+    buttonLabel: "Reset Password",
     footnote: "If you didn't request a password reset, you can safely ignore this email.",
   },
   magiclink: {
     subject: "Your sign-in link",
     headline: "Your Sign-In Link",
-    message_html: "<p>Click the button below to sign in to the ReloCentra Partner Portal. This link expires in 1 hour.</p>",
-    button_label: "Sign In",
+    bodyHtml: "<p>Click the button below to sign in to the ReloCentra Partner Portal. This link expires in 1 hour.</p>",
+    buttonLabel: "Sign In",
     footnote: "If you didn't request this link, you can safely ignore this email.",
   },
   email_change: {
     subject: "Confirm your new email",
     headline: "Confirm Email Change",
-    message_html: "<p>You requested to change your email address. Click the button below to confirm your new email address.</p>",
-    button_label: "Confirm New Email",
+    bodyHtml: "<p>You requested to change your email address. Click the button below to confirm your new email address.</p>",
+    buttonLabel: "Confirm New Email",
     footnote: "If you didn't request this change, contact support immediately.",
   },
   invite: {
     subject: "You've been invited",
     headline: "You've Been Invited to Partner Portal",
-    message_html: "<p>You've been invited to join the ReloCentra Partner Portal. Click the button below to accept your invitation and set up your account.</p>",
-    button_label: "Accept Invitation",
+    bodyHtml: "<p>You've been invited to join the ReloCentra Partner Portal. Click the button below to accept your invitation and set up your account.</p>",
+    buttonLabel: "Accept Invitation",
     footnote: "This invitation expires in 7 days.",
   },
 };
@@ -144,8 +144,8 @@ export async function POST(req: NextRequest) {
           copy = {
             subject: "Your admin account is ready",
             headline: "Your Admin Account",
-            message_html: "<p>Your admin account for the ReloCentra Partner Portal has been created. Click the button below to verify your email and access the admin dashboard.</p>",
-            button_label: "Access Admin Dashboard",
+            bodyHtml: "<p>Your admin account for the ReloCentra Partner Portal has been created. Click the button below to verify your email and access the admin dashboard.</p>",
+            buttonLabel: "Access Admin Dashboard",
             footnote: "If you didn't create an account, you can safely ignore this email.",
           };
         }
@@ -157,11 +157,13 @@ export async function POST(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
     const buttonUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=${actionType}${redirectTo ? `&redirect_to=${encodeURIComponent(redirectTo)}` : ""}`;
 
+    // Let a send failure surface as a 500 so Supabase reports the hook as failed —
+    // an auth email that silently vanishes locks the user out.
     await sendEmail({
-      to_email: email,
-      to_name: name || email,
+      to: email,
+      toName: name || undefined,
       greeting: name ? `Hi ${name},` : "Hi there,",
-      button_url: buttonUrl,
+      buttonUrl,
       ...copy,
     });
 

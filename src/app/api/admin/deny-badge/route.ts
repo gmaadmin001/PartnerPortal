@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendEmail } from "@/lib/email";
+import { escapeHtml, sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -34,17 +34,22 @@ export async function POST(req: NextRequest) {
 
   const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
   if (listing.primary_contact_email) {
-    await sendEmail({
-      to_email: listing.primary_contact_email as string,
-      to_name: (listing.primary_contact_name as string) || (listing.primary_contact_email as string),
-      greeting: listing.primary_contact_name ? `Hi ${listing.primary_contact_name},` : "Hi there,",
-      subject: "Update on your Verified Badge request",
-      headline: "Badge Verification Could Not Be Completed",
-      message_html: `<p>Thank you for your interest in the Verified Badge for <strong>${listing.company_name}</strong>. After review, we were unable to approve verification at this time.</p><p>Please contact our support team for more information. If a charge was made, we will process a refund.</p>`,
-      button_label: "Contact Support",
-      button_url: `${origin}/dashboard`,
-      footnote: "We apologize for any inconvenience.",
-    });
+    // Badge is already denied — a send failure must not fail the admin action.
+    try {
+      await sendEmail({
+        to: listing.primary_contact_email as string,
+        toName: (listing.primary_contact_name as string) || undefined,
+        greeting: listing.primary_contact_name ? `Hi ${listing.primary_contact_name},` : "Hi there,",
+        subject: "Update on your Verified Badge request",
+        headline: "Badge Verification Could Not Be Completed",
+        bodyHtml: `<p>Thank you for your interest in the Verified Badge for <strong>${escapeHtml(listing.company_name as string)}</strong>. After review, we were unable to approve verification at this time.</p><p>Please contact our support team for more information. If a charge was made, we will process a refund.</p>`,
+        buttonLabel: "Contact Support",
+        buttonUrl: `${origin}/dashboard`,
+        footnote: "We apologize for any inconvenience.",
+      });
+    } catch (err) {
+      console.error("[deny-badge] Email send failed:", err);
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -114,11 +114,11 @@ involved). Dashboard-only steps still get walked through click-by-click.
       limit for sending emails" above the 2/hour default (e.g. 100+/hour) — only editable once
       custom SMTP is on; still applies even with the E4 Send Email hook active.
 - [ ] **3.4 — App-owned branded auth emails** (Tasks E1–E7): Send Email hook → Edge route →
-      branded EmailJS template backed by Resend SMTP, signature-verified. End state that supersedes
+      branded template rendered in code and sent via the Resend API, signature-verified. End state that supersedes
       the interim built-in mailer.
 - [ ] **3.5 — Email deliverability QA** (Task E7/E6): trigger recovery + (if enabled) signup;
       confirm branded mail arrives from the authenticated domain and lands in the inbox (not
-      Spam/Promotions). A 200 from EmailJS = accepted, **not** delivered.
+      Spam/Promotions). A 200 from Resend = accepted, **not** delivered.
 
 ## 4. Cloudflare production environment variables
 
@@ -146,7 +146,7 @@ involved). Dashboard-only steps still get walked through click-by-click.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Build variable | already set |
 | `SUPABASE_SERVICE_ROLE_KEY` | Encrypted secret | server-only; never client |
 | `ADMIN_EMAIL` | Encrypted secret | gates admin claim-approval routes |
-| Email vars (Resend/EmailJS) | Encrypted secrets | added during §3 (E1–E8) |
+| Email vars (`RESEND_API_KEY`, `EMAIL_FROM`) | Encrypted secrets | added during §3 (E1–E8); the four `EMAILJS_*` secrets must be **deleted** from the Worker |
 
 - [ ] **4.1 — All Stripe live vars set** and a rebuild/redeploy done.
 - [ ] **4.2 — Confirm `SUPABASE_SERVICE_ROLE_KEY` is a runtime secret in prod** (it's the

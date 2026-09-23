@@ -1,10 +1,10 @@
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-EMAILJS_SERVICE_ID=
-EMAILJS_TEMPLATE_ID=
-EMAILJS_PUBLIC_KEY=
-EMAILJS_PRIVATE_KEY=
+# Resend — one key covers the HTTP API and smtp.resend.com
+RESEND_API_KEY=re_...
+# Sender must be on a domain verified in Resend
+EMAIL_FROM=ReloCentra Partner Portal <noreply@globalmobilityadviser.com>
 SUPABASE_AUTH_HOOK_SECRET=
 
 # Stripe — test keys locally (pk_test_*/sk_test_*), live keys in production

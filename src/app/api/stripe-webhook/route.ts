@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendEmail } from "@/lib/email";
+import { escapeHtml, sendEmail } from "@/lib/email";
 
 const SIGNATURE_TOLERANCE_SECONDS = 300;
 
@@ -131,9 +131,9 @@ async function setStatusBySubscription(
 const INVITE_COPY = {
   subject: "Payment confirmed — set up your Partner Portal account",
   headline: "You're all set — finish your account",
-  message_html:
+  bodyHtml:
     "<p>Your payment was received and your ReloCentra Partner listing has been created. Click below to set your password and access your dashboard.</p>",
-  button_label: "Set Your Password",
+  buttonLabel: "Set Your Password",
   footnote: "If you didn't sign up for the Partner Portal, you can safely ignore this email.",
 };
 
@@ -324,16 +324,16 @@ export async function POST(req: NextRequest) {
           await Promise.all(
             (admins ?? []).map((admin: { email: string; name: string | null }) =>
               sendEmail({
-                to_email: admin.email,
-                to_name: admin.name ?? "Admin",
+                to: admin.email,
+                toName: admin.name ?? "Admin",
                 subject: `Action required: Verified Badge purchase — ${companyLabel}`,
                 greeting: `Hi ${admin.name ?? "Admin"},`,
                 headline: "A partner purchased the Verified Badge",
-                message_html: `<p><strong>${companyLabel}</strong> has purchased the Verified Badge and is awaiting your approval in the admin dashboard. Please review and set their listing to <em>active</em> when ready.</p>`,
-                button_label: "Review in Admin Dashboard",
-                button_url: `${adminOrigin}/admin`,
+                bodyHtml: `<p><strong>${escapeHtml(companyLabel)}</strong> has purchased the Verified Badge and is awaiting your approval in the admin dashboard. Please review and set their listing to <em>active</em> when ready.</p>`,
+                buttonLabel: "Review in Admin Dashboard",
+                buttonUrl: `${adminOrigin}/admin`,
                 footnote: "This is an automated notification from the ReloCentra Partner Portal.",
-              })
+              }).catch((err) => console.error("[stripe-webhook] Admin badge notification failed:", err))
             )
           );
         }
@@ -426,17 +426,23 @@ export async function POST(req: NextRequest) {
         }
 
         const origin = process.env.NEXT_PUBLIC_MAIN_APP_URL || req.nextUrl.origin;
-        await sendEmail({
-          to_email: email,
-          to_name: claimName || email,
-          greeting: claimName ? `Hi ${claimName},` : "Hi there,",
-          button_url: `${origin}/dashboard`,
-          subject: "Claim submitted — under review",
-          headline: "Your Claim is Under Review",
-          message_html: `<p>Your payment was received and your claim for <strong>${claimSlug}</strong> has been submitted for review. Our team will verify your ownership and activate your listing within 1–2 business days.</p><p>You can sign in at any time to check your claim status.</p>`,
-          button_label: "Check Claim Status",
-          footnote: "If you didn't submit this claim, please contact us immediately.",
-        });
+        // Payment is already captured and the claim recorded — never fail the
+        // webhook (and trigger a Stripe retry) over a notification email.
+        try {
+          await sendEmail({
+            to: email,
+            toName: claimName || undefined,
+            greeting: claimName ? `Hi ${claimName},` : "Hi there,",
+            buttonUrl: `${origin}/dashboard`,
+            subject: "Claim submitted — under review",
+            headline: "Your Claim is Under Review",
+            bodyHtml: `<p>Your payment was received and your claim for <strong>${escapeHtml(claimSlug)}</strong> has been submitted for review. Our team will verify your ownership and activate your listing within 1–2 business days.</p><p>You can sign in at any time to check your claim status.</p>`,
+            buttonLabel: "Check Claim Status",
+            footnote: "If you didn't submit this claim, please contact us immediately.",
+          });
+        } catch (err) {
+          console.error("[stripe-webhook] Claim confirmation email failed:", err);
+        }
 
         await supabase
           .from("pending_registrations")
@@ -546,15 +552,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Registration insert failed" }, { status: 500 });
     }
 
-    // Send the branded set-password email via our own helper (fails soft if EmailJS unconfigured).
+    // Send the branded set-password email via our own helper (fails soft if Resend unconfigured).
+    // The registration row is marked consumed below either way — a Stripe retry would
+    // not re-send, so log loudly rather than failing the webhook.
     if (actionLink) {
-      await sendEmail({
-        to_email: email,
-        to_name: name || email,
-        greeting: name ? `Hi ${name},` : "Hi there,",
-        button_url: actionLink,
-        ...INVITE_COPY,
-      });
+      try {
+        await sendEmail({
+          to: email,
+          toName: name || undefined,
+          greeting: name ? `Hi ${name},` : "Hi there,",
+          buttonUrl: actionLink,
+          ...INVITE_COPY,
+        });
+      } catch (err) {
+        console.error("[stripe-webhook] Set-password email failed for", email, err);
+      }
     }
 
     // Mark consumed → idempotent against Stripe retries.
