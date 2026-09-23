@@ -5,6 +5,8 @@ SUPABASE_SERVICE_ROLE_KEY=
 RESEND_API_KEY=re_...
 # Sender must be on a domain verified in Resend
 EMAIL_FROM=ReloCentra Partner Portal <noreply@globalmobilityadviser.com>
+# Cloudflare account this Worker deploys to - must match account_id in wrangler.jsonc
+CLOUDFLARE_ACCOUNT_EMAIL=gmaadmin001@gmail.com
 SUPABASE_AUTH_HOOK_SECRET=
 
 # Stripe — test keys locally (pk_test_*/sk_test_*), live keys in production
