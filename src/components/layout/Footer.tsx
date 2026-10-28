@@ -82,6 +82,13 @@ export default function Footer() {
             </svg>
           </a>
         </div>
+
+        <p className="footer-credit">
+          Developed in partnership with{" "}
+          <a href="https://techleadershipgroup.com" target="_blank" rel="noopener noreferrer">
+            Technology Leadership Group (TLG)
+          </a>
+        </p>
       </div>
     </footer>
   );
